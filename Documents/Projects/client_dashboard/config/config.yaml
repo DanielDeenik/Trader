@@ -1,0 +1,5 @@
+# Configuration file for API keys and other secrets
+OPENAI_API_KEY: "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"
+AIRTABLE_API_KEY: "patbKU70lHwkidqHQ.9a0b049ae3432114fd7e630a85c58b20f3c546338a59027878025665ab0d8199"
+AIRTABLE_BASE_ID: "appUrDkvx7ZYe2bn6"
+

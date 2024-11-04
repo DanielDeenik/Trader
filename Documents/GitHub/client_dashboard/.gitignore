@@ -1,7 +1,7 @@
 # Ignore virtual environments
 .venv/
-venv/
-trading_bot_env/
+.venv/
+
 
 # Ignore Python cache files
 __pycache__/

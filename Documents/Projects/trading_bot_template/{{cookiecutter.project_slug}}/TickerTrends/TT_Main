@@ -1,0 +1,39 @@
+from TT_data_collection import get_trending_tickers, collect_data_from_tickertrends, collect_data_from_discord
+from TT_data_preprocessing import preprocess_data
+from TT_sentiment_analysis import load_sentiment_model
+from TT_feature_engineering import extract_features
+from TT_model_development import develop_model
+from TT_backtesting import backtest_model
+from sklearn.model_selection import train_test_split
+
+def main():
+    # Fetch trending tickers
+    trending_tickers = get_trending_tickers(num_tickers=10)
+
+    # Collect data from TickerTrends API and Discord API
+    tickertrends_data = collect_data_from_tickertrends(trending_tickers)
+    discord_data = collect_data_from_discord(DISCORD_CHANNEL_ID, DISCORD_BOT_TOKEN)
+    data = tickertrends_data + discord_data
+
+    # Preprocess and combine the data
+    df = preprocess_data(data)
+
+    # Load sentiment model
+    sentiment_model = load_sentiment_model()
+
+    # Feature engineering
+    df = extract_features(df, sentiment_model)
+
+    # Split the data
+    X = df.drop("ticker", axis=1)
+    y = df["ticker"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Develop the model
+    model = develop_model(X_train, y_train)
+
+    # Backtest and validate the model
+    backtest_model(model, X_test, y_test)
+
+if __name__ == "__main__":
+    main()

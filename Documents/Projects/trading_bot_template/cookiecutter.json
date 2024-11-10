@@ -1,0 +1,8 @@
+{
+    "project_name": "Trading Bot",
+    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
+    "description": "A trading bot for automated stock trading",
+    "author_name": "Your Name",
+    "python_version": "3.9"
+}
+

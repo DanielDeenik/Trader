@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="api_data.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Arb — Trend Lattice Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --text-dim: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922; --purple: #bc8cff;
+    --orange: #d18616;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 20px; color: var(--accent); }
+  .header .status { font-size: 13px; color: var(--text-dim); }
+
+  .container { display: grid; grid-template-columns: 300px 1fr 320px;
+               gap: 1px; background: var(--border); min-height: calc(100vh - 60px); }
+
+  /* Left Panel: Trend Input */
+  .panel { background: var(--surface); padding: 16px; overflow-y: auto; }
+  .panel h2 { font-size: 14px; color: var(--accent); margin-bottom: 12px;
+              text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label { display: block; font-size: 12px; color: var(--text-dim);
+                       margin-bottom: 4px; }
+  .input-group textarea, .input-group input, .input-group select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px;
+    font-family: inherit;
+  }
+  .input-group textarea { height: 120px; resize: vertical; }
+  .input-group textarea:focus, .input-group input:focus {
+    outline: none; border-color: var(--accent);
+  }
+
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
+         font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-yellow { background: var(--yellow); color: #000; }
+  .btn-small { padding: 4px 10px; font-size: 11px; }
+  .btn-group { display: flex; gap: 6px; margin-top: 8px; }
+
+  /* Center: Lattice Visualization */
+  .lattice-view { position: relative; }
+  .lattice-view h2 { position: sticky; top: 0; background: var(--surface);
+                     padding: 8px 0; z-index: 2; }
+
+  .cluster-card { background: var(--bg); border: 1px solid var(--border);
+                  border-radius: 8px; padding: 12px; margin-bottom: 10px;
+                  transition: border-color 0.15s; cursor: pointer; }
+  .cluster-card:hover { border-color: var(--accent); }
+  .cluster-card.active { border-color: var(--accent); box-shadow: 0 0 12px rgba(88,166,255,0.15); }
+
+  .cluster-header { display: flex; justify-content: space-between; align-items: center; }
+  .cluster-name { font-weight: 600; font-size: 14px; }
+  .cluster-strength { font-size: 12px; padding: 2px 8px; border-radius: 10px;
+                      font-weight: 600; }
+  .str-high { background: rgba(63,185,80,0.15); color: var(--green); }
+  .str-med { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .str-low { background: rgba(139,148,158,0.15); color: var(--text-dim); }
+
+  .cluster-meta { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+  .cluster-tickers { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .ticker-chip { font-size: 11px; padding: 2px 8px; border-radius: 4px;
+                 font-weight: 600; font-family: monospace; }
+  .chip-positive { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .chip-negative { background: rgba(248,81,73,0.12); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .chip-hidden { background: rgba(188,140,255,0.12); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .chip-mixed { background: rgba(209,134,22,0.12); color: var(--orange); border: 1px solid rgba(209,134,22,0.3); }
+
+  /* Beneficiary Map */
+  .beneficiary-section { margin-top: 12px; }
+  .beneficiary-section h3 { font-size: 12px; color: var(--text-dim);
+                            text-transform: uppercase; margin-bottom: 6px; }
+  .beneficiary-row { display: flex; align-items: center; gap: 8px;
+                     padding: 6px 8px; border-radius: 4px;
+                     font-size: 12px; margin-bottom: 4px; }
+  .beneficiary-row:hover { background: rgba(88,166,255,0.05); }
+  .b-ticker { font-family: monospace; font-weight: 600; min-width: 50px; }
+  .b-impact { min-width: 16px; text-align: center; }
+  .b-role { color: var(--text-dim); flex: 1; }
+  .b-edge { font-size: 10px; padding: 1px 6px; border-radius: 8px;
+            background: rgba(188,140,255,0.15); color: var(--purple); }
+
+  /* Right Panel: Assessment & Actions */
+  .assessment-card { background: var(--bg); border: 1px solid var(--border);
+                     border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .assessment-card h3 { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
+
+  .score-bar { height: 6px; background: var(--border); border-radius: 3px;
+               margin: 4px 0 8px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+  .verdict-badge { display: inline-block; padding: 4px 12px; border-radius: 6px;
+                   font-weight: 700; font-size: 13px; }
+  .verdict-strong-buy { background: rgba(63,185,80,0.2); color: var(--green); }
+  .verdict-buy { background: rgba(88,166,255,0.2); color: var(--accent); }
+  .verdict-watch { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .verdict-pass { background: rgba(209,134,22,0.2); color: var(--orange); }
+  .verdict-avoid { background: rgba(248,81,73,0.2); color: var(--red); }
+
+  .human-input { margin-top: 12px; }
+  .human-input label { font-size: 11px; color: var(--text-dim); display: block; margin-bottom: 3px; }
+  .human-input textarea { width: 100%; background: var(--bg); border: 1px solid var(--border);
+                          color: var(--text); padding: 6px 8px; border-radius: 4px;
+                          font-size: 12px; height: 60px; font-family: inherit; }
+
+  .conviction-slider { width: 100%; margin: 8px 0; accent-color: var(--accent); }
+
+  .action-buttons { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+
+  /* Hub Tickers */
+  .hub-list { margin-top: 8px; }
+  .hub-item { display: flex; justify-content: space-between; align-items: center;
+              padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .hub-centrality { color: var(--accent); font-family: monospace; }
+
+  /* Event Log */
+  .event-log { max-height: 200px; overflow-y: auto; font-size: 11px;
+               font-family: monospace; }
+  .event { padding: 3px 0; color: var(--text-dim); border-bottom: 1px solid rgba(48,54,61,0.5); }
+  .event .time { color: var(--accent); }
+
+  @media (max-width: 1024px) {
+    .container { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Social Arb — Trend Lattice</h1>
+    <div class="status" id="status">Ready — Enter a trend observation below</div>
+  </div>
+
+  <div class="container">
+    <!-- LEFT: Trend Input -->
+    <div class="panel" id="input-panel">
+      <h2>Your Observation</h2>
+      <div class="input-group">
+        <label>What did you see on the ground?</label>
+        <textarea id="observation" placeholder="e.g., Every nurse at the hospital is drinking Celsius. The vending machine at my gym is sold out. My Gen Z cousin switched from Monster last month."></textarea>
+      </div>
+      <div class="input-group">
+        <label>Keywords (comma separated)</label>
+        <input type="text" id="keywords" placeholder="celsius, energy drink, gen z, health">
+      </div>
+      <div class="input-group">
+        <label>Asset Class</label>
+        <select id="asset-class">
+          <option value="stock">Stocks</option>
+          <option value="crypto">Crypto</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="runAnalysis()">
+        Analyze Trend
+      </button>
+
+      <div style="margin-top: 20px;">
+        <h2>Hub Tickers</h2>
+        <div id="hub-list" class="hub-list">
+          <div style="color:var(--text-dim); font-size:12px;">Run analysis to see hub tickers</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <h2>Event Log</h2>
+        <div id="event-log" class="event-log"></div>
+      </div>
+    </div>
+
+    <!-- CENTER: Clusters + Lattice -->
+    <div class="panel lattice-view" id="lattice-panel">
+      <h2>Trend Clusters & Beneficiary Map</h2>
+      <div id="clusters-container">
+        <div style="text-align:center; padding:40px; color:var(--text-dim);">
+          <p style="font-size:16px; margin-bottom:8px;">Enter your ground-level observation</p>
+          <p style="font-size:12px;">The system will cluster signals, map beneficiaries,<br>
+          and show you the upstream/downstream supply chain.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Assessment & Actions -->
+    <div class="panel" id="action-panel">
+      <h2>Your Assessment</h2>
+
+      <div class="assessment-card" id="thesis-card" style="display:none;">
+        <h3>Thesis Verdict</h3>
+        <div id="verdict-display"></div>
+        <div style="margin-top:8px; font-size:12px;" id="thesis-summary"></div>
+      </div>
+
+      <div class="assessment-card">
+        <h3>Human Override</h3>
+        <p style="font-size:11px; color:var(--text-dim); margin-bottom:8px;">
+          You are the final decision maker. The system gives you data,
+          YOU make the call.
+        </p>
+        <div class="human-input">
+          <label>Your conviction (why you believe this trend)</label>
+          <textarea id="human-conviction" placeholder="I personally observed..."></textarea>
+        </div>
+        <div class="human-input">
+          <label>Conviction Level</label>
+          <input type="range" class="conviction-slider" id="human-score"
+                 min="0" max="100" value="50">
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-dim);">
+            <span>Low</span><span id="score-display">50%</span><span>High</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="assessment-card" id="position-card" style="display:none;">
+        <h3>Suggested Position</h3>
+        <div id="position-details"></div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-green btn-small" onclick="approveThesis()" id="btn-approve" disabled>
+          Approve & Queue Trade
+        </button>
+        <button class="btn btn-yellow btn-small" onclick="watchlistThesis()" id="btn-watch" disabled>
+          Add to Watchlist
+        </button>
+        <button class="btn btn-red btn-small" onclick="rejectThesis()" id="btn-reject" disabled>
+          Reject
+        </button>
+      </div>
+
+      <div class="assessment-card" style="margin-top:16px;">
+        <h3>Hidden Alpha Opportunities</h3>
+        <div id="hidden-alpha">
+          <div style="color:var(--text-dim); font-size:12px;">Run analysis to discover hidden gems</div>
+        </div>
+      </div>
+
+      <div class="assessment-card">
+        <h3>Short Candidates</h3>
+        <div id="short-targets">
+          <div style="color:var(--text-dim); font-size:12px;">Run analysis to find short targets</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ── State ──
+let currentAnalysis = null;
+let eventLog = [];
+
+// ── Slider ──
+document.getElementById('human-score').addEventListener('input', function() {
+  document.getElementById('score-display').textContent = this.value + '%';
+});
+
+// ── Event Logger ──
+function logEvent(msg) {
+  const time = new Date().toLocaleTimeString();
+  eventLog.unshift({ time, msg });
+  const el = document.getElementById('event-log');
+  el.innerHTML = eventLog.slice(0, 50).map(e =>
+    `<div class="event"><span class="time">${e.time}</span> ${e.msg}</div>`
+  ).join('');
+}
+
+// ── Analysis Engine — fetches themes from API ──
+async function runAnalysis() {
+  const obs = document.getElementById('observation').value.trim();
+  const kws = document.getElementById('keywords').value.trim();
+  const assetClass = document.getElementById('asset-class').value;
+
+  if (!obs) { alert('Enter your trend observation first.'); return; }
+
+  document.getElementById('status').textContent = 'Analyzing...';
+  logEvent('Started trend analysis');
+
+  // Ensure themes are loaded from API
+  await _loadThemes();
+
+  const clusters = detectClusters(obs + ' ' + kws);
+  renderClusters(clusters);
+  document.getElementById('status').textContent =
+    `Found ${clusters.length} trend clusters — select one to see beneficiary map`;
+  logEvent(`Detected ${clusters.length} trend clusters`);
+}
+
+// Theme data loaded from API — no hardcoded data
+let _cachedThemes = null;
+
+async function _loadThemes() {
+  if (_cachedThemes) return _cachedThemes;
+  try {
+    const resp = await fetch('/api/registry/themes');
+    const data = await resp.json();
+    if (data.themes && data.themes.length > 0) {
+      _cachedThemes = data.themes;
+      return _cachedThemes;
+    }
+  } catch (e) {
+    console.warn('Failed to load themes from API:', e);
+  }
+  return [];
+}
+
+// Load themes on page init
+_loadThemes().then(themes => {
+  document.getElementById('status').textContent =
+    themes.length > 0 ? `Loaded ${themes.length} trend themes from DB` : 'No trend themes in DB — add via /api/registry/themes';
+});
+
+function detectClusters(text) {
+  const t = text.toLowerCase();
+  const themes = _cachedThemes || [];
+
+  const results = [];
+  for (const th of themes) {
+    const kwList = th.keywords || [];
+    const matches = kwList.filter(kw => t.includes(kw.toLowerCase()));
+    if (matches.length > 0) {
+      const coverage = matches.length / kwList.length;
+      const strength = Math.min(10, coverage * 8 + matches.length * 0.5);
+      results.push({ ...th, matches, coverage, strength,
+        lifecycle: coverage > 0.5 ? 'confirmed' : coverage > 0.2 ? 'validating' : 'emerging' });
+    }
+  }
+  results.sort((a, b) => b.strength - a.strength);
+  return results;
+}
+
+function renderClusters(clusters) {
+  const container = document.getElementById('clusters-container');
+
+  if (!clusters.length) {
+    container.innerHTML = '<p style="color:var(--text-dim);padding:20px;">No matching trends detected. Try different keywords.</p>';
+    return;
+  }
+
+  container.innerHTML = clusters.map((c, i) => {
+    const strClass = c.strength >= 6 ? 'str-high' : c.strength >= 3 ? 'str-med' : 'str-low';
+    const allTickers = [
+      ...c.tickers.up.map(t => ({ t, cls: 'chip-positive' })),
+      ...c.tickers.down.map(t => ({ t, cls: 'chip-negative' })),
+      ...c.tickers.hidden.map(t => ({ t, cls: 'chip-hidden' })),
+    ];
+
+    return `
+      <div class="cluster-card" onclick="selectCluster(${i})" id="cluster-${i}">
+        <div class="cluster-header">
+          <span class="cluster-name">${c.name}</span>
+          <span class="cluster-strength ${strClass}">${c.strength.toFixed(1)}</span>
+        </div>
+        <div class="cluster-meta">
+          ${c.sector} · ${c.lifecycle} · ${c.matches.length} keyword matches · ${c.coverage.toFixed(0)}% coverage
+        </div>
+        <div class="cluster-tickers">
+          ${allTickers.map(({ t, cls }) => `<span class="ticker-chip ${cls}">${t}</span>`).join('')}
+        </div>
+        <div class="beneficiary-section" id="beneficiaries-${i}" style="display:none;">
+          <h3 style="margin-top:8px;">Upstream (Suppliers)</h3>
+          ${c.tickers.up.map(t => `
+            <div class="beneficiary-row">
+              <span class="b-impact" style="color:var(--green);">+</span>
+              <span class="b-ticker" style="color:var(--green);">${t}</span>
+              <span class="b-role">Direct beneficiary</span>
+            </div>
+          `).join('')}
+
+          <h3>Downstream (Hurt / Disrupted)</h3>
+          ${c.tickers.down.length ? c.tickers.down.map(t => `
+            <div class="beneficiary-row">
+              <span class="b-impact" style="color:var(--red);">−</span>
+              <span class="b-ticker" style="color:var(--red);">${t}</span>
+              <span class="b-role">Negative impact — short candidate</span>
+            </div>
+          `).join('') : '<div style="font-size:11px;color:var(--text-dim);padding:4px 8px;">None identified</div>'}
+
+          <h3>Hidden Alpha (2nd/3rd Order)</h3>
+          ${c.tickers.hidden.map(t => `
+            <div class="beneficiary-row">
+              <span class="b-impact" style="color:var(--purple);">★</span>
+              <span class="b-ticker" style="color:var(--purple);">${t}</span>
+              <span class="b-role">Hidden beneficiary — information edge</span>
+              <span class="b-edge">ALPHA</span>
+            </div>
+          `).join('')}
+        </div>
+        <p style="font-size:11px; color:var(--text-dim); margin-top:6px;">${c.desc}</p>
+      </div>
+    `;
+  }).join('');
+
+  currentAnalysis = clusters;
+
+  // Update hub tickers
+  const tickerCount = {};
+  clusters.forEach(c => {
+    [...c.tickers.up, ...c.tickers.hidden].forEach(t => {
+      tickerCount[t] = (tickerCount[t] || 0) + 1;
+    });
+  });
+  const hubs = Object.entries(tickerCount).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  document.getElementById('hub-list').innerHTML = hubs.map(([t, n]) =>
+    `<div class="hub-item"><span>${t}</span><span class="hub-centrality">${n} themes</span></div>`
+  ).join('');
+
+  // Update hidden alpha
+  const hiddenAll = [];
+  clusters.forEach(c => c.tickers.hidden.forEach(t =>
+    hiddenAll.push({ ticker: t, theme: c.name })));
+  document.getElementById('hidden-alpha').innerHTML = hiddenAll.length
+    ? hiddenAll.map(h => `<div class="hub-item"><span style="color:var(--purple)">${h.ticker}</span><span style="font-size:11px;color:var(--text-dim)">${h.theme}</span></div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;">None found</div>';
+
+  // Update short targets
+  const shortsAll = [];
+  clusters.forEach(c => c.tickers.down.forEach(t =>
+    shortsAll.push({ ticker: t, theme: c.name })));
+  document.getElementById('short-targets').innerHTML = shortsAll.length
+    ? shortsAll.map(s => `<div class="hub-item"><span style="color:var(--red)">${s.ticker}</span><span style="font-size:11px;color:var(--text-dim)">${s.theme}</span></div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;">None found</div>';
+}
+
+function selectCluster(idx) {
+  // Toggle beneficiary visibility
+  document.querySelectorAll('.cluster-card').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+    const bens = document.getElementById(`beneficiaries-${i}`);
+    if (bens) bens.style.display = i === idx ? 'block' : 'none';
+  });
+
+  const cluster = currentAnalysis[idx];
+  logEvent(`Selected cluster: ${cluster.name}`);
+
+  // Show thesis card with mock verdict
+  const thesisCard = document.getElementById('thesis-card');
+  thesisCard.style.display = 'block';
+
+  const score = Math.min(100, cluster.strength * 10);
+  let verdict, vClass;
+  if (score >= 75) { verdict = 'STRONG BUY'; vClass = 'verdict-strong-buy'; }
+  else if (score >= 55) { verdict = 'BUY'; vClass = 'verdict-buy'; }
+  else if (score >= 35) { verdict = 'WATCH'; vClass = 'verdict-watch'; }
+  else if (score >= 15) { verdict = 'PASS'; vClass = 'verdict-pass'; }
+  else { verdict = 'AVOID'; vClass = 'verdict-avoid'; }
+
+  document.getElementById('verdict-display').innerHTML =
+    `<span class="verdict-badge ${vClass}">${verdict}</span>
+     <span style="margin-left:8px;font-size:13px;">${score.toFixed(0)}% conviction</span>
+     <div class="score-bar"><div class="score-fill" style="width:${score}%;background:${
+       score >= 55 ? 'var(--green)' : score >= 35 ? 'var(--yellow)' : 'var(--red)'
+     }"></div></div>`;
+
+  document.getElementById('thesis-summary').textContent =
+    `${cluster.matches.length} matching keywords across ${cluster.lifecycle} trend. ` +
+    `${cluster.tickers.up.length} longs, ${cluster.tickers.down.length} shorts, ` +
+    `${cluster.tickers.hidden.length} hidden alpha.`;
+
+  // Position card
+  if (cluster.tickers.up.length > 0) {
+    const pos = document.getElementById('position-card');
+    pos.style.display = 'block';
+    const top = cluster.tickers.up[0];
+    document.getElementById('position-details').innerHTML = `
+      <div style="font-size:13px;"><strong>${top}</strong> — Primary beneficiary</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+        Barbell: 2-3% position · Stop: 20-30% · Antifragile tranche<br>
+        Max loss: $600-900 on $100K portfolio
+      </div>
+    `;
+  }
+
+  // Enable action buttons
+  document.getElementById('btn-approve').disabled = false;
+  document.getElementById('btn-watch').disabled = false;
+  document.getElementById('btn-reject').disabled = false;
+}
+
+function approveThesis() {
+  const conviction = document.getElementById('human-conviction').value;
+  const score = document.getElementById('human-score').value;
+  logEvent(`APPROVED thesis (human conviction: ${score}%)`);
+  alert(`Trade queued! Your conviction: ${score}%\n\nIn production, this sends to eToro Bridge for execution.`);
+}
+
+function watchlistThesis() {
+  logEvent('Added to watchlist');
+  alert('Added to watchlist. Will alert you when signals strengthen.');
+}
+
+function rejectThesis() {
+  const reason = document.getElementById('human-conviction').value || 'No reason given';
+  logEvent(`REJECTED: ${reason.substring(0, 40)}`);
+  alert('Thesis rejected. Your override has been logged.');
+}
+</script>
+</body>
+</html>

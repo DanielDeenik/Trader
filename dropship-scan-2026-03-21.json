@@ -1,0 +1,453 @@
+{
+  "scan_metadata": {
+    "scan_type": "daily",
+    "scan_date": "2026-03-21",
+    "sources_searched": [
+      "TikTok (#TikTokMadeMeBuyIt)",
+      "Amazon Movers & Shakers",
+      "Reddit (r/AmazonFinds, r/shutupandtakemymoney)",
+      "Google Trends"
+    ],
+    "products_analyzed": 20,
+    "products_qualifying": 20,
+    "api_status": "OFFLINE - localhost:5050 connection refused",
+    "note": "All product payloads saved to api_payloads.json for manual upload when API is back online"
+  },
+  "top_5_products": [
+    {
+      "product_name": "LED Light Therapy Mask",
+      "category": "beauty",
+      "moat": "weak",
+      "gold_rush_phase": "growth",
+      "stepps_score": 78.3,
+      "camillo_score": 71.2,
+      "composite_score": 74.8,
+      "signal_source": "tiktok",
+      "signal_description": "Higher-end item with high margins. Nearly a million 5-star reviews. Blue light therapy growing 38% YoY per Google Trends.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty-tech",
+        "high-margin"
+      ]
+    },
+    {
+      "product_name": "Mouth Tape (Sleep Strips)",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 70.0,
+      "camillo_score": 78.8,
+      "composite_score": 74.4,
+      "signal_source": "google_trends",
+      "signal_description": "134% YoY growth, 622K monthly searches. Branded strips priced at enormous markups over generic tape. Viral on TikTok sleep communities.",
+      "tags": [
+        "trending",
+        "viral",
+        "sleep",
+        "wellness",
+        "high-margin"
+      ]
+    },
+    {
+      "product_name": "Rolling Ice Cream Pan",
+      "category": "kitchen",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 73.3,
+      "camillo_score": 73.8,
+      "composite_score": 73.5,
+      "signal_source": "tiktok",
+      "signal_description": "Low-cost, no electricity required. Huge gift appeal. Visual/satisfying content drives shares on TikTok.",
+      "tags": [
+        "trending",
+        "viral",
+        "kitchen",
+        "gift"
+      ]
+    },
+    {
+      "product_name": "Magnetic Collision Ball Game (Kollide)",
+      "category": "kids",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 71.7,
+      "camillo_score": 75.0,
+      "composite_score": 73.3,
+      "signal_source": "tiktok",
+      "signal_description": "Over 100,000 copies sold on TikTok Shop. Low production cost, impulsive buy. Many positive reviews.",
+      "tags": [
+        "trending",
+        "viral",
+        "toy",
+        "impulse-buy"
+      ]
+    },
+    {
+      "product_name": "Heatless Hair Curling Set",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 75.0,
+      "camillo_score": 71.2,
+      "composite_score": 73.1,
+      "signal_source": "tiktok",
+      "signal_description": "Low price point, often sells out after viral videos. Before/after transformation content drives massive engagement.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty",
+        "transformation"
+      ]
+    }
+  ],
+  "all_products": [
+    {
+      "product_name": "LED Light Therapy Mask",
+      "category": "beauty",
+      "moat": "weak",
+      "gold_rush_phase": "growth",
+      "stepps_score": 78.3,
+      "camillo_score": 71.2,
+      "composite_score": 74.8,
+      "signal_source": "tiktok",
+      "signal_description": "Higher-end item with high margins. Nearly a million 5-star reviews. Blue light therapy growing 38% YoY per Google Trends.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty-tech",
+        "high-margin"
+      ]
+    },
+    {
+      "product_name": "Mouth Tape (Sleep Strips)",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 70.0,
+      "camillo_score": 78.8,
+      "composite_score": 74.4,
+      "signal_source": "google_trends",
+      "signal_description": "134% YoY growth, 622K monthly searches. Branded strips priced at enormous markups over generic tape. Viral on TikTok sleep communities.",
+      "tags": [
+        "trending",
+        "viral",
+        "sleep",
+        "wellness",
+        "high-margin"
+      ]
+    },
+    {
+      "product_name": "Rolling Ice Cream Pan",
+      "category": "kitchen",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 73.3,
+      "camillo_score": 73.8,
+      "composite_score": 73.5,
+      "signal_source": "tiktok",
+      "signal_description": "Low-cost, no electricity required. Huge gift appeal. Visual/satisfying content drives shares on TikTok.",
+      "tags": [
+        "trending",
+        "viral",
+        "kitchen",
+        "gift"
+      ]
+    },
+    {
+      "product_name": "Magnetic Collision Ball Game (Kollide)",
+      "category": "kids",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 71.7,
+      "camillo_score": 75.0,
+      "composite_score": 73.3,
+      "signal_source": "tiktok",
+      "signal_description": "Over 100,000 copies sold on TikTok Shop. Low production cost, impulsive buy. Many positive reviews.",
+      "tags": [
+        "trending",
+        "viral",
+        "toy",
+        "impulse-buy"
+      ]
+    },
+    {
+      "product_name": "Heatless Hair Curling Set",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 75.0,
+      "camillo_score": 71.2,
+      "composite_score": 73.1,
+      "signal_source": "tiktok",
+      "signal_description": "Low price point, often sells out after viral videos. Before/after transformation content drives massive engagement.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty",
+        "transformation"
+      ]
+    },
+    {
+      "product_name": "Hair Texture Powder",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 68.3,
+      "camillo_score": 76.2,
+      "composite_score": 72.3,
+      "signal_source": "google_trends",
+      "signal_description": "104% YoY growth, 106K monthly searches. Addresses fine/thinning hair. Expanding into male grooming market.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty",
+        "male-grooming"
+      ]
+    },
+    {
+      "product_name": "Wireless Mini Microphone",
+      "category": "tech",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 73.3,
+      "camillo_score": 68.7,
+      "composite_score": 71.0,
+      "signal_source": "tiktok",
+      "signal_description": "Affordable plug-and-play design for content creators. TikTok/Reels creator economy driving massive demand.",
+      "tags": [
+        "trending",
+        "viral",
+        "tech",
+        "creator-economy"
+      ]
+    },
+    {
+      "product_name": "Toe Spacers",
+      "category": "fitness",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 63.3,
+      "camillo_score": 77.5,
+      "composite_score": 70.4,
+      "signal_source": "google_trends",
+      "signal_description": "2.5 billion TikTok views. Rising Google search interest. Cheap to produce, light to ship. Yoga/running communities driving adoption.",
+      "tags": [
+        "trending",
+        "viral",
+        "fitness",
+        "cheap-to-ship"
+      ]
+    },
+    {
+      "product_name": "Vanity Travel Bag",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 70.0,
+      "camillo_score": 70.0,
+      "composite_score": 70.0,
+      "signal_source": "google_trends",
+      "signal_description": "66% YoY growth, 206K monthly searches. Travel makeup organizer. 40M Americans work hybrid jobs driving travel demand.",
+      "tags": [
+        "trending",
+        "viral",
+        "travel",
+        "organization"
+      ]
+    },
+    {
+      "product_name": "Portable Blender (Smoothie Cup)",
+      "category": "kitchen",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 75.0,
+      "camillo_score": 65.0,
+      "composite_score": 70.0,
+      "signal_source": "tiktok",
+      "signal_description": "Higher price point but great margins. Day-in-the-life content on TikTok drives organic demand. Cross-platform presence.",
+      "tags": [
+        "trending",
+        "viral",
+        "kitchen",
+        "health"
+      ]
+    },
+    {
+      "product_name": "69-Hole Bubble Gun (Rocket Bubble Machine)",
+      "category": "kids",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 68.3,
+      "camillo_score": 71.2,
+      "composite_score": 69.8,
+      "signal_source": "tiktok",
+      "signal_description": "Affordable, impulsive fun item. Highly visual content drives shares. Seasonal summer appeal.",
+      "tags": [
+        "trending",
+        "viral",
+        "toy",
+        "seasonal",
+        "summer"
+      ]
+    },
+    {
+      "product_name": "Privacy Screen Protector",
+      "category": "tech",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 70.0,
+      "camillo_score": 67.5,
+      "composite_score": 68.8,
+      "signal_source": "tiktok",
+      "signal_description": "13.28% conversion rate on TikTok, 7M impressions. Darkening tempered glass for phone privacy.",
+      "tags": [
+        "trending",
+        "viral",
+        "phone-accessory"
+      ]
+    },
+    {
+      "product_name": "Sunset Projection Lamp",
+      "category": "home",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 70.0,
+      "camillo_score": 66.2,
+      "composite_score": 68.1,
+      "signal_source": "tiktok",
+      "signal_description": "Inexpensive, small. Targets cozycore and indie vibes aesthetics. Room makeover content drives virality.",
+      "tags": [
+        "trending",
+        "viral",
+        "home-decor",
+        "aesthetic"
+      ]
+    },
+    {
+      "product_name": "Magnetic Eyelashes",
+      "category": "beauty",
+      "moat": "weak",
+      "gold_rush_phase": "peak",
+      "stepps_score": 71.7,
+      "camillo_score": 63.7,
+      "composite_score": 67.7,
+      "signal_source": "tiktok",
+      "signal_description": "5.32% conversion, 16M impressions on TikTok. Reusable lashes with magnetic eyeliner. Tutorial content is highly engaging.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty"
+      ]
+    },
+    {
+      "product_name": "Sleep Bonnet (Silk Hair Bonnet)",
+      "category": "beauty",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 63.3,
+      "camillo_score": 71.2,
+      "composite_score": 67.3,
+      "signal_source": "google_trends",
+      "signal_description": "64% YoY growth. Cost-effective alternative to silk pillowcases. Prevents frizz and breakage during sleep.",
+      "tags": [
+        "trending",
+        "viral",
+        "beauty",
+        "sleep"
+      ]
+    },
+    {
+      "product_name": "Pet Hair Remover Roller",
+      "category": "pet",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 68.3,
+      "camillo_score": 65.0,
+      "composite_score": 66.7,
+      "signal_source": "tiktok",
+      "signal_description": "Inexpensive, broad appeal to nearly 70% of households with pets. Before/after demos are highly shareable.",
+      "tags": [
+        "trending",
+        "viral",
+        "pet",
+        "practical"
+      ]
+    },
+    {
+      "product_name": "Posture Corrector Strap",
+      "category": "fitness",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 68.3,
+      "camillo_score": 63.7,
+      "composite_score": 66.0,
+      "signal_source": "tiktok",
+      "signal_description": "8.28% conversion rate on TikTok, 1M impressions. Wearable support strap for posture improvement.",
+      "tags": [
+        "trending",
+        "viral",
+        "health",
+        "wearable"
+      ]
+    },
+    {
+      "product_name": "Hard Water Shower Filter",
+      "category": "home",
+      "moat": "none",
+      "gold_rush_phase": "growth",
+      "stepps_score": 63.3,
+      "camillo_score": 66.2,
+      "composite_score": 64.8,
+      "signal_source": "google_trends",
+      "signal_description": "20% YoY growth, 55K monthly searches. Recurring revenue via cartridge replacements. Consumers spend $10B/yr on moisturizing.",
+      "tags": [
+        "trending",
+        "viral",
+        "home",
+        "recurring-revenue"
+      ]
+    },
+    {
+      "product_name": "Snack Bag Sealer",
+      "category": "kitchen",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 63.3,
+      "camillo_score": 65.0,
+      "composite_score": 64.2,
+      "signal_source": "tiktok",
+      "signal_description": "Low-cost item, sells thousands of units on TikTok Shop. Satisfying content format. Practical kitchen gadget.",
+      "tags": [
+        "trending",
+        "viral",
+        "kitchen",
+        "impulse-buy"
+      ]
+    },
+    {
+      "product_name": "Glass Straws",
+      "category": "kitchen",
+      "moat": "none",
+      "gold_rush_phase": "peak",
+      "stepps_score": 60.0,
+      "camillo_score": 58.7,
+      "composite_score": 59.4,
+      "signal_source": "google_trends",
+      "signal_description": "18% YoY growth, 125K monthly searches. Surpassed metal straws in 2020. Eco-friendly alternative driving sustained demand.",
+      "tags": [
+        "trending",
+        "eco-friendly",
+        "kitchen"
+      ]
+    }
+  ],
+  "scan_log": {
+    "scan_type": "daily",
+    "category": "all",
+    "products_found": 20,
+    "products_added": 0,
+    "top_product": "LED Light Therapy Mask",
+    "summary": "Daily scan on 2026-03-21 found 20 qualifying products. API was offline so results saved to file. Top product: LED Light Therapy Mask (composite 74.8). 12 products in growth phase (ideal entry window). Beauty category dominates with 6 products. Strong signals in kitchen gadgets and kids/toys."
+  }
+}

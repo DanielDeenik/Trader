@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Payment Universe Report · March 11, 2026</title>
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --card: #18181f; --border: #2a2a35;
+    --text: #e8e8f0; --muted: #8888a0; --dim: #55556a;
+    --violet: #7b6cf6; --cyan: #4fc3f7; --mint: #69f0ae;
+    --gold: #ffd740; --rose: #ff6e8a; --lavender: #b388ff;
+    --green: #4caf50; --red: #ef5350; --orange: #ff9800;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; line-height: 1.6; padding: 24px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; background: linear-gradient(90deg, var(--violet), var(--cyan), var(--mint)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 600; color: var(--cyan); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 15px; font-weight: 600; color: var(--lavender); margin: 20px 0 8px; }
+
+  .sector-header { display: flex; align-items: center; gap: 12px; margin: 40px 0 20px; }
+  .sector-pill { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .pill-cards { background: rgba(123,108,246,0.15); color: var(--violet); border: 1px solid rgba(123,108,246,0.3); }
+  .pill-wallets { background: rgba(79,195,247,0.15); color: var(--cyan); border: 1px solid rgba(79,195,247,0.3); }
+  .pill-infra { background: rgba(105,240,174,0.15); color: var(--mint); border: 1px solid rgba(105,240,174,0.3); }
+  .pill-crypto { background: rgba(255,215,64,0.15); color: var(--gold); border: 1px solid rgba(255,215,64,0.3); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
+  .ticker-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+  .ticker-card:hover { border-color: var(--violet); }
+
+  .ticker-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .ticker-sym { font-size: 22px; font-weight: 700; }
+  .ticker-name { font-size: 12px; color: var(--muted); }
+  .ticker-price { text-align: right; }
+  .price-val { font-size: 20px; font-weight: 600; }
+  .price-change { font-size: 13px; font-weight: 500; }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  .flat { color: var(--muted); }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+  .metric { background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+  .metric-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 14px; font-weight: 600; }
+
+  .earnings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+  .earn-box { background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+  .earn-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .earn-val { font-size: 13px; font-weight: 500; }
+  .beat { color: var(--green); }
+  .miss { color: var(--red); }
+
+  .analyst-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
+  .analyst-bar .buy { background: var(--green); }
+  .analyst-bar .hold { background: var(--gold); }
+  .analyst-bar .sell { background: var(--red); }
+  .analyst-legend { display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+  .analyst-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .analyst-legend .l-buy::before { background: var(--green); }
+  .analyst-legend .l-hold::before { background: var(--gold); }
+  .analyst-legend .l-sell::before { background: var(--red); }
+
+  .target-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 13px; }
+  .target-upside { font-weight: 600; color: var(--mint); }
+
+  .news-item { font-size: 12px; color: var(--muted); padding: 4px 0; border-top: 1px solid rgba(42,42,53,0.5); }
+  .news-item:first-child { border-top: none; }
+  .news-bullet { color: var(--cyan); margin-right: 6px; }
+
+  .summary-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .summary-table th { text-align: left; padding: 10px 12px; background: var(--surface); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .summary-table td { padding: 10px 12px; border-bottom: 1px solid rgba(42,42,53,0.4); }
+  .summary-table tr:hover td { background: rgba(123,108,246,0.05); }
+
+  .signal-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .sig-strong { background: rgba(76,175,80,0.15); color: var(--green); }
+  .sig-moderate { background: rgba(255,215,64,0.15); color: var(--gold); }
+  .sig-weak { background: rgba(239,83,80,0.15); color: var(--red); }
+
+  .theme-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .theme-title { font-size: 14px; font-weight: 600; color: var(--gold); margin-bottom: 8px; }
+  .theme-text { font-size: 13px; color: var(--muted); }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 40px 0; }
+
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .metrics-row { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<h1>LATTICE.NET — Payment Universe</h1>
+<p class="subtitle">Live research snapshot · March 11, 2026 · 19 tickers · 2 crypto · 10 data sources per scan</p>
+
+<!-- ══════════ SUMMARY TABLE ══════════ -->
+<h2>Overview — All 21 Payment Assets</h2>
+<div style="overflow-x:auto">
+<table class="summary-table">
+<thead>
+<tr><th>Ticker</th><th>Name</th><th>Subsector</th><th>Price</th><th>Mkt Cap</th><th>YTD</th><th>Fwd P/E</th><th>Consensus</th><th>Target</th><th>Upside</th></tr>
+</thead>
+<tbody>
+<!-- Card Networks -->
+<tr><td><strong>V</strong></td><td>Visa</td><td><span class="sector-pill pill-cards">Cards</span></td><td>$314.43</td><td>$614B</td><td class="down">−16%</td><td>24.2x</td><td><span class="signal-badge sig-strong">Strong Buy</span></td><td>$394</td><td class="up">+25%</td></tr>
+<tr><td><strong>MA</strong></td><td>Mastercard</td><td><span class="sector-pill pill-cards">Cards</span></td><td>$515.66</td><td>$462B</td><td class="down">−5%</td><td>28.5x</td><td><span class="signal-badge sig-strong">Strong Buy</span></td><td>$661</td><td class="up">+28%</td></tr>
+<tr><td><strong>AXP</strong></td><td>American Express</td><td><span class="sector-pill pill-cards">Cards</span></td><td>$302.74</td><td>$208B</td><td class="down">−18%</td><td>17.2x</td><td><span class="signal-badge sig-moderate">Hold</span></td><td>$353</td><td class="up">+17%</td></tr>
+<tr><td><strong>DFS</strong></td><td>Discover (Cap One)</td><td><span class="sector-pill pill-cards">Cards</span></td><td>$200.05</td><td>$50B</td><td class="up">Acquired</td><td>10.7x</td><td><span class="signal-badge sig-moderate">Buy</span></td><td>$213</td><td class="up">+7%</td></tr>
+<!-- Digital Wallets -->
+<tr><td><strong>PYPL</strong></td><td>PayPal</td><td><span class="sector-pill pill-wallets">Wallets</span></td><td>$46.97</td><td>$42B</td><td class="down">−41%</td><td>7.5x</td><td><span class="signal-badge sig-moderate">Hold</span></td><td>$64</td><td class="up">+36%</td></tr>
+<tr><td><strong>SQ</strong></td><td>Block (Square)</td><td><span class="sector-pill pill-wallets">Wallets</span></td><td>$86.96</td><td>$46B</td><td class="up">+21%</td><td>13.0x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$100</td><td class="up">+15%</td></tr>
+<tr><td><strong>SOFI</strong></td><td>SoFi Technologies</td><td><span class="sector-pill pill-wallets">Wallets</span></td><td>$18.25</td><td>$23B</td><td class="down">−29%</td><td>49.5x</td><td><span class="signal-badge sig-moderate">Hold</span></td><td>$26</td><td class="up">+43%</td></tr>
+<tr><td><strong>NU</strong></td><td>Nu Holdings</td><td><span class="sector-pill pill-wallets">Wallets</span></td><td>$14.88</td><td>$72B</td><td class="up">+16%</td><td>32.7x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$19</td><td class="up">+28%</td></tr>
+<tr><td><strong>AFRM</strong></td><td>Affirm</td><td><span class="sector-pill pill-wallets">Wallets</span></td><td>$50.38</td><td>$17B</td><td class="down">−39%</td><td>61.5x</td><td><span class="signal-badge sig-strong">Strong Buy</span></td><td>$85</td><td class="up">+69%</td></tr>
+<!-- Acquirers & Infra -->
+<tr><td><strong>FISV</strong></td><td>Fiserv</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$58.39</td><td>$31B</td><td class="down">−73%</td><td>—</td><td><span class="signal-badge sig-moderate">Hold</span></td><td>$77</td><td class="up">+32%</td></tr>
+<tr><td><strong>FIS</strong></td><td>FIS</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$50.53</td><td>$26B</td><td class="flat">—</td><td>—</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$81</td><td class="up">+60%</td></tr>
+<tr><td><strong>GPN</strong></td><td>Global Payments</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$73.54</td><td>$21B</td><td class="up">+3%</td><td>12.9x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$94</td><td class="up">+28%</td></tr>
+<tr><td><strong>ADYEN.AS</strong></td><td>Adyen</td><td><span class="sector-pill pill-infra">Infra</span></td><td>€935</td><td>€30B</td><td class="down">−47%</td><td>—</td><td><span class="signal-badge sig-strong">Strong Buy</span></td><td>€1,544</td><td class="up">+65%</td></tr>
+<tr><td><strong>TOST</strong></td><td>Toast</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$29.47</td><td>$18B</td><td class="down">−13%</td><td>38.9x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$42</td><td class="up">+43%</td></tr>
+<tr><td><strong>FOUR</strong></td><td>Shift4 Payments</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$46.88</td><td>$3.9B</td><td class="down">−25%</td><td>8.5x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$79</td><td class="up">+68%</td></tr>
+<tr><td><strong>PAYO</strong></td><td>Payoneer</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$4.67</td><td>$1.6B</td><td class="down">−28%</td><td>22.9x</td><td><span class="signal-badge sig-strong">Strong Buy</span></td><td>$9</td><td class="up">+93%</td></tr>
+<tr><td><strong>FLYW</strong></td><td>Flywire</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$13.00</td><td>$1.6B</td><td class="down">−46%</td><td>—</td><td><span class="signal-badge sig-moderate">Buy</span></td><td>$16</td><td class="up">+23%</td></tr>
+<tr><td><strong>MQ</strong></td><td>Marqeta</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$4.14</td><td>$1.7B</td><td class="flat">−1%</td><td>—</td><td><span class="signal-badge sig-moderate">Hold</span></td><td>$5.73</td><td class="up">+38%</td></tr>
+<tr><td><strong>COIN</strong></td><td>Coinbase</td><td><span class="sector-pill pill-infra">Infra</span></td><td>$196.69</td><td>$52B</td><td class="down">−13%</td><td>44.9x</td><td><span class="signal-badge sig-strong">Buy</span></td><td>$379</td><td class="up">+93%</td></tr>
+<!-- Crypto -->
+<tr><td><strong>BTC</strong></td><td>Bitcoin</td><td><span class="sector-pill pill-crypto">Crypto</span></td><td>$70,731</td><td>$1.3T</td><td class="down">−44%</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><strong>ETH</strong></td><td>Ethereum</td><td><span class="sector-pill pill-crypto">Crypto</span></td><td>$2,054</td><td>$248B</td><td class="down">−59%</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ KEY THEMES ══════════ -->
+<h2>Mosaic Themes — Cross-Source Signals</h2>
+
+<div class="grid">
+  <div class="theme-box">
+    <div class="theme-title">1. AI + Agentic Commerce Wave</div>
+    <div class="theme-text">Visa and Mastercard are positioning for AI-driven agentic commerce — projected $3–5T market by 2030. Affirm deepened Stripe integration for "Shared Payment Tokens" enabling AI agents to initiate BNPL purchases. Block launched Square AI in the UK. This is a leading signal: the rails are being built before the demand hits.</div>
+  </div>
+  <div class="theme-box">
+    <div class="theme-title">2. Stablecoin Settlement Goes Mainstream</div>
+    <div class="theme-text">Three independent signals converging: SoFi + Mastercard partnership for SoFiUSD stablecoin settlement across Mastercard's global network. Shift4 expanding stablecoin settlement. Payoneer announced a stablecoin bank plan (+13.6% rally). PayPal USD + TCS Blockchain routing $1B freight flows. Four companies, same thesis — stablecoins as payment rails, not speculation.</div>
+  </div>
+  <div class="theme-box">
+    <div class="theme-title">3. Broad Payment Sector Selloff — Value Emerging</div>
+    <div class="theme-text">FISV down 73% from peak. FLYW down 46% YTD. AFRM down 39%. PYPL down 41%. SOFI down 29%. The sector is in a drawdown not seen since 2022. But analyst targets show 25–93% upside across the board. PayPal at 7.5x forward P/E is historically cheap. Shift4 at 8.5x with 34% revenue growth is a divergence the Camillo framework flags as high-conviction.</div>
+  </div>
+  <div class="theme-box">
+    <div class="theme-title">4. Card Networks — Defensive Moats Holding</div>
+    <div class="theme-text">Visa (Strong Buy, $614B) and Mastercard (Strong Buy, $462B) continue to dominate. V beat Q1 estimates with 15% growth. MA delivered 25% EPS growth in Q4. Both trade at premium P/Es (24x, 28x) but analyst consensus shows 25–28% upside. The interchange litigation trials (April/September 2026) are the key risk to monitor. AXP weakest of the group at −18% YTD with softening consumer sentiment.</div>
+  </div>
+  <div class="theme-box">
+    <div class="theme-title">5. Block (SQ) — Breakout Performer</div>
+    <div class="theme-text">Only payment stock with strong positive YTD momentum (+21%). Achieved Rule of 40 (18% gross profit growth + 54% adj. operating income growth). Cash App gross profit +24%. ARK Invest bought $30.9M in shares. $5B buyback program. Square Register Gen 2 launched. This is the cleanest execution story in the sector right now.</div>
+  </div>
+  <div class="theme-box">
+    <div class="theme-title">6. Crypto Infrastructure — ETF Inflows Returning</div>
+    <div class="theme-text">Bitcoin spot ETFs attracted +$568M in March after 4 months of outflows. BTC at $70.7K is 44% below its 52-week high — institutional accumulation zone. ETH weaker at $2,054 (−59% from peak) with Vitalik selling pressure. Coinbase ($196, P/E 45x) missed Q4 but has $379 analyst target (+93%). The "Everything Exchange" thesis is a long play on crypto rails becoming payment rails.</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ CARD NETWORKS ══════════ -->
+<div class="sector-header">
+  <h2 style="margin:0;border:none;padding:0">Card Networks & Rails</h2>
+  <span class="sector-pill pill-cards">4 tickers · 8 data sources</span>
+</div>
+
+<div class="grid">
+  <!-- VISA -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">V</div><div class="ticker-name">Visa Inc.</div></div>
+      <div class="ticker-price"><div class="price-val">$314.43</div><div class="price-change down">−16% from peak</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$614B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">24.2x</div></div>
+      <div class="metric"><div class="metric-label">52w Range</div><div class="metric-value">$299–$376</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q1 '26 EPS</div><div class="earn-val beat">$3.17 vs $3.14 est ✓</div></div>
+      <div class="earn-box"><div class="earn-label">Q1 '26 Rev</div><div class="earn-val beat">$10.9B vs $10.7B est ✓</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:95%"></div><div class="hold" style="width:5%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">95% Buy</span> <span class="l-hold">5% Hold</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $394</span><span class="target-upside">+25% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Positioning for $3–5T agentic commerce market by 2030</div>
+    <div class="news-item"><span class="news-bullet">›</span>Level 2 Interchange sunset April 2026 — network modernisation</div>
+    <div class="news-item"><span class="news-bullet">›</span>Interchange litigation trials scheduled April + September 2026</div>
+  </div>
+
+  <!-- MASTERCARD -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">MA</div><div class="ticker-name">Mastercard Inc.</div></div>
+      <div class="ticker-price"><div class="price-val">$515.66</div><div class="price-change down">−5% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$462B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">28.5x</div></div>
+      <div class="metric"><div class="metric-label">52w Range</div><div class="metric-value">$466–$602</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val beat">$4.76 (+25% YoY) ✓</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$8.81B (+18% YoY) ✓</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:85%"></div><div class="hold" style="width:15%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">33 Buy</span> <span class="l-hold">6 Hold</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $661</span><span class="target-upside">+28% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>SoFiUSD stablecoin partnership for global settlement</div>
+    <div class="news-item"><span class="news-bullet">›</span>Cross-border volume +12% in Q4 2025</div>
+    <div class="news-item"><span class="news-bullet">›</span>Next earnings: April 23, 2026</div>
+  </div>
+
+  <!-- AXP -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">AXP</div><div class="ticker-name">American Express</div></div>
+      <div class="ticker-price"><div class="price-val">$302.74</div><div class="price-change down">−18% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$208B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">17.2x</div></div>
+      <div class="metric"><div class="metric-label">Div Yield</div><div class="metric-value">1.3%</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$3.53 vs $3.54 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">FY26 Guide</div><div class="earn-val">$17.30–$17.90 EPS</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:42%"></div><div class="hold" style="width:53%"></div><div class="sell" style="width:5%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">42% Buy</span> <span class="l-hold">53% Hold</span> <span class="l-sell">5% Sell</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $353</span><span class="target-upside">+17% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Rate cap threat unresolved — regulatory risk</div>
+    <div class="news-item"><span class="news-bullet">›</span>Softening consumer sentiment impacting spend</div>
+    <div class="news-item"><span class="news-bullet">›</span>15.9% dividend increase — returning capital</div>
+  </div>
+
+  <!-- DFS -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">DFS</div><div class="ticker-name">Discover Financial (Cap One sub)</div></div>
+      <div class="ticker-price"><div class="price-val">$200.05</div><div class="price-change up">Acquired May '25</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$50B</div></div>
+      <div class="metric"><div class="metric-label">P/E</div><div class="metric-value">10.7x</div></div>
+      <div class="metric"><div class="metric-label">Deal</div><div class="metric-value">$35.3B</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Last Q1 EPS</div><div class="earn-val beat">$4.25 vs $3.37 est ✓</div></div>
+      <div class="earn-box"><div class="earn-label">2027 Synergies</div><div class="earn-val">$1.2B expected</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $213</span><span class="target-upside">+7% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Capital One acquisition completed May 18, 2025</div>
+    <div class="news-item"><span class="news-bullet">›</span>Discover network now integrated with Cap One platform</div>
+    <div class="news-item"><span class="news-bullet">›</span>Replaced by COIN in S&P 500</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ DIGITAL WALLETS ══════════ -->
+<div class="sector-header">
+  <h2 style="margin:0;border:none;padding:0">Digital Wallets & Super-Apps</h2>
+  <span class="sector-pill pill-wallets">5 tickers + BTC/ETH · 10 data sources</span>
+</div>
+
+<div class="grid">
+  <!-- PYPL -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">PYPL</div><div class="ticker-name">PayPal Holdings</div></div>
+      <div class="ticker-price"><div class="price-val">$46.97</div><div class="price-change down">−41% from high</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$42B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value" style="color:var(--mint)">7.5x</div></div>
+      <div class="metric"><div class="metric-label">52w Range</div><div class="metric-value">$38–$80</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$1.23 vs $1.29 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val miss">$8.68B vs $8.79B est ✗</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:27%"></div><div class="hold" style="width:54%"></div><div class="sell" style="width:19%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">27% Buy</span> <span class="l-hold">54% Hold</span> <span class="l-sell">19% Sell</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $64</span><span class="target-upside">+36% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>New CEO Enrique Lores started March 1, 2026</div>
+    <div class="news-item"><span class="news-bullet">›</span>PayPal USD + TCS Blockchain: $1B+ freight settlement</div>
+    <div class="news-item"><span class="news-bullet">›</span>At 7.5x fwd P/E — cheapest in the payment sector</div>
+  </div>
+
+  <!-- SQ -->
+  <div class="ticker-card" style="border-color: var(--mint)">
+    <div class="ticker-top">
+      <div><div class="ticker-sym" style="color:var(--mint)">SQ ★</div><div class="ticker-name">Block Inc. (Square / Cash App)</div></div>
+      <div class="ticker-price"><div class="price-val">$86.96</div><div class="price-change up">+21% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$46B</div></div>
+      <div class="metric"><div class="metric-label">P/E</div><div class="metric-value">13.0x</div></div>
+      <div class="metric"><div class="metric-label">52w Range</div><div class="metric-value">$44–$87</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Gross Profit</div><div class="earn-val beat">$2.89B (+24% YoY) ✓</div></div>
+      <div class="earn-box"><div class="earn-label">FY26 Guide</div><div class="earn-val beat">EPS $3.66 (+54% YoY)</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:80%"></div><div class="hold" style="width:20%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">80% Buy</span> <span class="l-hold">20% Hold</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $100</span><span class="target-upside">+15% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Rule of 40 achieved — best execution in sector</div>
+    <div class="news-item"><span class="news-bullet">›</span>ARK Invest bought $30.9M in shares</div>
+    <div class="news-item"><span class="news-bullet">›</span>$5B buyback + Square AI launched UK</div>
+  </div>
+
+  <!-- SOFI -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">SOFI</div><div class="ticker-name">SoFi Technologies</div></div>
+      <div class="ticker-price"><div class="price-val">$18.25</div><div class="price-change down">−29% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$23B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">49.5x</div></div>
+      <div class="metric"><div class="metric-label">Members</div><div class="metric-value">13.7M</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$1.01B — first $1B qtr ✓</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val beat">$0.13 vs $0.12 est ✓</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $26</span><span class="target-upside">+43% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Mastercard partnership: SoFiUSD stablecoin settlement</div>
+    <div class="news-item"><span class="news-bullet">›</span>SoFi Plus subscription ($10/mo) launched March 2026</div>
+    <div class="news-item"><span class="news-bullet">›</span>CEO insider purchase ~$1M — positive signal</div>
+  </div>
+
+  <!-- NU -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">NU</div><div class="ticker-name">Nu Holdings (Nubank)</div></div>
+      <div class="ticker-price"><div class="price-val">$14.88</div><div class="price-change up">+16% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$72B</div></div>
+      <div class="metric"><div class="metric-label">P/E</div><div class="metric-value">32.7x</div></div>
+      <div class="metric"><div class="metric-label">Customers</div><div class="metric-value">110M+</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$4.9B vs $3.8B est ✓✓</div></div>
+      <div class="earn-box"><div class="earn-label">ROE</div><div class="earn-val beat">33% record</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $19</span><span class="target-upside">+28% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Revenue +45% YoY, net income +50% — massive beat</div>
+    <div class="news-item"><span class="news-bullet">›</span>Only ~5% of Brazil addressable market captured</div>
+    <div class="news-item"><span class="news-bullet">›</span>Morgan Stanley raised target to $21</div>
+  </div>
+
+  <!-- AFRM -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">AFRM</div><div class="ticker-name">Affirm Holdings (BNPL)</div></div>
+      <div class="ticker-price"><div class="price-val">$50.38</div><div class="price-change down">−39% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$17B</div></div>
+      <div class="metric"><div class="metric-label">P/E</div><div class="metric-value">61.5x</div></div>
+      <div class="metric"><div class="metric-label">GMV Growth</div><div class="metric-value">+43%</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q1 '26 EPS</div><div class="earn-val beat">$0.23 (+109% vs est) ✓✓</div></div>
+      <div class="earn-box"><div class="earn-label">Q1 '26 Rev</div><div class="earn-val beat">$933M ✓</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:88%"></div><div class="hold" style="width:12%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">88% Buy/Strong Buy</span> <span class="l-hold">12% Hold</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $85</span><span class="target-upside">+69% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Stripe partnership: Shared Payment Tokens for AI agents</div>
+    <div class="news-item"><span class="news-bullet">›</span>BofA initiated Buy with $82 target (March 5)</div>
+    <div class="news-item"><span class="news-bullet">›</span>GMV +43% to $10.4B — strong momentum</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ ACQUIRERS & INFRA ══════════ -->
+<div class="sector-header">
+  <h2 style="margin:0;border:none;padding:0">Payment Processing & Infrastructure</h2>
+  <span class="sector-pill pill-infra">10 tickers · 10 data sources</span>
+</div>
+
+<div class="grid">
+  <!-- FISV -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">FISV</div><div class="ticker-name">Fiserv</div></div>
+      <div class="ticker-price"><div class="price-val">$58.39</div><div class="price-change down">−73% from peak</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$31B</div></div>
+      <div class="metric"><div class="metric-label">FY26 EPS</div><div class="metric-value">$8.00–$8.30</div></div>
+      <div class="metric"><div class="metric-label">52w High</div><div class="metric-value">$227</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val beat">$1.99 vs $1.90 est ✓</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val miss">$4.9B vs $4.95B est ✗</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $77</span><span class="target-upside">+32% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>INDX platform for digital asset settlement (Feb 2026)</div>
+    <div class="news-item"><span class="news-bullet">›</span>ServiceNow AI partnership for financial services</div>
+  </div>
+
+  <!-- FIS -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">FIS</div><div class="ticker-name">Fidelity National Info Services</div></div>
+      <div class="ticker-price"><div class="price-val">$50.53</div><div class="price-change flat">Flat YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$26B</div></div>
+      <div class="metric"><div class="metric-label">FY26 Guide</div><div class="metric-value">30–31% rev growth</div></div>
+      <div class="metric"><div class="metric-label">FY25 EPS</div><div class="metric-value">$5.75 (+10%)</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$1.68 vs $1.70 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$2.81B vs $2.74B est ✓</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $81</span><span class="target-upside">+60% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Significant 2026 revenue acceleration expected</div>
+  </div>
+
+  <!-- GPN -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">GPN</div><div class="ticker-name">Global Payments</div></div>
+      <div class="ticker-price"><div class="price-val">$73.54</div><div class="price-change up">+3% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$21B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">12.9x</div></div>
+      <div class="metric"><div class="metric-label">FY26 EPS</div><div class="metric-value">$13.80–$14.00</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val beat">$3.18 vs $3.16 est ✓</div></div>
+      <div class="earn-box"><div class="earn-label">Buyback</div><div class="earn-val">$550M accelerated</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $94</span><span class="target-upside">+28% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>IRS Preferred Partner via Link2Gov (March 10)</div>
+    <div class="news-item"><span class="news-bullet">›</span>Pure-play commerce post Worldpay acquisition</div>
+  </div>
+
+  <!-- ADYEN -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">ADYEN</div><div class="ticker-name">Adyen N.V. (Amsterdam)</div></div>
+      <div class="ticker-price"><div class="price-val">€935</div><div class="price-change down">−47% from peak</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">€30B</div></div>
+      <div class="metric"><div class="metric-label">H2 EBITDA</div><div class="metric-value">€702M (+23%)</div></div>
+      <div class="metric"><div class="metric-label">FY26 Guide</div><div class="metric-value">20–22% growth</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">H2 '25 Rev</div><div class="earn-val miss">€1.27B (missed on FX)</div></div>
+      <div class="earn-box"><div class="earn-label">Consensus</div><div class="earn-val beat">28 Buy / 4 Hold / 0 Sell</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: €1,544</span><span class="target-upside">+65% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Guidance cut to 20–22% from "low-to-mid 20s"</div>
+    <div class="news-item"><span class="news-bullet">›</span>Stock dropped 20% post-earnings on APAC weakness</div>
+  </div>
+
+  <!-- TOST -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">TOST</div><div class="ticker-name">Toast Inc.</div></div>
+      <div class="ticker-price"><div class="price-val">$29.47</div><div class="price-change down">−13% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$18B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">38.9x</div></div>
+      <div class="metric"><div class="metric-label">Locations</div><div class="metric-value">164K</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$0.16 vs $0.19 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$1.62B (+22% YoY) ✓</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $42</span><span class="target-upside">+43% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Recurring gross profit hit $2B annualised run rate (+33%)</div>
+    <div class="news-item"><span class="news-bullet">›</span>+30K net new locations in 2025</div>
+  </div>
+
+  <!-- FOUR -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">FOUR</div><div class="ticker-name">Shift4 Payments</div></div>
+      <div class="ticker-price"><div class="price-val">$46.88</div><div class="price-change down">−25% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$3.9B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value" style="color:var(--mint)">8.5x</div></div>
+      <div class="metric"><div class="metric-label">EBITDA Mgn</div><div class="metric-value">49%</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$1.19B (+34% YoY) ✓</div></div>
+      <div class="earn-box"><div class="earn-label">FY26 EPS</div><div class="earn-val">$5.50–$5.70 guide</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $79</span><span class="target-upside">+68% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>34% revenue growth + 8.5x P/E = Camillo divergence signal</div>
+    <div class="news-item"><span class="news-bullet">›</span>Expanding stablecoin settlement offering</div>
+  </div>
+
+  <!-- PAYO -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">PAYO</div><div class="ticker-name">Payoneer Global</div></div>
+      <div class="ticker-price"><div class="price-val">$4.67</div><div class="price-change down">−28% YoY</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$1.6B</div></div>
+      <div class="metric"><div class="metric-label">Fwd P/E</div><div class="metric-value">22.9x</div></div>
+      <div class="metric"><div class="metric-label">FY25 Rev</div><div class="metric-value">$1.05B</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$0.05 vs $0.06 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">Catalyst</div><div class="earn-val beat">Stablecoin bank plan (+14%)</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $9.00</span><span class="target-upside">+93% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Crossed $1B revenue milestone in 2025</div>
+    <div class="news-item"><span class="news-bullet">›</span>Stablecoin bank announcement sparked 13.6% rally</div>
+  </div>
+
+  <!-- FLYW -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">FLYW</div><div class="ticker-name">Flywire Corp</div></div>
+      <div class="ticker-price"><div class="price-val">$13.00</div><div class="price-change down">−46% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$1.6B</div></div>
+      <div class="metric"><div class="metric-label">FY26 Guide</div><div class="metric-value">15–21% rev growth</div></div>
+      <div class="metric"><div class="metric-label">Margin Exp</div><div class="metric-value">+150–350 bps</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val beat">$155M (+35% YoY) ✓✓</div></div>
+      <div class="earn-box"><div class="earn-label">Upgrade</div><div class="earn-val beat">Morgan Stanley → Overweight</div></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $16</span><span class="target-upside">+23% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>35% revenue growth at $1.6B market cap — deep value</div>
+  </div>
+
+  <!-- MQ -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">MQ</div><div class="ticker-name">Marqeta</div></div>
+      <div class="ticker-price"><div class="price-val">$4.14</div><div class="price-change flat">−1% YoY</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$1.7B</div></div>
+      <div class="metric"><div class="metric-label">Q4 TPV</div><div class="metric-value">$109B (+36%)</div></div>
+      <div class="metric"><div class="metric-label">Q4 Rev</div><div class="metric-value">$172M (+27%)</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val beat">$0.00 vs −$0.02 est ✓</div></div>
+      <div class="earn-box"><div class="earn-label">2026</div><div class="earn-val beat">First GAAP profitable year</div></div>
+    </div>
+    <div class="target-row"><span>Fair Value Est: $5.73</span><span class="target-upside">+38% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>Turning GAAP profitable for first time in 2026</div>
+    <div class="news-item"><span class="news-bullet">›</span>$4.14 vs $14.32B IPO valuation — 88% compression</div>
+  </div>
+
+  <!-- COIN -->
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym">COIN</div><div class="ticker-name">Coinbase Global</div></div>
+      <div class="ticker-price"><div class="price-val">$196.69</div><div class="price-change down">−13% YTD</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$52B</div></div>
+      <div class="metric"><div class="metric-label">P/E</div><div class="metric-value">44.9x</div></div>
+      <div class="metric"><div class="metric-label">AUM</div><div class="metric-value">$516B</div></div>
+    </div>
+    <div class="earnings-row">
+      <div class="earn-box"><div class="earn-label">Q4 '25 EPS</div><div class="earn-val miss">$0.66 vs $1.05 est ✗</div></div>
+      <div class="earn-box"><div class="earn-label">Q4 '25 Rev</div><div class="earn-val miss">$1.71B vs $1.81B est ✗</div></div>
+    </div>
+    <div style="margin:10px 0">
+      <div class="analyst-bar"><div class="buy" style="width:62%"></div><div class="hold" style="width:35%"></div><div class="sell" style="width:3%"></div></div>
+      <div class="analyst-legend"><span class="l-buy">62% Buy</span> <span class="l-hold">35% Hold</span> <span class="l-sell">3% Sell</span></div>
+    </div>
+    <div class="target-row"><span>Avg Target: $379</span><span class="target-upside">+93% upside</span></div>
+    <div class="news-item"><span class="news-bullet">›</span>"Everything Exchange" 2026 roadmap — derivatives + stablecoins</div>
+    <div class="news-item"><span class="news-bullet">›</span>Replaced DFS in S&P 500 — institutional ownership rising</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ CRYPTO ══════════ -->
+<div class="sector-header">
+  <h2 style="margin:0;border:none;padding:0">Payment Crypto Assets</h2>
+  <span class="sector-pill pill-crypto">BTC + ETH · Digital Wallets sector</span>
+</div>
+
+<div class="grid">
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym" style="color:var(--gold)">BTC</div><div class="ticker-name">Bitcoin</div></div>
+      <div class="ticker-price"><div class="price-val">$70,731</div><div class="price-change down">−44% from $126K high</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$1.3T</div></div>
+      <div class="metric"><div class="metric-label">24h Vol</div><div class="metric-value">$31.6B</div></div>
+      <div class="metric"><div class="metric-label">52w Range</div><div class="metric-value">$60K–$126K</div></div>
+    </div>
+    <div class="news-item"><span class="news-bullet">›</span>Spot ETF inflows +$568M in March — ending 4-month outflow streak</div>
+    <div class="news-item"><span class="news-bullet">›</span>Two consecutive weeks of positive institutional inflows</div>
+    <div class="news-item"><span class="news-bullet">›</span>Institutional accumulation zone — sentiment shifting</div>
+  </div>
+
+  <div class="ticker-card">
+    <div class="ticker-top">
+      <div><div class="ticker-sym" style="color:var(--lavender)">ETH</div><div class="ticker-name">Ethereum</div></div>
+      <div class="ticker-price"><div class="price-val">$2,054</div><div class="price-change down">−59% from $5K peak</div></div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Mkt Cap</div><div class="metric-value">$248B</div></div>
+      <div class="metric"><div class="metric-label">24h Vol</div><div class="metric-value">$22.6B</div></div>
+      <div class="metric"><div class="metric-label">90d Range</div><div class="metric-value">$1.9K–$3.3K</div></div>
+    </div>
+    <div class="news-item"><span class="news-bullet">›</span>ETH ETFs showing recovery: $23.5M inflows (first positive weeks since Oct)</div>
+    <div class="news-item"><span class="news-bullet">›</span>Vitalik Buterin selling pressure contributing to weakness</div>
+    <div class="news-item"><span class="news-bullet">›</span>Underperforming BTC — ratio compression continues</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════ DIVERGENCE SIGNALS ══════════ -->
+<h2>Camillo Divergence Signals — Where Alpha Lives</h2>
+
+<div class="grid">
+  <div class="theme-box" style="border-left: 3px solid var(--green)">
+    <div class="theme-title" style="color:var(--green)">BULLISH: FOUR — Growth vs. Valuation Divergence</div>
+    <div class="theme-text">34% revenue growth, 49% EBITDA margins, $5.50–5.70 EPS guidance — yet trading at 8.5x forward P/E. The market is pricing this like a value trap while fundamentals scream growth. Analyst avg target $79 implies 68% upside. Stablecoin settlement expansion adds optionality. This is the classic Camillo signal: public data fragments are telling different stories.</div>
+  </div>
+  <div class="theme-box" style="border-left: 3px solid var(--green)">
+    <div class="theme-title" style="color:var(--green)">BULLISH: PYPL — Extreme Valuation Compression</div>
+    <div class="theme-text">7.5x forward P/E on a $42B company with $33B annual revenue. New CEO started March 1. PayPal USD blockchain settlement scaling. Agentic commerce partnerships with OpenAI + Google. At this valuation, the market is pricing zero growth — any catalyst re-rates the stock significantly. Highest asymmetry in the sector.</div>
+  </div>
+  <div class="theme-box" style="border-left: 3px solid var(--green)">
+    <div class="theme-title" style="color:var(--green)">BULLISH: FLYW — Revenue Acceleration vs. Price Collapse</div>
+    <div class="theme-text">Q4 revenue +35% YoY at a $1.6B market cap. Morgan Stanley upgraded to Overweight (March 2). EBITDA margin expanding 150–350 bps. Yet the stock is down 46% YTD. When revenue accelerates and the stock collapses, the information asymmetry gap widens — the web traffic and usage data should confirm or deny this over the next scan cycles.</div>
+  </div>
+  <div class="theme-box" style="border-left: 3px solid var(--gold)">
+    <div class="theme-title" style="color:var(--gold)">WATCH: Stablecoin Convergence — 4 Companies, Same Thesis</div>
+    <div class="theme-text">PYPL (PayPal USD settlement), SOFI (SoFiUSD + Mastercard), FOUR (stablecoin settlement), PAYO (stablecoin bank). Four independent companies announcing stablecoin payment infrastructure in the same month. This is a mosaic tile cluster — when multiple actors move simultaneously on the same thesis, the trend is real, not noise.</div>
+  </div>
+  <div class="theme-box" style="border-left: 3px solid var(--red)">
+    <div class="theme-title" style="color:var(--red)">BEARISH: AXP — Consumer Sentiment Degradation</div>
+    <div class="theme-text">−18% YTD, 53% Hold consensus (weakest of card networks), rate cap regulatory threat unresolved, insider selling. Softening consumer sentiment hits AXP harder than V/MA because AXP carries credit risk on its balance sheet. The premium customer base is also more exposed to macro slowdown. Google Trends + StockTwits should show sentiment divergence in next scan.</div>
+  </div>
+  <div class="theme-box" style="border-left: 3px solid var(--red)">
+    <div class="theme-title" style="color:var(--red)">BEARISH: ETH — Founder Selling + Structural Underperformance</div>
+    <div class="theme-text">−59% from peak. Vitalik actively selling. ETH/BTC ratio compressing. ETF inflows barely positive ($23.5M vs BTC's $568M). Ethereum is losing the institutional narrative to Bitcoin. The daily scan's CoinGecko + Google Trends connectors should track whether developer activity (the leading indicator) confirms or contradicts the price action.</div>
+  </div>
+</div>
+
+<div style="margin-top:40px; padding:20px; background:var(--surface); border-radius:12px; text-align:center; color:var(--dim); font-size:12px">
+  LATTICE.NET · Payment Universe Report · Generated March 11, 2026<br>
+  Data sources: Yahoo Finance, StockTwits, Google Trends, Wikipedia, YouTube, TikTok, Google Shopping, ChatGPT Discussion, CoinGecko, SimilarWeb<br>
+  Daily automated scans configured at 7:00 AM via <code>daily-lattice-scan</code> scheduled task
+</div>
+
+</body>
+</html>

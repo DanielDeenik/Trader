@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="api_data.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reasoning Lab — Mosaic ToT Engine</title>
+<style>
+  :root {
+    --bg: #0a0e17; --surface: #111827; --surface2: #1f2937;
+    --border: #374151; --text: #e5e7eb; --text-dim: #9ca3af;
+    --accent: #3b82f6; --green: #10b981; --red: #ef4444;
+    --yellow: #f59e0b; --purple: #8b5cf6; --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Mono', 'Fira Code', monospace; background: var(--bg); color: var(--text); }
+
+  /* ── Layout ─────────────────────────────────────── */
+  .header { display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .header h1 { font-size: 18px; color: var(--cyan); }
+  .header .stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); }
+  .header .stats span { padding: 4px 8px; background: var(--surface2); border-radius: 4px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .tab { padding: 12px 24px; cursor: pointer; font-size: 13px; color: var(--text-dim);
+    border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+
+  /* ── Branch Cards ───────────────────────────────── */
+  .branch-card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .branch-card .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .branch-card .edge-type { font-size: 11px; padding: 3px 8px; border-radius: 12px;
+    text-transform: uppercase; font-weight: bold; }
+  .edge-CAUSES { background: #1e3a5f; color: var(--cyan); }
+  .edge-BENEFITS { background: #064e3b; color: var(--green); }
+  .edge-HURTS { background: #7f1d1d; color: var(--red); }
+  .edge-LEADS_TO { background: #3b1f6e; color: var(--purple); }
+  .edge-DISRUPTS { background: #78350f; color: var(--yellow); }
+  .edge-SUPPORTS { background: #064e3b; color: var(--green); }
+  .edge-CONTRADICTS { background: #7f1d1d; color: var(--red); }
+  .edge-PREVENTS { background: #7f1d1d; color: var(--red); }
+  .edge-SUPPLIES { background: #1e3a5f; color: var(--cyan); }
+
+  .branch-card h3 { font-size: 14px; margin-bottom: 8px; }
+  .branch-card .chain { font-size: 13px; color: var(--cyan); margin-bottom: 8px;
+    padding: 8px 12px; background: var(--bg); border-radius: 4px; }
+  .branch-card .reasoning { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
+
+  .confidence-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+  .confidence-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .conf-high { background: var(--green); }
+  .conf-med { background: var(--yellow); }
+  .conf-low { background: var(--red); }
+
+  .branch-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-family: inherit; font-weight: bold; transition: all 0.2s; }
+  .btn-approve { background: var(--green); color: #000; }
+  .btn-approve:hover { background: #34d399; }
+  .btn-reject { background: var(--red); color: #fff; }
+  .btn-reject:hover { background: #f87171; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #60a5fa; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  .confidence-slider { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .confidence-slider input[type="range"] { flex: 1; accent-color: var(--cyan); }
+  .confidence-slider span { font-size: 12px; color: var(--cyan); min-width: 40px; }
+
+  /* ── Mosaic Path Explorer ──────────────────────── */
+  .path-search { display: flex; gap: 12px; margin-bottom: 20px; }
+  .path-search input { flex: 1; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; }
+  .path-result { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .path-chain { font-size: 14px; padding: 12px; background: var(--bg);
+    border-radius: 4px; margin: 8px 0; word-wrap: break-word; line-height: 1.8; }
+  .path-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); }
+
+  /* ── Graph Stats ───────────────────────────────── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; text-align: center; }
+  .stat-card .number { font-size: 28px; font-weight: bold; color: var(--cyan); }
+  .stat-card .label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── Bridge/Hub List ───────────────────────────── */
+  .entity-list { display: flex; flex-direction: column; gap: 8px; }
+  .entity-row { display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13px; }
+  .entity-row .name { color: var(--text); }
+  .entity-row .score { color: var(--cyan); font-weight: bold; }
+  .entity-row .type-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    background: var(--surface2); color: var(--text-dim); }
+
+  /* ── Audit Trail ───────────────────────────────── */
+  .audit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .audit-table th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border);
+    color: var(--text-dim); font-size: 11px; }
+  .audit-table td { padding: 8px 12px; border-bottom: 1px solid var(--surface2); }
+  .badge-approved { color: var(--green); }
+  .badge-rejected { color: var(--red); }
+  .badge-pending { color: var(--yellow); }
+
+  /* ── ToT Trigger ───────────────────────────────── */
+  .trigger-form { display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
+    padding: 16px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
+  .trigger-form input, .trigger-form select { padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty-state h3 { margin-bottom: 8px; }
+
+  .section-title { font-size: 15px; color: var(--text); margin: 24px 0 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--surface2); }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ Reasoning Lab</h1>
+  <div class="stats">
+    <span id="stat-nodes">— nodes</span>
+    <span id="stat-edges">— edges</span>
+    <span id="stat-pending">— pending</span>
+    <span id="stat-approved">— approved</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="review">Branch Review</div>
+  <div class="tab" data-panel="mosaic">Mosaic Paths</div>
+  <div class="tab" data-panel="graph">Graph Analysis</div>
+  <div class="tab" data-panel="audit">Audit Trail</div>
+  <div class="tab" data-panel="trigger">Run ToT</div>
+</div>
+
+<!-- ── Panel: Branch Review ──────────────────────── -->
+<div class="panel active" id="panel-review">
+  <div id="review-list">
+    <div class="loading">Loading pending reviews...</div>
+  </div>
+</div>
+
+<!-- ── Panel: Mosaic Path Explorer ───────────────── -->
+<div class="panel" id="panel-mosaic">
+  <div class="path-search">
+    <input type="number" id="path-start" placeholder="Start Entity ID">
+    <input type="number" id="path-end" placeholder="End Entity ID">
+    <input type="number" id="path-hops" placeholder="Max hops (5)" value="5">
+    <button class="btn btn-primary" onclick="searchPaths()">Find Mosaic Paths</button>
+  </div>
+  <div id="path-results"></div>
+</div>
+
+<!-- ── Panel: Graph Analysis ─────────────────────── -->
+<div class="panel" id="panel-graph">
+  <div id="graph-stats" class="stats-grid"></div>
+  <h3 class="section-title">Bridge Entities (Mosaic Connectors)</h3>
+  <div id="bridge-list" class="entity-list"></div>
+  <h3 class="section-title">Hub Entities (Most Connected)</h3>
+  <div id="hub-list" class="entity-list"></div>
+</div>
+
+<!-- ── Panel: Audit Trail ────────────────────────── -->
+<div class="panel" id="panel-audit">
+  <div id="audit-content"></div>
+</div>
+
+<!-- ── Panel: Run ToT ────────────────────────────── -->
+<div class="panel" id="panel-trigger">
+  <div class="trigger-form">
+    <label>Entity ID:</label>
+    <input type="number" id="tot-entity-id" placeholder="Entity ID">
+    <label>Mode:</label>
+    <select id="tot-mode">
+      <option value="batch">Batch (auto-approve high confidence)</option>
+      <option value="interactive">Interactive (all need review)</option>
+      <option value="dry_run">Dry Run (no writes)</option>
+    </select>
+    <button class="btn btn-primary" onclick="runToT()">🧠 Run ToT</button>
+  </div>
+  <div id="tot-results"></div>
+</div>
+
+<script>
+const API = '';  // Same-origin
+
+// ── Tab switching ─────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  });
+});
+
+// ── API helpers ───────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: {'Content-Type': 'application/json'},
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return res.json();
+}
+
+// ── Load stats ────────────────────────────────────
+async function loadStats() {
+  try {
+    const stats = await api('/api/graph/stats');
+    document.getElementById('stat-nodes').textContent = `${stats.n_nodes || 0} nodes`;
+    document.getElementById('stat-edges').textContent = `${stats.n_edges || 0} edges`;
+    const vc = stats.verification_counts || {};
+    document.getElementById('stat-pending').textContent = `${vc.pending || 0} pending`;
+    document.getElementById('stat-approved').textContent = `${vc.approved || 0} approved`;
+  } catch(e) { console.warn('Stats unavailable:', e); }
+}
+
+// ── Branch Review ─────────────────────────────────
+async function loadReviews() {
+  const container = document.getElementById('review-list');
+  try {
+    const data = await api('/api/tot/queue');
+    const pending = (data.pending || []).filter(p => p.status === 'pending');
+
+    if (!pending.length) {
+      container.innerHTML = `<div class="empty-state">
+        <h3>No pending reviews</h3>
+        <p>Run the ToT engine on an entity to generate branches for review.</p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = pending.map((item, i) => {
+      const b = item.branch;
+      const conf = (b.ai_confidence || 0);
+      const confClass = conf >= 0.7 ? 'conf-high' : conf >= 0.4 ? 'conf-med' : 'conf-low';
+      const edgeClass = 'edge-' + (b.edge_type || 'CAUSES').toUpperCase();
+
+      return `<div class="branch-card" id="branch-${i}">
+        <div class="header-row">
+          <span class="${edgeClass} edge-type">${b.edge_type || '?'}</span>
+          <span style="font-size:11px;color:var(--text-dim)">Order: ${b.order || '?'} | Lag: ${b.lag_weeks_estimate || '?'}w</span>
+        </div>
+        <div class="chain">${b.source_entity_name || '?'} ─(${(b.edge_type||'').toUpperCase()})→ ${b.target_entity_name || '?'}</div>
+        <h3>${b.hypothesis || 'No hypothesis'}</h3>
+        <div class="reasoning">${b.reasoning || ''}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim)">
+          <span>AI Confidence: ${(conf*100).toFixed(0)}%</span>
+          <span>Rec: <strong>${b.ai_recommendation || '?'}</strong></span>
+        </div>
+        <div class="confidence-bar"><div class="confidence-fill ${confClass}" style="width:${conf*100}%"></div></div>
+        ${b.argument_for ? `<div style="font-size:11px;margin-top:8px">✅ <em>${b.argument_for}</em></div>` : ''}
+        ${b.argument_against ? `<div style="font-size:11px;margin-top:4px">❌ <em>${b.argument_against}</em></div>` : ''}
+        <div class="confidence-slider">
+          <span>Override:</span>
+          <input type="range" min="0" max="100" value="${Math.round(conf*100)}" id="slider-${i}"
+            oninput="document.getElementById('slider-val-${i}').textContent=this.value+'%'">
+          <span id="slider-val-${i}">${Math.round(conf*100)}%</span>
+        </div>
+        <div class="branch-actions">
+          <button class="btn btn-approve" onclick="reviewBranch('${b.branch_id}','approved',${i})">✅ Approve</button>
+          <button class="btn btn-reject" onclick="reviewBranch('${b.branch_id}','rejected',${i})">❌ Reject</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><h3>Could not load reviews</h3><p>${e.message}</p></div>`;
+  }
+}
+
+async function reviewBranch(branchId, decision, index) {
+  const slider = document.getElementById('slider-' + index);
+  const confidence = slider ? slider.value / 100 : null;
+  try {
+    await api('/api/tot/review', {
+      method: 'POST',
+      body: { branch_id: branchId, decision, confidence }
+    });
+    document.getElementById('branch-' + index).style.opacity = '0.3';
+    loadStats();
+  } catch(e) { alert('Review failed: ' + e.message); }
+}
+
+// ── Mosaic Path Explorer ──────────────────────────
+async function searchPaths() {
+  const start = document.getElementById('path-start').value;
+  const end = document.getElementById('path-end').value;
+  const hops = document.getElementById('path-hops').value || 5;
+  const container = document.getElementById('path-results');
+
+  if (!start || !end) { alert('Enter start and end entity IDs'); return; }
+
+  container.innerHTML = '<div class="loading">Searching mosaic paths...</div>';
+
+  try {
+    const data = await api(`/api/graph/paths?start=${start}&end=${end}&max_hops=${hops}&top_k=5`);
+    if (!data.paths || !data.paths.length) {
+      container.innerHTML = '<div class="empty-state"><h3>No paths found</h3></div>';
+      return;
+    }
+    container.innerHTML = data.paths.map((p, i) => `
+      <div class="path-result">
+        <div class="path-chain">${p.path_summary}</div>
+        <div class="path-meta">
+          <span>Hops: ${p.total_hops}</span>
+          <span>Mosaic Probability: ${(p.mosaic_probability * 100).toFixed(2)}%</span>
+          <span>${p.all_verified ? '✅ All Verified' : '⚠️ Unverified edges'}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`;
+  }
+}
+
+// ── Graph Analysis ────────────────────────────────
+async function loadGraphAnalysis() {
+  try {
+    const [stats, centrality] = await Promise.all([
+      api('/api/graph/stats'),
+      api('/api/graph/centrality'),
+    ]);
+
+    document.getElementById('graph-stats').innerHTML = `
+      <div class="stat-card"><div class="number">${stats.n_nodes || 0}</div><div class="label">Nodes</div></div>
+      <div class="stat-card"><div class="number">${stats.n_edges || 0}</div><div class="label">Edges</div></div>
+      <div class="stat-card"><div class="number">${stats.density || 0}</div><div class="label">Density</div></div>
+      <div class="stat-card"><div class="number">${stats.n_components || 0}</div><div class="label">Components</div></div>
+      <div class="stat-card"><div class="number">${centrality.community_count || 0}</div><div class="label">Communities</div></div>
+      <div class="stat-card"><div class="number">${(stats.verification_counts||{}).approved||0}</div><div class="label">Verified Edges</div></div>
+    `;
+
+    document.getElementById('bridge-list').innerHTML = (centrality.top_bridges || []).slice(0, 10).map(b =>
+      `<div class="entity-row">
+        <span class="name">${b.name}</span>
+        <span class="type-badge">${b.entity_type}</span>
+        <span class="score">betweenness: ${b.betweenness}</span>
+      </div>`
+    ).join('') || '<div class="empty-state">No data</div>';
+
+    document.getElementById('hub-list').innerHTML = (centrality.top_hubs || []).slice(0, 10).map(h =>
+      `<div class="entity-row">
+        <span class="name">${h.name}</span>
+        <span class="type-badge">${h.entity_type} | in:${h.in_degree} out:${h.out_degree}</span>
+        <span class="score">centrality: ${h.degree_centrality}</span>
+      </div>`
+    ).join('') || '<div class="empty-state">No data</div>';
+
+  } catch(e) {
+    document.getElementById('graph-stats').innerHTML = `<div class="empty-state"><p>Graph engine unavailable: ${e.message}</p></div>`;
+  }
+}
+
+// ── Audit Trail ───────────────────────────────────
+async function loadAudit() {
+  try {
+    const data = await api('/api/tot/queue');
+    const all = data.pending || [];
+    const reviewed = all.filter(p => p.status !== 'pending');
+
+    if (!reviewed.length && !all.length) {
+      document.getElementById('audit-content').innerHTML = '<div class="empty-state"><h3>No audit history</h3></div>';
+      return;
+    }
+
+    document.getElementById('audit-content').innerHTML = `
+      <table class="audit-table">
+        <thead><tr>
+          <th>Branch</th><th>From → To</th><th>Edge Type</th>
+          <th>AI Conf</th><th>Human Conf</th><th>Status</th><th>Time</th>
+        </tr></thead>
+        <tbody>
+          ${all.map(item => {
+            const b = item.branch;
+            const statusClass = item.status === 'approved' ? 'badge-approved' :
+              item.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
+            return `<tr>
+              <td style="font-size:10px">${(b.branch_id||'').slice(0,20)}...</td>
+              <td>${b.source_entity_name||'?'} → ${b.target_entity_name||'?'}</td>
+              <td>${b.edge_type||'?'}</td>
+              <td>${((b.ai_confidence||0)*100).toFixed(0)}%</td>
+              <td>${b.human_confidence ? (b.human_confidence*100).toFixed(0)+'%' : '—'}</td>
+              <td class="${statusClass}">${item.status}</td>
+              <td style="font-size:10px">${item.reviewed_at || item.queued_at || '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e) {
+    document.getElementById('audit-content').innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
+  }
+}
+
+// ── Run ToT ───────────────────────────────────────
+async function runToT() {
+  const entityId = document.getElementById('tot-entity-id').value;
+  const mode = document.getElementById('tot-mode').value;
+  const container = document.getElementById('tot-results');
+
+  if (!entityId) { alert('Enter an entity ID'); return; }
+
+  container.innerHTML = '<div class="loading">🧠 Running Tree of Thoughts reasoning...</div>';
+
+  try {
+    const result = await api('/api/tot/run', {
+      method: 'POST',
+      body: { entity_id: parseInt(entityId), mode, max_iterations: 1 }
+    });
+
+    container.innerHTML = `
+      <div class="branch-card">
+        <h3>ToT Results for: ${result.fact_name || entityId}</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px">
+          <div class="stat-card"><div class="number">${result.generated || 0}</div><div class="label">Generated</div></div>
+          <div class="stat-card"><div class="number">${result.evaluated || 0}</div><div class="label">Evaluated</div></div>
+          <div class="stat-card"><div class="number">${result.approved || 0}</div><div class="label">Approved</div></div>
+          <div class="stat-card"><div class="number">${result.rejected || 0}</div><div class="label">Rejected</div></div>
+        </div>
+        ${result.errors && result.errors.length ? `<div style="color:var(--red);margin-top:12px;font-size:12px">${result.errors.join('<br>')}</div>` : ''}
+        <div style="margin-top:12px;font-size:11px;color:var(--text-dim)">
+          Session: ${result.session_id || '?'} | Mode: ${result.mode || '?'}
+        </div>
+      </div>
+    `;
+
+    // Refresh review panel
+    loadReviews();
+    loadStats();
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error: ${e.message}</p></div>`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────
+loadStats();
+loadReviews();
+loadGraphAnalysis();
+loadAudit();
+</script>
+</body>
+</html>

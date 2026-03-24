@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Dropship KPI Dashboard</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — Quixel/Fab dark canvas + chrome-rainbow
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg-deep:    #06060a;
+  --bg-canvas:  #0a0a0f;
+  --bg-card:    #111118;
+  --bg-card-2:  #16161f;
+  --bg-hover:   #1a1a25;
+  --border:     #1e1e2a;
+  --border-2:   #2a2a3a;
+  --text:       #e8e8f0;
+  --text-dim:   #8888a0;
+  --text-muted: #555570;
+  --violet:     #7b6cf6;
+  --cyan:       #4fc3f7;
+  --mint:       #69f0ae;
+  --gold:       #ffd740;
+  --rose:       #ff6e8a;
+  --lavender:   #b388ff;
+  --green-up:   #00e676;
+  --red-down:   #ff5252;
+  --orange:     #ffab40;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: 'SF Pro Display', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+a { color: var(--cyan); text-decoration: none; }
+
+/* HEADER */
+.header {
+  background: var(--bg-canvas);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.logo { font-size: 15px; font-weight: 700; letter-spacing: 2px; color: var(--violet); }
+.logo span { color: var(--text-dim); font-weight: 400; letter-spacing: 0; }
+.header-stats { display: flex; gap: 24px; margin-left: auto; }
+.stat-box { text-align: center; }
+.stat-val { font-size: 18px; font-weight: 700; }
+.stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 0;
+  background: var(--bg-canvas);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--violet); border-bottom-color: var(--violet); }
+
+/* LAYOUT */
+.content { padding: 20px 24px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+/* CARDS */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.card-title .icon { margin-right: 6px; }
+
+/* KPI TILES */
+.kpi-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.kpi-tile .kpi-val {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.kpi-tile .kpi-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.kpi-tile .kpi-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+.kpi-tile .kpi-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-2);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.kpi-tile .kpi-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s; }
+
+/* STATUS BADGES */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-green { background: rgba(0,230,118,0.15); color: var(--green-up); }
+.badge-gold { background: rgba(255,215,64,0.15); color: var(--gold); }
+.badge-rose { background: rgba(255,110,138,0.15); color: var(--rose); }
+.badge-violet { background: rgba(123,108,246,0.15); color: var(--violet); }
+.badge-cyan { background: rgba(79,195,247,0.15); color: var(--cyan); }
+.badge-dim { background: rgba(136,136,160,0.15); color: var(--text-dim); }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-2);
+  cursor: pointer;
+}
+th:hover { color: var(--text-dim); }
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+tr:hover td { background: var(--bg-hover); }
+
+/* TREE DIAGRAM */
+.tree { padding: 12px 0; }
+.tree-level {
+  padding: 8px 0 8px 24px;
+  border-left: 2px solid var(--border-2);
+  margin-left: 12px;
+  position: relative;
+}
+.tree-level::before {
+  content: '';
+  position: absolute;
+  left: -2px; top: 16px;
+  width: 16px; height: 2px;
+  background: var(--border-2);
+}
+.tree-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: var(--bg-card-2);
+  border: 1px solid var(--border);
+}
+.tree-node.root {
+  background: linear-gradient(135deg, rgba(123,108,246,0.2), rgba(79,195,247,0.2));
+  border-color: var(--violet);
+  font-weight: 600;
+}
+.tree-node .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* FORMULA BOX */
+.formula {
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.formula .op { color: var(--text-dim); }
+.formula .val { color: var(--gold); }
+.formula .label { color: var(--text); }
+
+/* SECTION SPACER */
+.section { margin-bottom: 20px; }
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* PILLAR INDICATOR */
+.pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.pillar-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  position: relative;
+}
+.pillar-ring::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--bg-card);
+}
+.pillar-ring .pillar-val { position: relative; z-index: 1; }
+.pillar-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+/* GAUGE */
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.gauge-label {
+  width: 140px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.gauge-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-card-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.gauge-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.gauge-val { width: 50px; text-align: right; font-size: 12px; font-weight: 600; }
+
+/* ALERT */
+.alert-box {
+  background: rgba(255,82,82,0.08);
+  border: 1px solid rgba(255,82,82,0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.alert-box.warn { background: rgba(255,171,64,0.08); border-color: rgba(255,171,64,0.25); }
+.alert-box.info { background: rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.25); }
+.alert-box .alert-title { font-weight: 600; margin-bottom: 4px; }
+
+/* SCROLL */
+.scroll-y { max-height: 400px; overflow-y: auto; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+
+/* HIDE */
+.hidden { display: none !important; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">LATTICE.NET <span>· Dropship KPIs</span></div>
+  <div class="header-stats" id="headerStats"></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="framework" onclick="switchTab('framework')">KPI Framework</div>
+  <div class="tab" data-tab="products" onclick="switchTab('products')">Product Scorecard</div>
+  <div class="tab" data-tab="economics" onclick="switchTab('economics')">Unit Economics</div>
+  <div class="tab" data-tab="arbitrage" onclick="switchTab('arbitrage')">Arbitrage Radar</div>
+</div>
+
+<!-- ═══════════ TAB 1: KPI FRAMEWORK ═══════════ -->
+<div class="content tab-content" id="tab-framework">
+
+  <!-- 4 PILLARS -->
+  <div class="section">
+    <div class="section-title">The Four Pillars of Dropship Intelligence</div>
+    <div class="grid-4" id="pillarCards"></div>
+  </div>
+
+  <!-- KPI TREE -->
+  <div class="section">
+    <div class="section-title">First-Principles KPI Tree</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">💰 Unit Economics Chain</div>
+        <div class="formula">
+          <span class="label">Revenue</span> <span class="op">−</span> <span class="label">COGS</span> <span class="op">−</span> <span class="label">Shipping</span> <span class="op">−</span> <span class="label">Processing (2.9%+$0.30)</span> <span class="op">−</span> <span class="label">Returns</span> <span class="op">=</span> <span class="val">Gross Profit</span>
+        </div>
+        <div class="formula">
+          <span class="val">Gross Profit</span> <span class="op">−</span> <span class="label">CAC</span> <span class="op">=</span> <span class="val">Contribution Margin</span>
+        </div>
+        <div class="formula">
+          <span class="val">Contribution Margin</span> <span class="op">×</span> <span class="label">Volume</span> <span class="op">−</span> <span class="label">Fixed Costs</span> <span class="op">=</span> <span class="val">Net Profit</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="gauge-row"><div class="gauge-label">Gross Margin Target</div><div class="gauge-track"><div class="gauge-fill" style="width:70%;background:var(--mint)"></div></div><div class="gauge-val" style="color:var(--mint)">60-75%</div></div>
+          <div class="gauge-row"><div class="gauge-label">CAC ≤ % of Revenue</div><div class="gauge-track"><div class="gauge-fill" style="width:30%;background:var(--gold)"></div></div><div class="gauge-val" style="color:var(--gold)">≤30%</div></div>
+          <div class="gauge-row"><div class="gauge-label">Contribution Margin</div><div class="gauge-track"><div class="gauge-fill" style="width:25%;background:var(--cyan)"></div></div><div class="gauge-val" style="color:var(--cyan)">&gt;25%</div></div>
+          <div class="gauge-row"><div class="gauge-label">Return Rate Ceiling</div><div class="gauge-track"><div class="gauge-fill" style="width:20%;background:var(--rose)"></div></div><div class="gauge-val" style="color:var(--rose)">&lt;20%</div></div>
+          <div class="gauge-row"><div class="gauge-label">Markup Multiple</div><div class="gauge-track"><div class="gauge-fill" style="width:50%;background:var(--violet)"></div></div><div class="gauge-val" style="color:var(--violet)">4-6×</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📡 Signal Arbitrage Formula</div>
+        <div class="formula">
+          <span class="label">Arbitrage Gap</span> <span class="op">=</span> <span class="label">Social Chatter Growth %</span> <span class="op">−</span> <span class="label">Competitor Ad Spend Growth %</span>
+        </div>
+        <div style="margin-top:12px; font-size:12px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="badge badge-green">GAP &gt; 200%</span> <span style="color:var(--text-dim)">Strong window — act now</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="badge badge-gold">GAP 50-200%</span> <span style="color:var(--text-dim)">Monitor — confirm next week</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="badge badge-rose">GAP &lt; 50%</span> <span style="color:var(--text-dim)">Priced in — pass</span></div>
+        </div>
+        <div class="card-title" style="margin-top:16px;">🔥 Gold Rush Exit Signal</div>
+        <div class="formula">
+          <span class="label">Exit When:</span> <span class="val">Ad Spend Growth</span> <span class="op">&gt;</span> <span class="val">Social Growth</span> <span class="label">for 2 consecutive weeks</span>
+        </div>
+        <div class="card-title" style="margin-top:16px;">🎯 10× Threshold</div>
+        <div style="font-size:12px; color:var(--text-dim); line-height:1.8;">
+          <span style="color:var(--text)">Bull ROI ≥ 10×</span> on test budget<br>
+          <span style="color:var(--text)">TAM ≥ $500K</span> annual revenue potential<br>
+          <span style="color:var(--text)">Gold Rush ≥ 3 months</span> remaining<br>
+          <span style="color:var(--text)">STEPPS ≥ 22/30</span> organic amplification<br>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL KPI REFERENCE -->
+  <div class="section">
+    <div class="section-title">Complete KPI Reference by Decision Phase</div>
+    <div id="kpiReference"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 2: PRODUCT SCORECARD ═══════════ -->
+<div class="content tab-content hidden" id="tab-products">
+  <div class="section">
+    <div class="section-title">Product Scorecard</div>
+    <div class="card">
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Phase</th>
+            <th>Camillo</th>
+            <th>STEPPS</th>
+            <th>Moat</th>
+            <th>Margin</th>
+            <th>Signal</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody id="productBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUCT DETAIL -->
+  <div class="section" id="productDetail" style="display:none">
+    <div class="section-title" id="detailTitle">Product Detail</div>
+    <div class="grid-2" id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 3: UNIT ECONOMICS ═══════════ -->
+<div class="content tab-content hidden" id="tab-economics">
+  <div class="section">
+    <div class="section-title">Unit Economics Simulator</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Inputs</div>
+        <div id="ecoInputs"></div>
+        <button onclick="runSimulation()" style="margin-top:12px;padding:8px 20px;background:var(--violet);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Run Simulation</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Bear / Base / Bull Scenarios</div>
+        <div id="ecoResults"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKUP GUIDE -->
+  <div class="section">
+    <div class="section-title">Markup & CAC Reference</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Markup Multiple Guide</div>
+        <table>
+          <thead><tr><th>Supplier Cost</th><th>Min Sell</th><th>Recommended</th><th>Multiple</th></tr></thead>
+          <tbody>
+            <tr><td>$2–5</td><td>$12</td><td>$15–20</td><td><span class="badge badge-mint" style="background:rgba(105,240,174,0.15);color:var(--mint)">4–6×</span></td></tr>
+            <tr><td>$5–10</td><td>$22</td><td>$28–40</td><td><span class="badge badge-mint" style="background:rgba(105,240,174,0.15);color:var(--mint)">4–5×</span></td></tr>
+            <tr><td>$10–20</td><td>$35</td><td>$50–70</td><td><span class="badge badge-gold">3.5–5×</span></td></tr>
+            <tr><td>$20–40</td><td>$70</td><td>$90–120</td><td><span class="badge badge-gold">3–4×</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">CAC by Platform (Benchmarks)</div>
+        <table>
+          <thead><tr><th>Platform</th><th>Avg CPM</th><th>CTR</th><th>CVR</th><th>Est. CAC</th></tr></thead>
+          <tbody>
+            <tr><td>Facebook/IG</td><td>$8–20</td><td>1.5–3%</td><td>1–3%</td><td>$15–50</td></tr>
+            <tr><td>TikTok</td><td>$5–12</td><td>2–5%</td><td>0.8–2%</td><td>$12–40</td></tr>
+            <tr><td>Google Shopping</td><td>$0.50–2 CPC</td><td>—</td><td>2–5%</td><td>$20–60</td></tr>
+            <tr><td>Pinterest</td><td>$4–8</td><td>0.5–1.5%</td><td>0.5–1.5%</td><td>$25–70</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RETURN RISK -->
+  <div class="section">
+    <div class="section-title">Return Rate Risk Matrix</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Risk Flag</th><th>Return Penalty</th><th>Benchmark Range</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Requires sizing (S/M/L)</td><td style="color:var(--rose)">+15%</td><td>30–40% (apparel)</td><td><span class="badge badge-rose">Avoid unless brand-specific</span></td></tr>
+          <tr><td>Contains glass / fragile</td><td style="color:var(--rose)">+12%</td><td>10–15%</td><td><span class="badge badge-gold">Test carefully</span></td></tr>
+          <tr><td>Electronics with setup</td><td style="color:var(--orange)">+10%</td><td>8–12%</td><td><span class="badge badge-gold">Include guide</span></td></tr>
+          <tr><td>Fabric / utility, no sizing</td><td style="color:var(--mint)">0%</td><td>5–10%</td><td><span class="badge badge-green">Ideal category</span></td></tr>
+          <tr><td>Social commerce / influencer</td><td style="color:var(--rose)">+8%</td><td>20–35%</td><td><span class="badge badge-rose">High impulse return</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 4: ARBITRAGE RADAR ═══════════ -->
+<div class="content tab-content hidden" id="tab-arbitrage">
+  <div class="section">
+    <div class="section-title">Gold Rush Lifecycle Map</div>
+    <div class="card" style="text-align:center;">
+      <svg id="goldRushSvg" width="700" height="320" viewBox="0 0 700 320"></svg>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">STEPPS Virality Scoring</div>
+    <div class="grid-2">
+      <div class="card" id="steppsChart"></div>
+      <div class="card">
+        <div class="card-title">STEPPS Interpretation</div>
+        <div style="font-size:12px; line-height:1.8;">
+          <div style="display:flex;gap:8px;padding:4px 0;"><span class="badge badge-green">22–30</span> High virality — low-spend ads work</div>
+          <div style="display:flex;gap:8px;padding:4px 0;"><span class="badge badge-gold">14–21</span> Moderate — needs strong creative</div>
+          <div style="display:flex;gap:8px;padding:4px 0;"><span class="badge badge-rose">&lt;14</span> Hard sell — reconsider product</div>
+        </div>
+        <div class="card-title" style="margin-top:16px;">Vulnerability Signals (Moat Analysis)</div>
+        <div style="font-size:12px; color:var(--text-dim); line-height:1.8;">
+          Top 3 sellers have 1–2★ reviews on same flaw<br>
+          No recognizable brand dominates (generic suppliers)<br>
+          Consumer switching cost ≈ zero<br>
+          Flaw is fixable by better sourcing<br>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMILLO 8-ATOM RADAR -->
+  <div class="section">
+    <div class="section-title">Camillo 8-Atom Analysis</div>
+    <div class="card" id="atomHeatmap"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DATA & STATE
+   ═══════════════════════════════════════════════════════════════ */
+let DATA = { products: [], summary: {} };
+let currentTab = 'framework';
+
+/* ═══════════════════════════════════════════════════════════════
+   KPI DEFINITIONS — First Principles
+   ═══════════════════════════════════════════════════════════════ */
+const KPI_FRAMEWORK = {
+  pillars: [
+    {
+      name: "Discovery",
+      icon: "🔍",
+      color: "var(--violet)",
+      score: 0,
+      description: "Finding products before competitors",
+      kpis: [
+        { name: "Arbitrage Gap", formula: "Social Growth % − Ad Spend Growth %", target: ">200%", status: "critical", why: "Measures the information asymmetry window — your edge" },
+        { name: "Cross-Platform Confirmation", formula: "Platforms with signal ≥ 3", target: "≥3 platforms", status: "important", why: "Single-platform signals are noise; multi-platform = real demand" },
+        { name: "Review Velocity", formula: "Weekly new reviews on top 3 competitors", target: "Rising trend", status: "useful", why: "Indicates growing category demand independent of your ads" },
+        { name: "Google Trends Slope", formula: "4-week regression slope", target: "Positive & accelerating", status: "critical", why: "Confirms sustained interest vs flash-in-pan spikes" },
+        { name: "Competitor Density", formula: "Active FB ads in niche (Ad Library)", target: "<50 active", status: "important", why: "High ad count = saturated = high CAC" },
+      ]
+    },
+    {
+      name: "Economics",
+      icon: "💰",
+      color: "var(--mint)",
+      score: 0,
+      description: "Making money on every unit sold",
+      kpis: [
+        { name: "Contribution Margin", formula: "Revenue − COGS − Shipping − Processing − Returns − CAC", target: ">25% of revenue", status: "critical", why: "The ONLY metric that tells you if you're actually profitable per order" },
+        { name: "Markup Multiple", formula: "Retail Price ÷ Supplier Cost", target: "4–6×", status: "critical", why: "Below 4× there's no room for ad spend after variable costs" },
+        { name: "ROAS", formula: "Revenue ÷ Ad Spend", target: ">3.5×", status: "important", why: "Measures ad efficiency, but must pair with contribution margin" },
+        { name: "CAC", formula: "Total Marketing ÷ Customers Acquired", target: "<30% of AOV", status: "critical", why: "Customer acquisition is the biggest variable cost lever" },
+        { name: "LTV:CAC Ratio", formula: "Customer Lifetime Value ÷ CAC", target: "≥3:1", status: "important", why: "Below 2:1 you're burning cash faster than you earn it" },
+        { name: "Return Rate", formula: "Returns ÷ Orders", target: "<15%", status: "important", why: "Every return is negative contribution margin — full cost, zero revenue" },
+      ]
+    },
+    {
+      name: "Lifecycle",
+      icon: "🔄",
+      color: "var(--gold)",
+      score: 0,
+      description: "Timing entry, scaling, and exit",
+      kpis: [
+        { name: "Gold Rush Phase", formula: "Discovery → Growth → Peak → Decline", target: "Enter at Growth", status: "critical", why: "Peak entry = declining margins; Discovery = unvalidated" },
+        { name: "Days in Phase", formula: "Days since phase transition", target: "Context-dependent", status: "useful", why: "Growth phase averaging 30-90 days; shorter = faster exit needed" },
+        { name: "CAC Trend (30d)", formula: "Current CAC ÷ CAC 30 days ago", target: "Declining or flat", status: "critical", why: "Rising CAC = saturation signal — the gold rush is ending" },
+        { name: "Contribution Margin Erosion", formula: "CM this week ÷ CM 4 weeks ago", target: ">90%", status: "important", why: "Margin compression = competitors driving prices/CPM up" },
+        { name: "New Entrant Rate", formula: "New competitor ads per week", target: "<5/week", status: "important", why: "Crowding velocity — if faster than demand growth, exit" },
+      ]
+    },
+    {
+      name: "Virality",
+      icon: "🚀",
+      color: "var(--rose)",
+      score: 0,
+      description: "Organic amplification that reduces CAC",
+      kpis: [
+        { name: "STEPPS Score", formula: "6 dimensions × 5 points = max 30", target: "≥22/30", status: "critical", why: "High STEPPS = organic sharing = lower CAC = longer lifecycle" },
+        { name: "Social Currency", formula: "Does owning it make people look good?", target: "≥4/5", status: "important", why: "Products that signal status/identity get shared free" },
+        { name: "UGC Rate", formula: "Organic posts about product ÷ orders", target: ">5%", status: "useful", why: "Free content = compound returns on ad spend" },
+        { name: "Share-to-View Ratio", formula: "Shares ÷ Views on product content", target: ">2%", status: "important", why: "High ratio = emotional resonance = viral potential" },
+        { name: "Trigger Frequency", formula: "How often daily cue reminds of product", target: "Daily or weekly", status: "useful", why: "Environmental triggers sustain demand without ad spend" },
+      ]
+    }
+  ],
+  phases: [
+    {
+      name: "Discovery",
+      icon: "🔍",
+      color: "var(--violet)",
+      kpis: ["Arbitrage Gap", "Cross-Platform Confirmation", "Google Trends Slope", "STEPPS Score", "Competitor Density"]
+    },
+    {
+      name: "Validation ($0-500 test)",
+      icon: "🧪",
+      color: "var(--cyan)",
+      kpis: ["ROAS", "CAC", "Return Rate", "Add-to-Cart Rate", "Contribution Margin"]
+    },
+    {
+      name: "Scaling",
+      icon: "📈",
+      color: "var(--mint)",
+      kpis: ["Contribution Margin", "LTV:CAC Ratio", "CAC Trend", "UGC Rate", "Gold Rush Phase"]
+    },
+    {
+      name: "Exit Decision",
+      icon: "🚪",
+      color: "var(--rose)",
+      kpis: ["CAC Trend", "Contribution Margin Erosion", "New Entrant Rate", "Arbitrage Gap", "Days in Phase"]
+    }
+  ]
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   LOAD DATA
+   ═══════════════════════════════════════════════════════════════ */
+async function loadData() {
+  try {
+    const resp = await fetch('/api/dropship/summary');
+    if (resp.ok) {
+      const d = await resp.json();
+      DATA.products = d.products || [];
+      DATA.summary = d;
+    } else throw new Error('API fail');
+  } catch {
+    try {
+      const resp2 = await fetch('/api/dropship/products');
+      if (resp2.ok) {
+        const d2 = await resp2.json();
+        DATA.products = d2.products || d2 || [];
+      }
+    } catch {
+      // Use embedded data if available
+      if (window.__DROPSHIP_DATA__) DATA = window.__DROPSHIP_DATA__;
+    }
+  }
+  computeScores();
+  renderAll();
+}
+
+function computeScores() {
+  const P = DATA.products;
+  if (!P.length) return;
+
+  // Pillar scores from available data
+  const fw = KPI_FRAMEWORK.pillars;
+  // Discovery: average camillo_score / 100
+  fw[0].score = Math.round(P.reduce((s,p) => s + (p.camillo_score||0), 0) / P.length);
+  // Economics: check if financials filled
+  const hasFinancials = P.filter(p => p.retail_price > 0).length;
+  fw[1].score = hasFinancials ? Math.round(hasFinancials / P.length * 100) : 0;
+  // Lifecycle: phase distribution
+  const phases = P.map(p => p.gold_rush_phase);
+  const inGrowth = phases.filter(p => p === 'growth').length;
+  fw[2].score = Math.round(inGrowth / P.length * 100);
+  // Virality: STEPPS average
+  fw[3].score = Math.round(P.reduce((s,p) => s + (p.stepps_composite||0), 0) / P.length * 100);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER
+   ═══════════════════════════════════════════════════════════════ */
+function renderAll() {
+  renderHeader();
+  renderPillars();
+  renderKpiReference();
+  renderProducts();
+  renderGoldRush();
+  renderStepps();
+  renderAtomHeatmap();
+  renderEcoInputs();
+}
+
+function renderHeader() {
+  const P = DATA.products;
+  const el = document.getElementById('headerStats');
+  el.innerHTML = `
+    <div class="stat-box"><div class="stat-val" style="color:var(--violet)">${P.length}</div><div class="stat-label">Products</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--mint)">${P.filter(p=>p.gold_rush_phase==='growth').length}</div><div class="stat-label">In Growth</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--gold)">${P.filter(p=>p.camillo_grade==='A'||p.camillo_grade==='S').length}</div><div class="stat-label">Grade A+</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--rose)">${P.filter(p=>p.retail_price>0).length}/${P.length}</div><div class="stat-label">Financials Set</div></div>
+  `;
+}
+
+function renderPillars() {
+  const el = document.getElementById('pillarCards');
+  el.innerHTML = KPI_FRAMEWORK.pillars.map(p => `
+    <div class="kpi-tile">
+      <div style="font-size:28px;margin-bottom:6px;">${p.icon}</div>
+      <div class="kpi-val" style="color:${p.color}">${p.score}%</div>
+      <div class="kpi-label">${p.name}</div>
+      <div class="kpi-sub">${p.description}</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${p.score}%;background:${p.color}"></div></div>
+    </div>
+  `).join('');
+}
+
+function statusBadge(s) {
+  if (s === 'critical') return '<span class="badge badge-rose">Critical</span>';
+  if (s === 'important') return '<span class="badge badge-gold">Important</span>';
+  return '<span class="badge badge-dim">Useful</span>';
+}
+
+function renderKpiReference() {
+  const el = document.getElementById('kpiReference');
+
+  // Phase-based view
+  let html = '<div class="grid-2" style="margin-bottom:20px;">';
+  KPI_FRAMEWORK.phases.forEach(phase => {
+    html += `<div class="card">
+      <div class="card-title">${phase.icon} ${phase.name}</div>
+      ${phase.kpis.map(kpiName => {
+        // Find KPI details
+        let kpi = null;
+        for (const pillar of KPI_FRAMEWORK.pillars) {
+          kpi = pillar.kpis.find(k => k.name === kpiName);
+          if (kpi) break;
+        }
+        if (!kpi) return `<div style="padding:4px 0;font-size:12px;color:var(--text-dim)">${kpiName}</div>`;
+        return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:600;font-size:12px;">${kpi.name}</span>
+            ${statusBadge(kpi.status)}
+          </div>
+          <div style="font-size:11px;color:var(--cyan);font-family:monospace;margin:4px 0;">${kpi.formula}</div>
+          <div style="font-size:11px;color:var(--text-dim);">Target: <span style="color:var(--mint)">${kpi.target}</span></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${kpi.why}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+  html += '</div>';
+
+  // Full pillar reference
+  html += '<div class="card-title" style="margin:16px 0 8px;">All KPIs by Pillar</div>';
+  html += '<div class="grid-2">';
+  KPI_FRAMEWORK.pillars.forEach(pillar => {
+    html += `<div class="card">
+      <div class="card-title" style="color:${pillar.color}">${pillar.icon} ${pillar.name} — ${pillar.description}</div>
+      ${pillar.kpis.map(k => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:600;font-size:12px;">${k.name}</span>
+            ${statusBadge(k.status)}
+          </div>
+          <div style="font-size:11px;color:var(--cyan);font-family:monospace;margin:4px 0;">${k.formula}</div>
+          <div style="display:flex;gap:16px;font-size:11px;">
+            <span style="color:var(--text-dim)">Target: <span style="color:var(--mint)">${k.target}</span></span>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${k.why}</div>
+        </div>
+      `).join('')}
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUCT TABLE
+   ═══════════════════════════════════════════════════════════════ */
+function phaseBadge(phase) {
+  const m = { discovery: 'badge-violet', growth: 'badge-green', peak: 'badge-gold', decline: 'badge-rose' };
+  return `<span class="badge ${m[phase]||'badge-dim'}">${phase}</span>`;
+}
+
+function gradeBadge(g) {
+  const m = { S: 'badge-violet', A: 'badge-green', B: 'badge-cyan', C: 'badge-gold', D: 'badge-rose' };
+  return `<span class="badge ${m[g]||'badge-dim'}">${g}</span>`;
+}
+
+function steppsBadge(val) {
+  const s30 = Math.round(val * 30);
+  if (s30 >= 22) return `<span class="badge badge-green">${s30}/30</span>`;
+  if (s30 >= 14) return `<span class="badge badge-gold">${s30}/30</span>`;
+  return `<span class="badge badge-rose">${s30}/30</span>`;
+}
+
+function moatBadge(m) {
+  if (m === 'none') return '<span class="badge badge-green">None ✓</span>';
+  if (m === 'weak') return '<span class="badge badge-gold">Weak</span>';
+  return '<span class="badge badge-rose">Strong</span>';
+}
+
+function renderProducts() {
+  const tbody = document.getElementById('productBody');
+  const P = DATA.products.sort((a,b) => (b.camillo_score||0) - (a.camillo_score||0));
+  tbody.innerHTML = P.map((p, i) => {
+    const margin = p.retail_price > 0 ? Math.round(p.margin_pct) + '%' : '<span style="color:var(--rose)">—</span>';
+    const hasSignal = p.signal_description ? '✓' : '—';
+    const verdict = getVerdict(p);
+    return `<tr onclick="showProductDetail(${i})" style="cursor:pointer">
+      <td style="font-weight:600">${p.product_name}</td>
+      <td><span class="badge badge-dim">${p.category}</span></td>
+      <td>${phaseBadge(p.gold_rush_phase)}</td>
+      <td>${gradeBadge(p.camillo_grade)} <span style="color:var(--text-dim)">${p.camillo_score}</span></td>
+      <td>${steppsBadge(p.stepps_composite)}</td>
+      <td>${moatBadge(p.moat_strength)}</td>
+      <td>${margin}</td>
+      <td style="color:${hasSignal==='✓'?'var(--mint)':'var(--text-muted)'}">${hasSignal}</td>
+      <td>${verdict}</td>
+    </tr>`;
+  }).join('');
+}
+
+function getVerdict(p) {
+  const score = p.camillo_score || 0;
+  const stepps30 = Math.round((p.stepps_composite||0) * 30);
+  const phase = p.gold_rush_phase;
+  const moat = p.moat_strength;
+
+  if (score >= 70 && stepps30 >= 20 && phase === 'growth' && moat !== 'strong')
+    return '<span class="badge badge-green">TEST NOW</span>';
+  if (score >= 60 && phase !== 'decline')
+    return '<span class="badge badge-gold">WATCHLIST</span>';
+  if (phase === 'peak' || phase === 'decline')
+    return '<span class="badge badge-rose">LATE / PASS</span>';
+  return '<span class="badge badge-dim">MONITOR</span>';
+}
+
+function showProductDetail(idx) {
+  const p = DATA.products.sort((a,b) => (b.camillo_score||0) - (a.camillo_score||0))[idx];
+  document.getElementById('productDetail').style.display = '';
+  document.getElementById('detailTitle').textContent = p.product_name;
+
+  const atoms = [
+    { name: 'Organic', val: p.c1_organic, key: 'c1' },
+    { name: 'Velocity', val: p.c2_velocity, key: 'c2' },
+    { name: 'Cross-Platform', val: p.c3_crossplatform, key: 'c3' },
+    { name: 'Pre-Mainstream', val: p.c4_premainstream, key: 'c4' },
+    { name: 'Price-to-Trend', val: p.c5_pricetotrend, key: 'c5' },
+    { name: 'Category', val: p.c6_category, key: 'c6' },
+    { name: 'Demographic', val: p.c7_demographic, key: 'c7' },
+    { name: 'Timing', val: p.c8_timing, key: 'c8' },
+  ];
+
+  const stepps = [
+    { name: 'Social Currency', val: p.stepps_social_currency },
+    { name: 'Triggers', val: p.stepps_triggers },
+    { name: 'Emotion', val: p.stepps_emotion },
+    { name: 'Public', val: p.stepps_public },
+    { name: 'Practical Value', val: p.stepps_practical_value },
+    { name: 'Stories', val: p.stepps_stories },
+  ];
+
+  const el = document.getElementById('detailContent');
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Camillo 8 Atoms</div>
+      ${atoms.map(a => `
+        <div class="gauge-row">
+          <div class="gauge-label">${a.name}</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:${a.val}%;background:${atomColor(a.val)}"></div></div>
+          <div class="gauge-val" style="color:${atomColor(a.val)}">${Math.round(a.val)}</div>
+        </div>
+      `).join('')}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text-dim)">Composite Score</span>
+          <span style="font-size:18px;font-weight:700;color:${atomColor(p.camillo_score)}">${p.camillo_score} ${gradeBadge(p.camillo_grade)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">STEPPS Virality</div>
+      ${stepps.map(s => `
+        <div class="gauge-row">
+          <div class="gauge-label">${s.name}</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:${(s.val||0)*100}%;background:var(--rose)"></div></div>
+          <div class="gauge-val" style="color:var(--rose)">${((s.val||0)*5).toFixed(1)}/5</div>
+        </div>
+      `).join('')}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--text-dim)">STEPPS Total</span>
+          <span style="font-size:18px;font-weight:700;">${steppsBadge(p.stepps_composite)}</span>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-top:16px;">Financials</div>
+      ${p.retail_price > 0 ? `
+        <div class="gauge-row"><div class="gauge-label">Supplier Cost</div><div class="gauge-val">$${p.supplier_cost}</div></div>
+        <div class="gauge-row"><div class="gauge-label">Retail Price</div><div class="gauge-val">$${p.retail_price}</div></div>
+        <div class="gauge-row"><div class="gauge-label">Margin</div><div class="gauge-val" style="color:var(--mint)">${p.margin_pct}%</div></div>
+        <div class="gauge-row"><div class="gauge-label">Markup</div><div class="gauge-val">${(p.retail_price/p.supplier_cost).toFixed(1)}×</div></div>
+      ` : `<div class="alert-box warn"><div class="alert-title">⚠ No financials set</div>Add supplier cost and retail price to calculate unit economics.</div>`}
+
+      <div class="card-title" style="margin-top:16px;">Signal</div>
+      <div style="font-size:12px;color:var(--text-dim)">${p.signal_description || 'No signal captured yet.'}</div>
+    </div>
+  `;
+}
+
+function atomColor(val) {
+  if (val >= 80) return 'var(--mint)';
+  if (val >= 60) return 'var(--cyan)';
+  if (val >= 40) return 'var(--gold)';
+  return 'var(--rose)';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GOLD RUSH LIFECYCLE SVG
+   ═══════════════════════════════════════════════════════════════ */
+function renderGoldRush() {
+  const svg = document.getElementById('goldRushSvg');
+  const P = DATA.products;
+  const cx = 350, cy = 160;
+  const rings = [
+    { r: 130, phase: 'discovery', label: 'DISCOVERY', color: 'var(--violet)' },
+    { r: 90, phase: 'growth', label: 'GROWTH', color: 'var(--mint)' },
+    { r: 50, phase: 'peak', label: 'PEAK', color: 'var(--gold)' },
+  ];
+
+  let html = '';
+  // Draw rings
+  rings.forEach(ring => {
+    html += `<circle cx="${cx}" cy="${cy}" r="${ring.r}" fill="none" stroke="${ring.color}" stroke-opacity="0.2" stroke-width="1.5"/>`;
+    html += `<text x="${cx}" y="${cy - ring.r + 14}" text-anchor="middle" fill="${ring.color}" font-size="9" font-weight="600" opacity="0.5">${ring.label}</text>`;
+  });
+
+  // Place products
+  const phaseProducts = { discovery: [], growth: [], peak: [], decline: [] };
+  P.forEach(p => {
+    const ph = p.gold_rush_phase || 'discovery';
+    if (phaseProducts[ph]) phaseProducts[ph].push(p);
+  });
+
+  Object.entries(phaseProducts).forEach(([phase, products]) => {
+    const ring = rings.find(r => r.phase === phase);
+    const r = ring ? ring.r : 140;
+    const color = ring ? ring.color : 'var(--rose)';
+    products.forEach((p, i) => {
+      const angle = (Math.PI * 2 * i / products.length) - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      const radius = 6 + (p.camillo_score || 0) / 20;
+      html += `<circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" fill-opacity="0.7" stroke="${color}" stroke-width="1">
+        <title>${p.product_name} — ${p.camillo_grade} (${p.camillo_score})</title>
+      </circle>`;
+      html += `<text x="${x}" y="${y + radius + 12}" text-anchor="middle" fill="var(--text-dim)" font-size="8">${p.product_name.split(' ').slice(0,2).join(' ')}</text>`;
+    });
+  });
+
+  // Decline ring outside
+  if (phaseProducts.decline && phaseProducts.decline.length) {
+    html += `<text x="${cx}" y="${cy - 145}" text-anchor="middle" fill="var(--rose)" font-size="9" font-weight="600" opacity="0.5">DECLINE</text>`;
+    phaseProducts.decline.forEach((p, i) => {
+      const angle = (Math.PI * 2 * i / phaseProducts.decline.length) - Math.PI / 2;
+      const x = cx + 150 * Math.cos(angle);
+      const y = cy + 150 * Math.sin(angle);
+      html += `<circle cx="${x}" cy="${y}" r="6" fill="var(--rose)" fill-opacity="0.5" stroke="var(--rose)" stroke-width="1">
+        <title>${p.product_name} — DECLINE</title>
+      </circle>`;
+      html += `<text x="${x}" y="${y + 16}" text-anchor="middle" fill="var(--text-muted)" font-size="8">${p.product_name.split(' ').slice(0,2).join(' ')}</text>`;
+    });
+  }
+
+  svg.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEPPS CHART
+   ═══════════════════════════════════════════════════════════════ */
+function renderStepps() {
+  const el = document.getElementById('steppsChart');
+  const P = DATA.products;
+  if (!P.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:20px;">No products loaded</div>'; return; }
+
+  const dims = ['Social Currency', 'Triggers', 'Emotion', 'Public', 'Practical Value', 'Stories'];
+  const keys = ['stepps_social_currency', 'stepps_triggers', 'stepps_emotion', 'stepps_public', 'stepps_practical_value', 'stepps_stories'];
+
+  let html = '<div class="card-title">STEPPS by Product</div>';
+  P.sort((a,b) => (b.stepps_composite||0) - (a.stepps_composite||0)).forEach(p => {
+    html += `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:600;">${p.product_name}</span>
+        ${steppsBadge(p.stepps_composite)}
+      </div>
+      <div style="display:flex;gap:2px;height:20px;">
+        ${keys.map((k,i) => {
+          const val = (p[k]||0);
+          const w = val * 100;
+          const colors = ['var(--violet)', 'var(--cyan)', 'var(--rose)', 'var(--gold)', 'var(--mint)', 'var(--lavender)'];
+          return `<div style="flex:1;background:${colors[i]};opacity:${0.3+val*0.7};border-radius:2px;" title="${dims[i]}: ${(val*5).toFixed(1)}/5"></div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  // Legend
+  html += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:8px;border-top:1px solid var(--border)">';
+  const colors = ['var(--violet)', 'var(--cyan)', 'var(--rose)', 'var(--gold)', 'var(--mint)', 'var(--lavender)'];
+  dims.forEach((d,i) => {
+    html += `<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim)"><div style="width:8px;height:8px;border-radius:2px;background:${colors[i]}"></div>${d}</div>`;
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ATOM HEATMAP
+   ═══════════════════════════════════════════════════════════════ */
+function renderAtomHeatmap() {
+  const el = document.getElementById('atomHeatmap');
+  const P = DATA.products.sort((a,b) => (b.camillo_score||0) - (a.camillo_score||0));
+  if (!P.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:20px;">No products loaded</div>'; return; }
+
+  const atoms = ['C1 Organic', 'C2 Velocity', 'C3 Cross-Plat', 'C4 Pre-Main', 'C5 Price', 'C6 Category', 'C7 Demo', 'C8 Timing'];
+  const keys = ['c1_organic', 'c2_velocity', 'c3_crossplatform', 'c4_premainstream', 'c5_pricetotrend', 'c6_category', 'c7_demographic', 'c8_timing'];
+
+  let html = '<div class="card-title">8-Atom Heatmap</div>';
+  html += '<table><thead><tr><th>Product</th>';
+  atoms.forEach(a => { html += `<th style="text-align:center;font-size:9px;">${a}</th>`; });
+  html += '<th style="text-align:center">Score</th></tr></thead><tbody>';
+
+  P.forEach(p => {
+    html += `<tr><td style="font-weight:600;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.product_name}</td>`;
+    keys.forEach(k => {
+      const v = p[k] || 0;
+      html += `<td style="text-align:center"><div style="display:inline-block;width:28px;height:22px;border-radius:3px;background:${heatColor(v)};line-height:22px;font-size:10px;font-weight:600;color:#000">${Math.round(v)}</div></td>`;
+    });
+    html += `<td style="text-align:center;font-weight:700;color:${atomColor(p.camillo_score)}">${p.camillo_score} ${gradeBadge(p.camillo_grade)}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function heatColor(v) {
+  if (v >= 80) return '#00e676';
+  if (v >= 60) return '#69f0ae';
+  if (v >= 40) return '#ffd740';
+  if (v >= 20) return '#ffab40';
+  return '#ff5252';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UNIT ECONOMICS SIMULATOR
+   ═══════════════════════════════════════════════════════════════ */
+function renderEcoInputs() {
+  const el = document.getElementById('ecoInputs');
+  const inputs = [
+    { id: 'sim_cost', label: 'Supplier Cost ($)', val: 8, min: 1, max: 200, step: 0.5 },
+    { id: 'sim_ship', label: 'Shipping Cost ($)', val: 3, min: 0, max: 50, step: 0.5 },
+    { id: 'sim_price', label: 'Retail Price ($)', val: 35, min: 5, max: 500, step: 1 },
+    { id: 'sim_adbudget', label: 'Daily Ad Budget ($)', val: 30, min: 5, max: 500, step: 5 },
+    { id: 'sim_cpm', label: 'Est. CPM ($)', val: 12, min: 3, max: 50, step: 1 },
+    { id: 'sim_ctr', label: 'Est. CTR (%)', val: 2.5, min: 0.5, max: 10, step: 0.1 },
+    { id: 'sim_cvr', label: 'Est. CVR (%)', val: 2, min: 0.5, max: 10, step: 0.1 },
+    { id: 'sim_return', label: 'Return Rate (%)', val: 10, min: 0, max: 40, step: 1 },
+  ];
+
+  el.innerHTML = inputs.map(inp => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <label style="width:140px;font-size:11px;color:var(--text-dim)">${inp.label}</label>
+      <input type="range" id="${inp.id}" min="${inp.min}" max="${inp.max}" step="${inp.step}" value="${inp.val}"
+        oninput="document.getElementById('${inp.id}_v').textContent=this.value"
+        style="flex:1;accent-color:var(--violet)">
+      <span id="${inp.id}_v" style="width:40px;text-align:right;font-weight:600;font-size:12px">${inp.val}</span>
+    </div>
+  `).join('');
+}
+
+function runSimulation() {
+  const g = id => parseFloat(document.getElementById(id).value);
+  const cost = g('sim_cost'), ship = g('sim_ship'), price = g('sim_price');
+  const adBudget = g('sim_adbudget'), cpm = g('sim_cpm');
+  const ctr = g('sim_ctr') / 100, cvr = g('sim_cvr') / 100;
+  const returnRate = g('sim_return') / 100;
+  const processingFee = price * 0.029 + 0.30;
+
+  function scenario(cpmMult, cvrMult, returnMult, label) {
+    const sCpm = cpm * cpmMult;
+    const sCvr = cvr * cvrMult;
+    const sReturn = returnRate * returnMult;
+    const cac = (sCpm / 1000) / ctr / sCvr;
+    const grossPerUnit = price - cost - ship - processingFee - (price * sReturn);
+    const cmPerUnit = grossPerUnit - cac;
+    const dailyOrders = adBudget / cac;
+    const dailyProfit = dailyOrders * cmPerUnit;
+    const monthlyProfit = dailyProfit * 30;
+    const roas = price * dailyOrders / adBudget;
+    const markup = price / cost;
+    const grossMarginPct = (grossPerUnit / price * 100);
+    const cmPct = (cmPerUnit / price * 100);
+    return { label, cac, grossPerUnit, cmPerUnit, dailyOrders, dailyProfit, monthlyProfit, roas, markup, grossMarginPct, cmPct, sCpm, sCvr: sCvr*100, sReturn: sReturn*100 };
+  }
+
+  const bear = scenario(1.5, 0.5, 1.5, 'Bear (20th %ile)');
+  const base = scenario(1.0, 1.0, 1.0, 'Base (50th %ile)');
+  const bull = scenario(0.7, 1.5, 0.3, 'Bull (80th %ile)');
+
+  // Verdict
+  let verdict, verdictClass;
+  if (bull.roas > 5 && base.cmPct > 15 && bear.monthlyProfit < -500) {
+    verdict = "High risk / high reward. Micro-test only ($100-500).";
+    verdictClass = "warn";
+  } else if (bull.roas > 3 && bear.monthlyProfit > -300) {
+    verdict = "Proceed. Strong asymmetry — favorable risk/reward.";
+    verdictClass = "info";
+  } else if (bear.monthlyProfit < -500 && bull.roas < 3) {
+    verdict = "Pass. Unfavorable risk/reward.";
+    verdictClass = "";
+  } else {
+    verdict = "Marginal. Optimize creative/targeting before scaling.";
+    verdictClass = "warn";
+  }
+
+  const el = document.getElementById('ecoResults');
+  el.innerHTML = `
+    <div class="alert-box ${verdictClass}" style="margin-bottom:12px;">
+      <div class="alert-title">Verdict</div>
+      ${verdict}
+    </div>
+    <table>
+      <thead><tr><th></th><th style="color:var(--rose)">Bear</th><th style="color:var(--gold)">Base</th><th style="color:var(--mint)">Bull</th></tr></thead>
+      <tbody>
+        ${scenarioRow('CPM', '$'+bear.sCpm.toFixed(0), '$'+base.sCpm.toFixed(0), '$'+bull.sCpm.toFixed(0))}
+        ${scenarioRow('CVR', bear.sCvr.toFixed(1)+'%', base.sCvr.toFixed(1)+'%', bull.sCvr.toFixed(1)+'%')}
+        ${scenarioRow('Return Rate', bear.sReturn.toFixed(0)+'%', base.sReturn.toFixed(0)+'%', bull.sReturn.toFixed(0)+'%')}
+        ${scenarioRow('CAC', '$'+bear.cac.toFixed(2), '$'+base.cac.toFixed(2), '$'+bull.cac.toFixed(2))}
+        ${scenarioRow('Gross/Unit', '$'+bear.grossPerUnit.toFixed(2), '$'+base.grossPerUnit.toFixed(2), '$'+bull.grossPerUnit.toFixed(2))}
+        ${scenarioRow('CM/Unit', fmtCM(bear.cmPerUnit), fmtCM(base.cmPerUnit), fmtCM(bull.cmPerUnit))}
+        ${scenarioRow('CM %', fmtPct(bear.cmPct), fmtPct(base.cmPct), fmtPct(bull.cmPct))}
+        ${scenarioRow('ROAS', bear.roas.toFixed(1)+'×', base.roas.toFixed(1)+'×', bull.roas.toFixed(1)+'×')}
+        ${scenarioRow('Orders/Day', bear.dailyOrders.toFixed(1), base.dailyOrders.toFixed(1), bull.dailyOrders.toFixed(1))}
+        ${scenarioRow('Daily P&L', fmtCM(bear.dailyProfit), fmtCM(base.dailyProfit), fmtCM(bull.dailyProfit))}
+        ${scenarioRow('Monthly P&L', fmtCM(bear.monthlyProfit), fmtCM(base.monthlyProfit), fmtCM(bull.monthlyProfit))}
+      </tbody>
+    </table>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-muted)">
+      Markup: ${(price/cost).toFixed(1)}× · Gross Margin: ${((price-cost-ship-processingFee)/price*100).toFixed(0)}%
+    </div>
+  `;
+}
+
+function scenarioRow(label, bear, base, bull) {
+  return `<tr><td style="color:var(--text-dim);font-size:11px">${label}</td><td>${bear}</td><td>${base}</td><td>${bull}</td></tr>`;
+}
+function fmtCM(v) { return `<span style="color:${v>=0?'var(--mint)':'var(--rose)'}">$${v.toFixed(2)}</span>`; }
+function fmtPct(v) { return `<span style="color:${v>=0?'var(--mint)':'var(--rose)'}">${v.toFixed(1)}%</span>`; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB SWITCHING
+   ═══════════════════════════════════════════════════════════════ */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('hidden', c.id !== 'tab-' + name));
+  currentTab = name;
+}
+
+/* INIT */
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Payment KPI Mapping (First Principles)</title>
+<style>
+:root {
+  --bg: #0a0a0f; --surface: #111118; --card: #18181f; --elevated: #1e1e28;
+  --border: #2a2a35; --hover: #2a2a3a;
+  --violet: #7b6cf6; --cyan: #4fc3f7; --mint: #69f0ae;
+  --gold: #ffd740; --rose: #ff6e8a; --lavender: #b388ff;
+  --text: #e8e8f0; --muted: #9898b0; --dim: #5c5c70;
+  --green: #4caf50; --red: #ef5350;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,system-ui,sans-serif; line-height:1.7; }
+.container { max-width:1300px; margin:0 auto; padding:40px 24px; }
+h1 { font-size:30px; font-weight:700; background:linear-gradient(135deg,var(--violet),var(--cyan),var(--mint)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:4px; }
+.sub { color:var(--muted); font-size:13px; margin-bottom:40px; }
+h2 { font-size:20px; font-weight:700; color:var(--cyan); margin:44px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+h3 { font-size:16px; font-weight:600; color:var(--lavender); margin:24px 0 10px; }
+h4 { font-size:13px; font-weight:600; color:var(--gold); margin:16px 0 8px; text-transform:uppercase; letter-spacing:.5px; }
+p { font-size:14px; margin-bottom:14px; }
+
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+.card:hover { border-color:rgba(123,108,246,.3); }
+.card-h { font-size:14px; font-weight:600; margin-bottom:6px; }
+
+table { width:100%; border-collapse:collapse; margin:16px 0; font-size:12px; }
+th { text-align:left; padding:10px 12px; background:var(--surface); color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); position:sticky; top:0; }
+td { padding:10px 12px; border-bottom:1px solid rgba(42,42,53,.4); vertical-align:top; }
+tr:hover td { background:rgba(123,108,246,.03); }
+
+.pill { display:inline-block; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:600; }
+.pill-cards { background:rgba(123,108,246,.12); color:var(--violet); border:1px solid rgba(123,108,246,.25); }
+.pill-wallets { background:rgba(79,195,247,.12); color:var(--cyan); border:1px solid rgba(79,195,247,.25); }
+.pill-infra { background:rgba(255,110,138,.12); color:var(--rose); border:1px solid rgba(255,110,138,.25); }
+.pill-crypto { background:rgba(255,215,64,.12); color:var(--gold); border:1px solid rgba(255,215,64,.25); }
+.pill-all { background:rgba(105,240,174,.12); color:var(--mint); border:1px solid rgba(105,240,174,.25); }
+
+.est { display:inline-block; padding:1px 8px; border-radius:8px; font-size:10px; font-weight:600; }
+.est-direct { background:rgba(105,240,174,.15); color:var(--mint); }
+.est-proxy { background:rgba(255,215,64,.15); color:var(--gold); }
+.est-none { background:rgba(255,110,138,.1); color:var(--rose); }
+
+.mono { font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; color:var(--mint); background:rgba(105,240,174,.06); padding:1px 6px; border-radius:3px; }
+
+.highlight { background:linear-gradient(135deg,rgba(123,108,246,.08),rgba(79,195,247,.06)); border:1px solid rgba(123,108,246,.2); border-radius:12px; padding:18px; margin:20px 0; }
+.hl-title { font-size:12px; font-weight:700; color:var(--violet); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+.grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; }
+@media(max-width:900px) { .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; } }
+
+.divider { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:40px 0; }
+
+.kpi-box { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.kpi-box:hover { border-color:rgba(79,195,247,.3); }
+.kpi-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.kpi-def { font-size:11px; color:var(--muted); margin-bottom:6px; }
+.kpi-why { font-size:11px; color:var(--dim); }
+.kpi-conn { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; }
+
+.tree { padding-left:20px; }
+.tree li { padding:3px 0; position:relative; list-style:none; font-size:13px; }
+.tree li::before { content:'├'; position:absolute; left:-16px; color:var(--dim); font-family:monospace; }
+.tree li:last-child::before { content:'└'; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Payment KPI Mapping — First Principles</h1>
+<p class="sub">What a payment company actually does → What proves it's working → What LATTICE can measure → How it enters the knowledge graph</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>The First Principle: What Is a Payment Company?</h2>
+<!-- ═══════════════════════════════════════════════ -->
+
+<p>Strip away every brand, every product name, every earnings call buzzword. A payment company does exactly one thing: <strong>it moves money from point A to point B and takes a cut</strong>. Every KPI that matters is a derivative of three variables:</p>
+
+<div class="grid-3">
+  <div class="card" style="border-left:3px solid var(--mint);">
+    <div class="card-h" style="color:var(--mint)">Volume</div>
+    <p style="font-size:12px; color:var(--muted)">How much money flows through the pipe? Measured as TPV (Total Payment Volume), GMV, or processing volume. This is the raw throughput.</p>
+  </div>
+  <div class="card" style="border-left:3px solid var(--gold);">
+    <div class="card-h" style="color:var(--gold)">Take Rate</div>
+    <p style="font-size:12px; color:var(--muted)">What percentage does the company keep? Interchange fees, processing fees, subscription fees. Revenue = Volume × Take Rate. This is the margin multiplier.</p>
+  </div>
+  <div class="card" style="border-left:3px solid var(--cyan);">
+    <div class="card-h" style="color:var(--cyan)">Network Size</div>
+    <p style="font-size:12px; color:var(--muted)">How many endpoints (merchants + consumers) are connected? More endpoints = more volume = network effects. This is the moat.</p>
+  </div>
+</div>
+
+<p>Every other KPI is a leading indicator, quality indicator, or decomposition of these three. Cross-border volume? That's a high-take-rate subset of Volume. Active accounts? That's a proxy for Network Size. Chargeback rate? That's a quality tax on Take Rate.</p>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>KPI Taxonomy by Subsector</h2>
+<!-- ═══════════════════════════════════════════════ -->
+
+<!-- ──── CARD NETWORKS ──── -->
+<h3><span class="pill pill-cards">Card Networks</span> V · MA · AXP · DFS</h3>
+<p>Card networks are <em>toll bridges</em>. They don't hold customer money or take credit risk. They charge a fee every time a transaction crosses their bridge. Their KPIs reflect bridge traffic and toll rates.</p>
+
+<table>
+<thead>
+<tr><th>KPI</th><th>What It Measures</th><th>Why It's Alpha</th><th>Reported</th><th>Alt-Data Estimable?</th><th>LATTICE Connector</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Payment Volume</strong></td>
+  <td>Total $ value of transactions on network</td>
+  <td>Direct revenue driver. V processed ~$15T annually. 1% volume growth = ~$150B more flow</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> (card payment searches) + <span class="mono">web_traffic</span> (merchant site visits)</td>
+</tr>
+<tr>
+  <td><strong>Cross-Border Volume</strong></td>
+  <td>International transaction $ value</td>
+  <td>2-3x higher take rate than domestic. MA reported +12% in Q4'25. Leading travel recovery indicator</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("international transfer", airline searches) + <span class="mono">wikipedia</span> (travel destination page views)</td>
+</tr>
+<tr>
+  <td><strong>Processed Transactions</strong></td>
+  <td>Number of discrete transactions</td>
+  <td>Shows transaction frequency (separate from average ticket size). Growth here means more daily usage</td>
+  <td>Quarterly</td>
+  <td><span class="est est-none">Hard</span></td>
+  <td>No direct connector. Would need POS terminal data or retail transaction counts</td>
+</tr>
+<tr>
+  <td><strong>Value-Added Services Rev</strong></td>
+  <td>Revenue from fraud tools, analytics, tokenization, etc.</td>
+  <td>V's VAS grew to $3.2B in Q4'25 (+28-32%). Higher margin than core interchange. Indicates platform stickiness</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("Visa token service", "Mastercard fraud protection") + <span class="mono">youtube_search</span> (developer tutorials)</td>
+</tr>
+<tr>
+  <td><strong>Interchange Rate</strong></td>
+  <td>% fee per transaction (typically 1.5-3%)</td>
+  <td>Regulatory risk signal. Rate caps destroy revenue. AXP facing rate cap threat. V interchange litigation April/Sep '26</td>
+  <td>Regulatory filings</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("interchange fee", "credit card fees") + <span class="mono">chatgpt_discussion</span> (regulatory sentiment)</td>
+</tr>
+<tr>
+  <td><strong>Operating Margin</strong></td>
+  <td>Operating income / revenue</td>
+  <td>Card networks run 60-65% margins. Any compression is a red flag</td>
+  <td>Quarterly</td>
+  <td><span class="est est-none">Hard</span></td>
+  <td><span class="mono">yahoo_finance</span> (historical margin data)</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ──── DIGITAL WALLETS ──── -->
+<h3><span class="pill pill-wallets">Digital Wallets</span> PYPL · SQ · SOFI · NU · AFRM</h3>
+<p>Digital wallets are <em>two-sided marketplaces</em>. They connect consumers to merchants (or peer-to-peer). Their KPIs reflect marketplace health: both sides growing, engaged, and monetizable.</p>
+
+<table>
+<thead>
+<tr><th>KPI</th><th>What It Measures</th><th>Why It's Alpha</th><th>Reported</th><th>Alt-Data Estimable?</th><th>LATTICE Connector</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Total Payment Volume (TPV)</strong></td>
+  <td>Gross $ value processed on platform</td>
+  <td>Revenue = TPV × Take Rate. PYPL $1.8T, Cash App $280B. TPV growth rate is the health pulse</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">web_traffic</span> (paypal.com visits) + <span class="mono">google_trends</span> ("send money PayPal") + <span class="mono">tiktok_views</span> (Cash App virality)</td>
+</tr>
+<tr>
+  <td><strong>Monthly Active Users (MAU)</strong></td>
+  <td>Users transacting per month</td>
+  <td>Network size proxy. Cash App 59M MAUs. SOFI 13.7M members. Growth rate tells you retention + acquisition</td>
+  <td>Quarterly</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">web_traffic</span> (unique visitors) + <span class="mono">google_trends</span> (app name searches) + <span class="mono">tiktok_views</span> (brand mentions) + <span class="mono">google_shopping</span> (product searches)</td>
+</tr>
+<tr>
+  <td><strong>Take Rate</strong></td>
+  <td>Revenue ÷ TPV (% retained)</td>
+  <td>PYPL ~2.1%, SQ ~1.5%, AFRM ~4-6%. Higher = more valuable service or less competition. Declining = price war</td>
+  <td>Quarterly (derived)</td>
+  <td><span class="est est-none">Hard</span></td>
+  <td>No direct connector. Calculate from <span class="mono">yahoo_finance</span> (revenue) ÷ disclosed TPV</td>
+</tr>
+<tr>
+  <td><strong>Transactions Per User</strong></td>
+  <td>Engagement intensity</td>
+  <td>AFRM: 6.4 txns/user (+20% YoY). More transactions = stickier product = higher LTV</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">web_traffic</span> (pages/visit, session duration as engagement proxy)</td>
+</tr>
+<tr>
+  <td><strong>BNPL GMV</strong></td>
+  <td>Total installment purchase $ value</td>
+  <td>AFRM $10.4B GMV (+43%). Card GMV up 115%. BNPL adoption rate in checkout is the key leading indicator</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("buy now pay later", "Affirm checkout") + <span class="mono">google_shopping</span> ("pay in 4" merchant presence)</td>
+</tr>
+<tr>
+  <td><strong>Net New Customers</strong></td>
+  <td>New signups - churned users</td>
+  <td>SOFI added 1M net new in Q4'25. Deceleration = market saturation. Acceleration = product-market fit expanding</td>
+  <td>Quarterly</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">google_trends</span> ("SoFi sign up", "Cash App download") + <span class="mono">tiktok_views</span> (referral codes) + <span class="mono">web_traffic</span> (signup page traffic)</td>
+</tr>
+<tr>
+  <td><strong>Venmo Revenue / Ecosystem Revenue</strong></td>
+  <td>Revenue from sub-products</td>
+  <td>PYPL Venmo $1.7B (+20% YoY). Shows monetization of user base beyond core checkout</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("Venmo", "Venmo pay merchants") + <span class="mono">tiktok_views</span> (Venmo cultural presence)</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ──── PROCESSORS/INFRA ──── -->
+<h3><span class="pill pill-infra">Processors & Infrastructure</span> FISV · FIS · GPN · ADYEN.AS · TOST · FOUR · PAYO · FLYW · MQ · COIN</h3>
+<p>Processors are <em>plumbing companies</em>. They build and maintain the pipes that money flows through. Their KPIs reflect pipe capacity, pipe count, and flow rates.</p>
+
+<table>
+<thead>
+<tr><th>KPI</th><th>What It Measures</th><th>Why It's Alpha</th><th>Reported</th><th>Alt-Data Estimable?</th><th>LATTICE Connector</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Processing Volume (TPV)</strong></td>
+  <td>$ value flowing through infrastructure</td>
+  <td>FOUR $46.9B (+34%), MQ $383B (+31%). Volume growth rate vs. legacy (GPN 5%) reveals market share shifts</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">web_traffic</span> (processor dashboard logins) + <span class="mono">google_trends</span> ("Shift4 payments", "Adyen integration")</td>
+</tr>
+<tr>
+  <td><strong>Active Merchants</strong></td>
+  <td>Number of businesses using the platform</td>
+  <td>FISV 6M merchants, GPN 3.5M, AFRM 478K (+42%). Network size = moat depth</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("Shift4 pricing", "Toast POS") + <span class="mono">youtube_search</span> ("how to set up [processor]" tutorials)</td>
+</tr>
+<tr>
+  <td><strong>Revenue Per Merchant</strong></td>
+  <td>Annual revenue ÷ merchant count</td>
+  <td>Shows upsell success. TOST expanding fintech modules per restaurant. Rising ARPM = cross-sell working</td>
+  <td>Quarterly (derived)</td>
+  <td><span class="est est-none">Hard</span></td>
+  <td>No direct connector. Derived from <span class="mono">yahoo_finance</span> financials</td>
+</tr>
+<tr>
+  <td><strong>Net Revenue Retention</strong></td>
+  <td>% of existing merchant revenue retained + expanded</td>
+  <td>110%+ = merchants spending more over time. Below 100% = churn. ADYEN runs ~125% NRR</td>
+  <td>Quarterly/Annual</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">web_traffic</span> (dashboard traffic growth) + <span class="mono">stocktwits</span> (merchant satisfaction sentiment)</td>
+</tr>
+<tr>
+  <td><strong>Authorization / Approval Rate</strong></td>
+  <td>% of payments successfully authorized</td>
+  <td>ADYEN's intelligent routing optimizes this. Higher rate = fewer lost sales for merchants = competitive advantage. Should be 75%+</td>
+  <td>Real-time (internal)</td>
+  <td><span class="est est-none">Hard</span></td>
+  <td>No alt-data proxy. Internal operational metric</td>
+</tr>
+<tr>
+  <td><strong>Vertical Concentration</strong></td>
+  <td>Revenue mix by industry vertical</td>
+  <td>TOST 100% restaurants, FLYW education+healthcare, FOUR stadiums+hospitality. Vertical focus = defensibility but also risk</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> (vertical-specific searches) + <span class="mono">web_traffic</span> (vertical industry sites linking to processor)</td>
+</tr>
+<tr>
+  <td><strong>Cross-Border Volume</strong></td>
+  <td>International payment $ for PAYO, FLYW, ADYEN</td>
+  <td>PAYO $80.1B (+21%). Cross-border specialists have higher take rates (2-4% vs. domestic 0.5-1.5%)</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("international payments", "cross-border transfer") + <span class="mono">wikipedia</span> (remittance/payment articles)</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ──── CRYPTO ──── -->
+<h3><span class="pill pill-crypto">Crypto Infrastructure</span> BTC · ETH · COIN</h3>
+<p>Crypto is <em>native digital money rails</em>. The KPIs are split: on-chain metrics (protocol health) vs. exchange metrics (platform business). Both feed the payment thesis because crypto rails are becoming payment rails.</p>
+
+<table>
+<thead>
+<tr><th>KPI</th><th>What It Measures</th><th>Why It's Alpha</th><th>Reported</th><th>Alt-Data Estimable?</th><th>LATTICE Connector</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Active Addresses</strong></td>
+  <td>Unique wallets transacting</td>
+  <td>ETH 1.03M active addresses. Network adoption proxy. More addresses = more usage = more fees</td>
+  <td>Real-time (on-chain)</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">coingecko</span> (developer activity) + on-chain data (future connector)</td>
+</tr>
+<tr>
+  <td><strong>Transaction Volume</strong></td>
+  <td>$ value transferred on-chain</td>
+  <td>BTC transaction volume +362.8% in 2026. Shows real economic activity vs. speculative trading</td>
+  <td>Real-time</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">coingecko</span> (volume data)</td>
+</tr>
+<tr>
+  <td><strong>Exchange Trading Volume</strong></td>
+  <td>$ value traded on COIN</td>
+  <td>COIN $425B in Q2'25, $296B in Q3. Revenue directly correlated. 83% institutional = more stable</td>
+  <td>Quarterly</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">coingecko</span> (exchange volumes) + <span class="mono">google_trends</span> ("buy bitcoin", "Coinbase") + <span class="mono">stocktwits</span></td>
+</tr>
+<tr>
+  <td><strong>Assets Under Custody</strong></td>
+  <td>Total crypto held on platform</td>
+  <td>COIN $425B AUM. Custody revenue is recurring and high-margin. AUM growth = trust signal</td>
+  <td>Quarterly</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">coingecko</span> (market cap × exchange share estimates)</td>
+</tr>
+<tr>
+  <td><strong>ETF Inflows/Outflows</strong></td>
+  <td>Net $ flowing into/out of spot BTC/ETH ETFs</td>
+  <td>+$568M March inflows after 4 months of outflows. ETF flows = institutional conviction signal</td>
+  <td>Daily</td>
+  <td><span class="est est-proxy">Proxy</span></td>
+  <td><span class="mono">google_trends</span> ("bitcoin ETF", "IBIT") + <span class="mono">stocktwits</span> (ETF sentiment)</td>
+</tr>
+<tr>
+  <td><strong>Staking Yield</strong></td>
+  <td>APY from validating/staking</td>
+  <td>ETH ~4% APY. Yield compression = more validators (bullish for security, bearish for yield seekers)</td>
+  <td>Real-time</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">coingecko</span> (staking data)</td>
+</tr>
+<tr>
+  <td><strong>Stablecoin Market Cap</strong></td>
+  <td>Total $ value of stablecoins (USDT, USDC, PYUSD, SoFiUSD)</td>
+  <td>Stablecoin growth = crypto being used as payment rail, not speculation. Directly relevant to SOFI, MA, PYPL stablecoin theses</td>
+  <td>Real-time</td>
+  <td><span class="est est-direct">Direct</span></td>
+  <td><span class="mono">coingecko</span> + <span class="mono">google_trends</span> ("stablecoin", "PYUSD", "SoFiUSD")</td>
+</tr>
+</tbody>
+</table>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>The KPI → Connector → Graph Edge Pipeline</h2>
+<!-- ═══════════════════════════════════════════════ -->
+
+<p>Here's the critical mapping: which LATTICE connectors can estimate which KPIs, and what graph relationships do they create?</p>
+
+<table>
+<thead>
+<tr><th>LATTICE Connector</th><th>KPIs It Estimates</th><th>Tickers It Applies To</th><th>Graph Edge Created</th><th>Lead Time vs. Earnings</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><span class="mono">yahoo_finance</span></td>
+  <td>Price, Market Cap, P/E, Volume Ratio, 52w Range, EPS</td>
+  <td>All 19 stocks</td>
+  <td><strong>HAS_METRIC</strong> (ticker → price, mcap)</td>
+  <td>Real-time (price); 0d (already reported)</td>
+</tr>
+<tr>
+  <td><span class="mono">google_trends</span></td>
+  <td>MAU proxy, TPV proxy, Net New Customer proxy, Cross-Border Volume proxy, BNPL adoption, VAS interest</td>
+  <td>All 21</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → search_interest). <strong>CORRELATES_WITH</strong> when multiple tickers spike on same keyword</td>
+  <td><strong>4-8 weeks</strong> (search precedes revenue)</td>
+</tr>
+<tr>
+  <td><span class="mono">web_traffic</span></td>
+  <td>MAU proxy (unique visitors), Engagement (pages/visit, bounce rate), Merchant Interest (signup page traffic)</td>
+  <td>All 19 stocks (domain-based)</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → traffic_trend). <strong>DIVERGES_FROM</strong> (traffic ↔ price)</td>
+  <td><strong>2-4 weeks</strong></td>
+</tr>
+<tr>
+  <td><span class="mono">stocktwits</span></td>
+  <td>Investor Saturation proxy (followers, message volume), Sentiment (bull/bear ratio)</td>
+  <td>All 19 stocks</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → sentiment). <strong>DIVERGES_FROM</strong> (sentiment ↔ price)</td>
+  <td><strong>1-2 weeks</strong> (reactive, not leading)</td>
+</tr>
+<tr>
+  <td><span class="mono">tiktok_views</span></td>
+  <td>MAU proxy (Gen Z adoption), Brand Virality, Net New Customer proxy (referral culture)</td>
+  <td>PYPL, SQ, SOFI, NU, AFRM, COIN</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → viral_momentum). Key for Gen Z wallet adoption trends</td>
+  <td><strong>4-12 weeks</strong> (cultural shifts lead financial adoption)</td>
+</tr>
+<tr>
+  <td><span class="mono">youtube_search</span></td>
+  <td>Developer Interest (API tutorials), Merchant Onboarding (setup guides), Product Awareness</td>
+  <td>All 21</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → content_velocity)</td>
+  <td><strong>2-6 weeks</strong></td>
+</tr>
+<tr>
+  <td><span class="mono">wikipedia</span></td>
+  <td>Mainstream Awareness (page views as attention proxy), Cultural Relevance</td>
+  <td>All 21</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → public_attention). <strong>DIVERGES_FROM</strong> (attention ↔ price)</td>
+  <td><strong>2-4 weeks</strong></td>
+</tr>
+<tr>
+  <td><span class="mono">google_shopping</span></td>
+  <td>BNPL Adoption (Affirm/Klarna presence at checkout), Consumer Spend Intent</td>
+  <td>AFRM, PYPL, SQ</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → commerce_penetration)</td>
+  <td><strong>2-8 weeks</strong> (shopping intent precedes transaction)</td>
+</tr>
+<tr>
+  <td><span class="mono">chatgpt_discussion</span></td>
+  <td>AI-Adjacent Interest, Narrative Momentum, Regulatory Risk Awareness</td>
+  <td>All 21</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → ai_discussion_index). Unique to LATTICE — captures emerging narratives</td>
+  <td><strong>Variable</strong></td>
+</tr>
+<tr>
+  <td><span class="mono">coingecko</span></td>
+  <td>Active Addresses, Transaction Volume, Staking Yield, Exchange Volume, Stablecoin Mcap</td>
+  <td>BTC, ETH, COIN</td>
+  <td><strong>HAS_METRIC</strong> (crypto → on-chain KPIs). <strong>CORRELATES_WITH</strong> (on-chain activity ↔ COIN revenue)</td>
+  <td><strong>Real-time</strong></td>
+</tr>
+<tr>
+  <td><span class="mono">huggingface_nlp</span></td>
+  <td>Sentiment Scoring (earnings call tone), Text Corpus Analysis</td>
+  <td>All 21</td>
+  <td><strong>HAS_SIGNAL</strong> (ticker → nlp_sentiment)</td>
+  <td><strong>0-1 week</strong> (post-hoc analysis)</td>
+</tr>
+</tbody>
+</table>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>Ticker-by-Ticker KPI Matrix</h2>
+<!-- ═══════════════════════════════════════════════ -->
+
+<p>For each of the 21 payment assets, here are the 3-5 KPIs that most directly drive its stock price, and whether LATTICE can estimate them from alternative data.</p>
+
+<h4>Card Networks</h4>
+<div class="grid-2">
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--violet)">V — Visa</div>
+    <div class="kpi-def">$614B mcap · 24.2x fwd P/E</div>
+    <ul class="tree">
+      <li><strong>Payment Volume</strong> (~$15T/yr) — <span class="est est-proxy">Proxy</span> via google_trends + retail data</li>
+      <li><strong>Cross-Border Volume</strong> (+12-13% growth) — <span class="est est-proxy">Proxy</span> via travel searches + wikipedia</li>
+      <li><strong>VAS Revenue</strong> ($3.2B, +28%) — <span class="est est-proxy">Proxy</span> via "Visa token" developer searches</li>
+      <li><strong>Operating Margin</strong> (~65%) — <span class="est est-none">Hard</span> quarterly only</li>
+      <li><strong>Interchange Litigation Risk</strong> — <span class="est est-direct">Direct</span> via google_trends + chatgpt_discussion regulatory sentiment</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--violet)">MA — Mastercard</div>
+    <div class="kpi-def">$462B mcap · 28.5x fwd P/E</div>
+    <ul class="tree">
+      <li><strong>Cross-Border Volume</strong> (+12% Q4'25) — <span class="est est-proxy">Proxy</span> via travel + remittance searches</li>
+      <li><strong>Stablecoin Partnership Traction</strong> (SoFiUSD) — <span class="est est-direct">Direct</span> via google_trends "SoFiUSD" + news</li>
+      <li><strong>Service Revenue Growth</strong> — <span class="est est-proxy">Proxy</span> via merchant signup page traffic</li>
+      <li><strong>Agentic Commerce Positioning</strong> — <span class="est est-direct">Direct</span> via chatgpt_discussion + youtube_search (AI commerce)</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--violet)">AXP — American Express</div>
+    <div class="kpi-def">$208B mcap · 17.2x fwd P/E</div>
+    <ul class="tree">
+      <li><strong>Consumer Spend</strong> (billings growth) — <span class="est est-proxy">Proxy</span> via google_shopping + retail data</li>
+      <li><strong>Premium Member Growth</strong> — <span class="est est-proxy">Proxy</span> via google_trends "Amex Platinum" + tiktok_views</li>
+      <li><strong>Regulatory Risk</strong> (rate cap) — <span class="est est-direct">Direct</span> via google_trends + chatgpt_discussion</li>
+      <li><strong>Consumer Sentiment</strong> — <span class="est est-direct">Direct</span> via stocktwits + social sentiment</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--violet)">DFS — Discover (Cap One)</div>
+    <div class="kpi-def">$50B mcap · 10.7x P/E · Acquired</div>
+    <ul class="tree">
+      <li><strong>Integration Progress</strong> (synergy realization) — <span class="est est-proxy">Proxy</span> via google_trends + news</li>
+      <li><strong>Network Volume Growth</strong> (vs. V/MA) — <span class="est est-proxy">Proxy</span> via merchant acceptance searches</li>
+      <li><strong>Expected Synergies</strong> ($1.2B by 2027) — <span class="est est-none">Hard</span> quarterly disclosure only</li>
+    </ul>
+  </div>
+</div>
+
+<h4>Digital Wallets</h4>
+<div class="grid-2">
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--cyan)">PYPL — PayPal</div>
+    <div class="kpi-def">$42B mcap · 7.5x fwd P/E · Cheapest in sector</div>
+    <ul class="tree">
+      <li><strong>TPV Growth</strong> ($1.8T, +7%) — <span class="est est-proxy">Proxy</span> via web_traffic (paypal.com) + google_trends</li>
+      <li><strong>Branded Checkout Share</strong> (+40% adoption) — <span class="est est-proxy">Proxy</span> via google_shopping (PayPal button presence)</li>
+      <li><strong>Venmo Revenue</strong> ($1.7B, +20%) — <span class="est est-direct">Direct</span> via google_trends "Venmo" + tiktok_views</li>
+      <li><strong>New CEO Impact</strong> (Enrique Lores) — <span class="est est-direct">Direct</span> via chatgpt_discussion + stocktwits sentiment shift</li>
+      <li><strong>Stablecoin Adoption</strong> (PYUSD) — <span class="est est-direct">Direct</span> via coingecko (PYUSD mcap) + google_trends</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--mint)">SQ — Block ★ Breakout</div>
+    <div class="kpi-def">$46B mcap · 13.0x P/E · +21% YTD</div>
+    <ul class="tree">
+      <li><strong>Cash App MAU</strong> (59M) — <span class="est est-direct">Direct</span> via google_trends "Cash App" + tiktok_views + web_traffic</li>
+      <li><strong>Gross Profit Growth</strong> (+24% YoY) — <span class="est est-proxy">Proxy</span> via merchant adoption trends</li>
+      <li><strong>Rule of 40 Score</strong> (18% growth + 54% margin) — <span class="est est-none">Hard</span> quarterly only</li>
+      <li><strong>Square AI Adoption</strong> (UK launch) — <span class="est est-direct">Direct</span> via google_trends "Square AI" + youtube_search tutorials</li>
+      <li><strong>Institutional Buying</strong> (ARK $30.9M) — <span class="est est-direct">Direct</span> via stocktwits + yahoo_finance (institutional flow data)</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--cyan)">SOFI — SoFi Technologies</div>
+    <div class="kpi-def">$23B mcap · 49.5x fwd P/E</div>
+    <ul class="tree">
+      <li><strong>Member Growth</strong> (13.7M, +1M/qtr) — <span class="est est-direct">Direct</span> via google_trends "SoFi" + web_traffic + tiktok_views</li>
+      <li><strong>Product Cross-Sell</strong> (14.9M products, 1.09 products/member) — <span class="est est-proxy">Proxy</span> via google_trends product-specific queries</li>
+      <li><strong>SoFiUSD Stablecoin Traction</strong> — <span class="est est-direct">Direct</span> via google_trends + coingecko (if listed)</li>
+      <li><strong>SoFi Plus Subscription</strong> ($10/mo) — <span class="est est-proxy">Proxy</span> via google_trends "SoFi Plus" + tiktok_views</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--cyan)">NU — Nu Holdings</div>
+    <div class="kpi-def">$72B mcap · 32.7x P/E · 110M+ customers</div>
+    <ul class="tree">
+      <li><strong>Customer Count</strong> (110M, +45% rev growth) — <span class="est est-proxy">Proxy</span> via google_trends "Nubank" (Brazil) + web_traffic</li>
+      <li><strong>ROE</strong> (33% record) — <span class="est est-none">Hard</span> quarterly only</li>
+      <li><strong>Brazil TAM Penetration</strong> (~5% captured) — <span class="est est-proxy">Proxy</span> via wikipedia (Brazil banking articles) + google_trends geographic</li>
+      <li><strong>Mexico/Colombia Expansion</strong> — <span class="est est-proxy">Proxy</span> via google_trends geographic filters</li>
+    </ul>
+  </div>
+  <div class="kpi-box" style="grid-column: span 2;">
+    <div class="kpi-name" style="color:var(--cyan)">AFRM — Affirm</div>
+    <div class="kpi-def">$17B mcap · 61.5x P/E · +69% upside to target</div>
+    <ul class="tree">
+      <li><strong>GMV</strong> ($10.4B, +43%) — <span class="est est-proxy">Proxy</span> via google_shopping ("Affirm" checkout presence) + google_trends "buy now pay later"</li>
+      <li><strong>Active Consumers</strong> (25.8M, +23%) — <span class="est est-direct">Direct</span> via web_traffic + google_trends "Affirm" + tiktok_views</li>
+      <li><strong>Active Merchants</strong> (478K, +42%) — <span class="est est-proxy">Proxy</span> via google_trends "accept Affirm" + youtube_search merchant integration tutorials</li>
+      <li><strong>Affirm Card GMV</strong> (+115%) — <span class="est est-proxy">Proxy</span> via google_trends "Affirm card" + tiktok_views (card unboxing/review content)</li>
+      <li><strong>Stripe AI Payment Token Traction</strong> — <span class="est est-direct">Direct</span> via google_trends "Affirm Stripe" + chatgpt_discussion (agentic commerce)</li>
+    </ul>
+  </div>
+</div>
+
+<h4>Acquirers & Infrastructure</h4>
+<div class="grid-2">
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--rose)">FOUR — Shift4 ★ Top Divergence</div>
+    <div class="kpi-def">$3.9B mcap · 8.5x P/E · +34% rev growth</div>
+    <ul class="tree">
+      <li><strong>End-to-End Volume</strong> (+34%) — <span class="est est-proxy">Proxy</span> via web_traffic + google_trends "Shift4 payments"</li>
+      <li><strong>Stadium/Venue Wins</strong> — <span class="est est-direct">Direct</span> via google_trends + youtube_search (event venue integrations)</li>
+      <li><strong>Stablecoin Settlement</strong> — <span class="est est-direct">Direct</span> via google_trends + chatgpt_discussion</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--rose)">COIN — Coinbase</div>
+    <div class="kpi-def">$52B mcap · 44.9x P/E · +93% upside</div>
+    <ul class="tree">
+      <li><strong>Trading Volume</strong> ($425B Q2) — <span class="est est-direct">Direct</span> via coingecko + google_trends "buy bitcoin Coinbase"</li>
+      <li><strong>Monthly Transacting Users</strong> (8.7M) — <span class="est est-direct">Direct</span> via web_traffic + google_trends + tiktok_views</li>
+      <li><strong>AUM</strong> ($425B) — <span class="est est-proxy">Proxy</span> via coingecko (market cap × exchange share)</li>
+      <li><strong>Institutional Mix</strong> (83%) — <span class="est est-none">Hard</span> quarterly only</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--rose)">TOST — Toast</div>
+    <div class="kpi-def">$18B mcap · 38.9x P/E</div>
+    <ul class="tree">
+      <li><strong>Restaurant Locations</strong> — <span class="est est-proxy">Proxy</span> via google_trends "Toast POS" + youtube_search setup tutorials</li>
+      <li><strong>Fintech Module Attach Rate</strong> — <span class="est est-proxy">Proxy</span> via google_trends "Toast payroll" / "Toast lending"</li>
+      <li><strong>ARPU Growth</strong> — <span class="est est-none">Hard</span> quarterly only</li>
+    </ul>
+  </div>
+  <div class="kpi-box">
+    <div class="kpi-name" style="color:var(--rose)">PAYO — Payoneer</div>
+    <div class="kpi-def">$1.6B mcap · 22.9x P/E · +93% upside</div>
+    <ul class="tree">
+      <li><strong>Cross-Border Volume</strong> ($80.1B, +21%) — <span class="est est-proxy">Proxy</span> via google_trends "send money" + web_traffic</li>
+      <li><strong>Stablecoin Bank Launch</strong> — <span class="est est-direct">Direct</span> via google_trends + chatgpt_discussion</li>
+      <li><strong>Freelancer/SMB Adoption</strong> — <span class="est est-proxy">Proxy</span> via google_trends "Payoneer vs PayPal" + tiktok_views</li>
+    </ul>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2>The Camillo Divergence Map: Where KPIs Create Alpha</h2>
+<!-- ═══════════════════════════════════════════════ -->
+
+<p>The Camillo framework says alpha lives in the <em>gap</em> between what alternative data shows and what the market price reflects. Here are the specific KPI divergences that LATTICE's 12 connectors can detect:</p>
+
+<table>
+<thead>
+<tr><th>Divergence Type</th><th>What LATTICE Compares</th><th>Connectors Used</th><th>Example</th><th>Implication</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Traffic ↔ Price</strong></td>
+  <td>web_traffic monthly visits trend vs. stock price trend</td>
+  <td><span class="mono">web_traffic</span> + <span class="mono">yahoo_finance</span></td>
+  <td>PYPL visits +5.2% but stock −41% YTD</td>
+  <td style="color:var(--mint)">Bullish — usage growing faster than market reflects</td>
+</tr>
+<tr>
+  <td><strong>Search ↔ Price</strong></td>
+  <td>google_trends interest vs. stock price</td>
+  <td><span class="mono">google_trends</span> + <span class="mono">yahoo_finance</span></td>
+  <td>FOUR "Shift4 payments" searches rising but stock −25% YTD</td>
+  <td style="color:var(--mint)">Bullish — demand signal not priced in</td>
+</tr>
+<tr>
+  <td><strong>Sentiment ↔ Price</strong></td>
+  <td>stocktwits bull ratio vs. price direction</td>
+  <td><span class="mono">stocktwits</span> + <span class="mono">yahoo_finance</span></td>
+  <td>AFRM sentiment 80%+ bullish but price −39% YTD</td>
+  <td style="color:var(--gold)">Watch — retail sentiment often lags institutional</td>
+</tr>
+<tr>
+  <td><strong>Virality ↔ Revenue</strong></td>
+  <td>tiktok mentions/views vs. quarterly revenue growth</td>
+  <td><span class="mono">tiktok_views</span> + <span class="mono">yahoo_finance</span></td>
+  <td>Cash App TikTok virality sustained but SQ rev only +18% growth</td>
+  <td style="color:var(--gold)">Watch — Gen Z attention may not monetize linearly</td>
+</tr>
+<tr>
+  <td><strong>Developer ↔ Price</strong></td>
+  <td>youtube tutorial volume for API/integrations vs. price</td>
+  <td><span class="mono">youtube_search</span> + <span class="mono">yahoo_finance</span></td>
+  <td>ADYEN integration tutorials spiking but stock −47% YTD</td>
+  <td style="color:var(--mint)">Bullish — developer adoption is strongest leading indicator</td>
+</tr>
+<tr>
+  <td><strong>Cross-Theme Convergence</strong></td>
+  <td>Multiple tickers in same theme showing correlated alt-data signals</td>
+  <td><span class="mono">google_trends</span> keyword co-occurrence across SOFI + FOUR + PAYO + PYPL</td>
+  <td>"Stablecoin" searches rising simultaneously for 4 payment companies</td>
+  <td style="color:var(--mint)">Bullish — sector-level shift, not single-stock noise</td>
+</tr>
+<tr>
+  <td><strong>Volume ↔ Attention</strong></td>
+  <td>Trading volume spike without corresponding search/social spike</td>
+  <td><span class="mono">yahoo_finance</span> (vol ratio) vs. <span class="mono">google_trends</span> + <span class="mono">stocktwits</span></td>
+  <td>FLYW trading volume 2x normal but no news/search spike</td>
+  <td style="color:var(--gold)">Watch — institutional accumulation before retail awareness (Camillo "asymmetric")</td>
+</tr>
+</tbody>
+</table>
+
+<div class="highlight">
+  <div class="hl-title">The Knowledge Graph Edge These Divergences Create</div>
+  <p>Each divergence becomes a <span class="mono">DIVERGES_FROM</span> edge in the graph connecting two Metric nodes (e.g., "traffic_growth: +5.2%" and "price_return: −41%"). Over time, the graph accumulates divergence history. When the same divergence type persists for 4+ weeks, LATTICE should escalate it from "watch" to "high conviction" — this is the Gold Rush transitioning from "emerging" to "validating."</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<div style="text-align:center; color:var(--dim); font-size:11px; padding:20px 0;">
+  LATTICE.NET Payment KPI Mapping · March 12, 2026 · First Principles Analysis<br>
+  21 Payment Assets · 12 Connectors · 5 Graph Node Types · 8 Edge Types
+</div>
+
+</div>
+</body>
+</html>

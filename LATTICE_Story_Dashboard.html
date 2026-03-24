@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Weekly Intelligence Brief</title>
+<style>
+  /* Email-compatible inline-first design — dark canvas + chrome iridescence */
+  body { margin:0; padding:0; background:#0a0a0f; color:#e0e0e0; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .wrapper { max-width:680px; margin:0 auto; padding:24px 16px; }
+
+  /* Header */
+  .header { text-align:center; padding:32px 0 20px; border-bottom:2px solid rgba(168,130,255,0.3); }
+  .header h1 { font-size:28px; font-weight:700; color:#a882ff; margin:0 0 4px; letter-spacing:1px; }
+  .header .subtitle { font-size:13px; color:#7a7a8e; margin:0; letter-spacing:2px; text-transform:uppercase; }
+  .header .date { font-size:12px; color:#555; margin-top:8px; }
+
+  /* Story sections */
+  .story-section { margin:28px 0; padding:20px 24px; border-radius:12px; border-left:4px solid; }
+  .story-section h2 { font-size:13px; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px; }
+  .story-section .narrative { font-size:15px; line-height:1.65; color:#c8c8d4; margin:0 0 16px; }
+  .story-section .metric-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+  .metric-card { flex:1 1 140px; background:rgba(255,255,255,0.04); border-radius:8px; padding:12px 14px; text-align:center; border:1px solid rgba(255,255,255,0.06); }
+  .metric-card .label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:#7a7a8e; margin:0 0 4px; }
+  .metric-card .value { font-size:22px; font-weight:700; margin:0; }
+  .metric-card .sub { font-size:10px; color:#555; margin-top:2px; }
+
+  /* Section colors — each story beat gets its own accent */
+  .setting { border-color:#7a7a8e; background:rgba(122,122,142,0.06); }
+  .setting h2 { color:#7a7a8e; }
+  .snap { border-color:#00e5ff; background:rgba(0,229,255,0.06); }
+  .snap h2 { color:#00e5ff; }
+  .struggle { border-color:#ff8fab; background:rgba(255,143,171,0.06); }
+  .struggle h2 { color:#ff8fab; }
+  .shift { border-color:#ffd700; background:rgba(255,215,0,0.06); }
+  .shift h2 { color:#ffd700; }
+  .success { border-color:#7fffd4; background:rgba(127,255,212,0.06); }
+  .success h2 { color:#7fffd4; }
+
+  /* Product table */
+  .product-table { width:100%; border-collapse:collapse; margin:16px 0 0; font-size:12px; }
+  .product-table th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#7a7a8e; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .product-table td { padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.04); color:#c8c8d4; }
+  .product-table tr:hover td { background:rgba(255,255,255,0.02); }
+
+  /* Tier badges */
+  .badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; letter-spacing:0.5px; }
+  .badge-alpha { background:rgba(127,255,212,0.15); color:#7fffd4; }
+  .badge-strong { background:rgba(168,130,255,0.15); color:#a882ff; }
+  .badge-watch { background:rgba(255,215,0,0.15); color:#ffd700; }
+  .badge-dead { background:rgba(255,143,171,0.15); color:#ff8fab; }
+
+  /* Gate badges */
+  .gate-buy { color:#7fffd4; }
+  .gate-hold { color:#ffd700; }
+  .gate-avoid { color:#ff8fab; }
+
+  /* Progress bars */
+  .bar-bg { height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; margin-top:4px; }
+  .bar-fill { height:100%; border-radius:3px; }
+
+  /* Trend ring indicator */
+  .ring { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+  .ring-confirmed { background:#7fffd4; }
+  .ring-validating { background:#ffd700; }
+  .ring-emerging { background:#ff8fab; }
+
+  /* Footer */
+  .footer { text-align:center; padding:24px 0 16px; border-top:1px solid rgba(255,255,255,0.06); margin-top:32px; }
+  .footer p { font-size:11px; color:#444; margin:4px 0; }
+  .footer .brand { color:#a882ff; font-weight:600; }
+
+  /* Sparkline-style mini bar chart */
+  .spark-row { display:flex; align-items:flex-end; gap:3px; height:32px; margin-top:8px; }
+  .spark-bar { flex:1; border-radius:2px 2px 0 0; min-width:4px; }
+
+  /* Responsive */
+  @media (max-width:480px) {
+    .wrapper { padding:16px 12px; }
+    .metric-card .value { font-size:18px; }
+    .story-section { padding:16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ═══════════════════════════════════════ HEADER ═══════════════════════════════════════ -->
+  <div class="header">
+    <h1>LATTICE.NET</h1>
+    <p class="subtitle">Weekly Arbitrage Intelligence Brief</p>
+    <p class="date">March 13, 2026 &middot; Social Arbitrage Portfolio</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════ 1. SETTING ═══════════════════════════════════ -->
+  <div class="story-section setting">
+    <h2>Setting &mdash; The Landscape</h2>
+    <p class="narrative">
+      It's March 2026. The EU e-commerce market is a &euro;730 billion arena where 12 million sellers compete for attention.
+      Your LATTICE scanner is tracking <strong>12 products</strong> across <strong>8 categories</strong> in this landscape &mdash;
+      each one evaluated through 69 data points spanning Camillo's 8-Atom Framework, STEPPS virality scoring, and Cialdini Pre-suasion dimensions.
+    </p>
+    <div class="metric-row">
+      <div class="metric-card">
+        <p class="label">Products Tracked</p>
+        <p class="value" style="color:#a882ff">12</p>
+        <p class="sub">across 8 categories</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Data Points Each</p>
+        <p class="value" style="color:#a882ff">69</p>
+        <p class="sub">per product snapshot</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Avg Quality Score</p>
+        <p class="value" style="color:#a882ff">70.8</p>
+        <p class="sub">composite /100</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">EU Market</p>
+        <p class="value" style="color:#a882ff">&euro;730B</p>
+        <p class="sub">2026 forecast</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ 2. SNAP ═══════════════════════════════════════ -->
+  <div class="story-section snap">
+    <h2>Snap &mdash; The Signal</h2>
+    <p class="narrative">
+      Then LATTICE detects something unusual: in beauty and beauty tech, social chatter is growing <strong>185-220%</strong> faster than
+      competitor ad spend. That gap &mdash; the <em>arbitrage gap</em> &mdash; means consumer demand is outrunning the market's ability to
+      advertise against it. Three products flash signals strong enough to cross the Buy threshold.
+    </p>
+    <div class="metric-row">
+      <div class="metric-card">
+        <p class="label">Highest Arb Gap</p>
+        <p class="value" style="color:#00e5ff">+220%</p>
+        <p class="sub">Glass Skin Serum</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Buy Signals</p>
+        <p class="value" style="color:#00e5ff">3</p>
+        <p class="sub">of 12 products</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">TikTok Viral Peak</p>
+        <p class="value" style="color:#00e5ff">95</p>
+        <p class="sub">Lip Oil Gloss /100</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Alpha Opportunity</p>
+        <p class="value" style="color:#00e5ff">1</p>
+        <p class="sub">wealth score 76+</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ 3. STRUGGLE ═══════════════════════════════════ -->
+  <div class="story-section struggle">
+    <h2>Struggle &mdash; The Barriers</h2>
+    <p class="narrative">
+      But signals alone don't make money. The market fights back: <strong>90 competitors</strong> crowd the UV-C sanitizer space (now in decline),
+      return rates hit <strong>17%</strong> in home decor, and Meta CPMs climb to &euro;13.48 in health tech. Two products score Avoid.
+      The internal conflict: how do you separate the few genuine opportunities from the noise of a saturated landscape?
+    </p>
+    <div class="metric-row">
+      <div class="metric-card">
+        <p class="label">Highest Competition</p>
+        <p class="value" style="color:#ff8fab">90</p>
+        <p class="sub">UV-C Wand sellers</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Worst Return Rate</p>
+        <p class="value" style="color:#ff8fab">17%</p>
+        <p class="sub">home decor category</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Avoid Signals</p>
+        <p class="value" style="color:#ff8fab">2</p>
+        <p class="sub">keyboard + sanitizer</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Dead Money</p>
+        <p class="value" style="color:#ff8fab">1</p>
+        <p class="sub">wealth score 25</p>
+      </div>
+    </div>
+
+    <!-- Mini struggle table: the 2 Avoids -->
+    <table class="product-table" style="margin-top:16px;">
+      <tr><th>Product</th><th>Competitors</th><th>Phase</th><th>Arb Gap</th><th>Gate</th></tr>
+      <tr>
+        <td>Bluetooth Keyboard</td>
+        <td>72</td>
+        <td>Peak</td>
+        <td style="color:#ffd700">+25%</td>
+        <td><span class="gate-avoid">Avoid</span></td>
+      </tr>
+      <tr>
+        <td>UV-C Sanitizer Wand</td>
+        <td>90</td>
+        <td style="color:#ff8fab">Decline</td>
+        <td style="color:#ff8fab">-15%</td>
+        <td><span class="gate-avoid">Avoid</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════ 4. SHIFT ═══════════════════════════════════════ -->
+  <div class="story-section shift">
+    <h2>Shift &mdash; The Quality Filter</h2>
+    <p class="narrative">
+      The breakthrough: instead of chasing every trending product, LATTICE applies a <strong>Quality Composite</strong> score &mdash;
+      a 6-factor formula weighting supplier reliability, conversion benchmarks, return risk, shipping weight advantage, review moats, and TikTok viral potential.
+      Products scoring above 80 on quality <em>and</em> above 80 on arbitrage alignment are the real plays. Only 3 survive the filter.
+    </p>
+
+    <!-- The 3 Buy products -->
+    <table class="product-table">
+      <tr>
+        <th>Product</th>
+        <th>Quality</th>
+        <th>Arb Quality</th>
+        <th>Wealth</th>
+        <th>Tier</th>
+      </tr>
+      <tr>
+        <td style="color:#7fffd4">Glass Skin Serum</td>
+        <td>
+          <span style="color:#ffd700">86.3</span>
+          <div class="bar-bg"><div class="bar-fill" style="width:86.3%; background:linear-gradient(90deg,#a882ff,#7fffd4)"></div></div>
+        </td>
+        <td style="color:#00e5ff">86.3</td>
+        <td style="color:#7fffd4; font-weight:700">76</td>
+        <td><span class="badge badge-alpha">Alpha</span></td>
+      </tr>
+      <tr>
+        <td style="color:#a882ff">Lip Oil Gloss</td>
+        <td>
+          <span style="color:#ffd700">85.6</span>
+          <div class="bar-bg"><div class="bar-fill" style="width:85.6%; background:linear-gradient(90deg,#a882ff,#7fffd4)"></div></div>
+        </td>
+        <td style="color:#00e5ff">84.5</td>
+        <td style="color:#a882ff; font-weight:700">72</td>
+        <td><span class="badge badge-strong">Strong</span></td>
+      </tr>
+      <tr>
+        <td style="color:#a882ff">LED Light Therapy Mask</td>
+        <td>
+          <span style="color:#ffd700">85.8</span>
+          <div class="bar-bg"><div class="bar-fill" style="width:85.8%; background:linear-gradient(90deg,#a882ff,#7fffd4)"></div></div>
+        </td>
+        <td style="color:#00e5ff">82.6</td>
+        <td style="color:#a882ff; font-weight:700">69</td>
+        <td><span class="badge badge-strong">Strong</span></td>
+      </tr>
+    </table>
+
+    <p class="narrative" style="margin-top:16px; font-size:13px; color:#8a8a9e;">
+      <strong style="color:#ffd700">Why these 3?</strong> All three share: supplier quality &gt;96%, lightweight shipping (&lt;500g, +35% margin advantage),
+      category conversion rate 4.7%, return rate only 7%, confirmed trend ring, and TikTok viral scores above 85.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════ 5. SUCCESS ═══════════════════════════════════ -->
+  <div class="story-section success">
+    <h2>Success &mdash; The Outcome</h2>
+    <p class="narrative">
+      The lesson: information arbitrage isn't about finding more products &mdash; it's about filtering ruthlessly until only the
+      highest-quality signals remain. The portfolio's adjusted monthly projection sits at <strong>&euro;31,516</strong>, placing you in the
+      <strong>Wealth Building</strong> income tier. One product has reached Alpha Opportunity status. Eight maintain Strong Thesis.
+      The system works not because it finds everything, but because it knows what to ignore.
+    </p>
+    <div class="metric-row">
+      <div class="metric-card">
+        <p class="label">Monthly Adjusted</p>
+        <p class="value" style="color:#7fffd4">&euro;31,516</p>
+        <p class="sub">risk-adjusted projection</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Income Tier</p>
+        <p class="value" style="color:#7fffd4; font-size:16px">Wealth Building</p>
+        <p class="sub">&euro;20K-50K/mo band</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Avg Wealth Score</p>
+        <p class="value" style="color:#7fffd4">58.3</p>
+        <p class="sub">portfolio average</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Avg Margin</p>
+        <p class="value" style="color:#7fffd4">57.1%</p>
+        <p class="sub">contribution margin</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ FULL PORTFOLIO TABLE ═══════════════════════════ -->
+  <div style="margin:28px 0; padding:20px 24px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+    <h2 style="font-size:13px; text-transform:uppercase; letter-spacing:3px; color:#a882ff; margin:0 0 16px;">Full Portfolio &mdash; 12 Products Ranked</h2>
+    <div style="overflow-x:auto;">
+    <table class="product-table">
+      <tr>
+        <th>#</th>
+        <th>Product</th>
+        <th>Category</th>
+        <th style="text-align:center">Trend</th>
+        <th style="text-align:right">Quality</th>
+        <th style="text-align:right">Wealth</th>
+        <th>Gate</th>
+        <th style="text-align:right">&euro;/mo Adj</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td style="color:#7fffd4">Glass Skin Serum</td>
+        <td>beauty</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Confirmed</td>
+        <td style="text-align:right">86.3</td>
+        <td style="text-align:right; font-weight:700; color:#7fffd4">76</td>
+        <td><span class="gate-buy">Buy</span></td>
+        <td style="text-align:right">&euro;4,130</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td style="color:#a882ff">Lip Oil Gloss</td>
+        <td>beauty</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Confirmed</td>
+        <td style="text-align:right">85.6</td>
+        <td style="text-align:right; font-weight:700; color:#a882ff">72</td>
+        <td><span class="gate-buy">Buy</span></td>
+        <td style="text-align:right">&euro;3,989</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="color:#a882ff">LED Therapy Mask</td>
+        <td>beauty tech</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Confirmed</td>
+        <td style="text-align:right">85.8</td>
+        <td style="text-align:right; font-weight:700; color:#a882ff">69</td>
+        <td><span class="gate-buy">Buy</span></td>
+        <td style="text-align:right">&euro;5,317</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Espresso Maker</td>
+        <td>outdoor</td>
+        <td style="text-align:center"><span class="ring ring-validating"></span>Validating</td>
+        <td style="text-align:right">64.1</td>
+        <td style="text-align:right; color:#a882ff">68</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;4,217</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Smart Pet Feeder</td>
+        <td>pet tech</td>
+        <td style="text-align:center"><span class="ring ring-validating"></span>Validating</td>
+        <td style="text-align:right">60.7</td>
+        <td style="text-align:right; color:#a882ff">64</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;4,104</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Gym Bag Organizer</td>
+        <td>fitness</td>
+        <td style="text-align:center"><span class="ring ring-emerging"></span>Emerging</td>
+        <td style="text-align:right">68.6</td>
+        <td style="text-align:right; color:#a882ff">60</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;1,333</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Galaxy Projector</td>
+        <td>home decor</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Confirmed</td>
+        <td style="text-align:right">61.5</td>
+        <td style="text-align:right; color:#a882ff">59</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;2,433</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Beeswax Wraps</td>
+        <td>eco home</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Confirmed</td>
+        <td style="text-align:right">80.8</td>
+        <td style="text-align:right; color:#a882ff">58</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;1,856</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>Smart Door Lock</td>
+        <td>smart home</td>
+        <td style="text-align:center"><span class="ring ring-validating"></span>Validating</td>
+        <td style="text-align:right">56.5</td>
+        <td style="text-align:right; color:#a882ff">57</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;3,085</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>Pet GPS Tracker</td>
+        <td>pet tech</td>
+        <td style="text-align:center"><span class="ring ring-emerging"></span>Emerging</td>
+        <td style="text-align:right">71.3</td>
+        <td style="text-align:right; color:#ffd700">50</td>
+        <td><span class="gate-hold">Hold</span></td>
+        <td style="text-align:right">&euro;1,052</td>
+      </tr>
+      <tr style="opacity:0.6">
+        <td>11</td>
+        <td>BT Keyboard</td>
+        <td>tech acc.</td>
+        <td style="text-align:center"><span class="ring ring-confirmed"></span>Peak</td>
+        <td style="text-align:right">62.8</td>
+        <td style="text-align:right; color:#ffd700">42</td>
+        <td><span class="gate-avoid">Avoid</span></td>
+        <td style="text-align:right; color:#ff8fab">&euro;914</td>
+      </tr>
+      <tr style="opacity:0.5">
+        <td>12</td>
+        <td>UV-C Sanitizer</td>
+        <td>health tech</td>
+        <td style="text-align:center" style="color:#ff8fab">Decline</td>
+        <td style="text-align:right">66.0</td>
+        <td style="text-align:right; color:#ff8fab">25</td>
+        <td><span class="gate-avoid">Avoid</span></td>
+        <td style="text-align:right; color:#ff8fab">&euro;22</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ KEY INSIGHT ═══════════════════════════════════ -->
+  <div style="margin:24px 0; padding:20px 24px; background:linear-gradient(135deg, rgba(168,130,255,0.08), rgba(0,229,255,0.06)); border-radius:12px; border:1px solid rgba(168,130,255,0.2); text-align:center;">
+    <p style="font-size:11px; text-transform:uppercase; letter-spacing:3px; color:#a882ff; margin:0 0 8px;">This Week's Mantra</p>
+    <p style="font-size:18px; font-weight:600; color:#e0e0e0; margin:0; line-height:1.5;">
+      &ldquo;The edge isn't in finding signals &mdash;<br>it's in knowing which 3 out of 12 to act on.&rdquo;
+    </p>
+    <p style="font-size:12px; color:#555; margin-top:12px;">
+      Quality Composite &times; Arbitrage Alignment = the filter that turns noise into conviction.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════ ACTIONS ═══════════════════════════════════════ -->
+  <div style="margin:24px 0; padding:20px 24px; background:rgba(127,255,212,0.04); border-radius:12px; border:1px solid rgba(127,255,212,0.15);">
+    <h2 style="font-size:13px; text-transform:uppercase; letter-spacing:3px; color:#7fffd4; margin:0 0 12px;">Next Actions</h2>
+    <table style="width:100%; font-size:13px; color:#c8c8d4;">
+      <tr>
+        <td style="padding:6px 0; color:#7fffd4;">&#9679;</td>
+        <td style="padding:6px 8px;"><strong>Activate</strong> Glass Skin Serum &mdash; Alpha Opportunity, highest arb gap (+220%), supplier quality 98.2%</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0; color:#7fffd4;">&#9679;</td>
+        <td style="padding:6px 8px;"><strong>Scale</strong> Lip Oil Gloss &mdash; TikTok viral score 95, lowest CPM in beauty (&euro;12.46), confirmed trend ring</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0; color:#ffd700;">&#9679;</td>
+        <td style="padding:6px 8px;"><strong>Test</strong> Portable Espresso Maker &mdash; only 22 competitors, validating ring, open ad space (&euro;8.20 CPM)</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0; color:#ff8fab;">&#9679;</td>
+        <td style="padding:6px 8px;"><strong>Exit</strong> UV-C Sanitizer Wand &mdash; 90 competitors, negative arb gap, decline phase, &euro;22/mo adjusted</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════ SCORING LEGEND ═══════════════════════════════ -->
+  <div style="margin:24px 0; padding:16px 24px; background:rgba(255,255,255,0.02); border-radius:8px; font-size:11px; color:#555; line-height:1.7;">
+    <strong style="color:#7a7a8e;">How Scores Work:</strong>
+    Wealth Score = 30% Camillo + 20% Virality + 15% Persuasion + 20% Margin + 15% Arbitrage (max 100).
+    Quality Composite = 25% Supplier + 20% Conversion + 20% Low Returns + 15% Weight + 10% Review Moat + 10% TikTok Viral.
+    Arbitrage Quality = Quality &times; (0.5 + 0.5 &times; arb_alignment).
+    Investment Gates: Strong Buy (&ge;50 combined, &le;15% returns, &ge;70% satisfaction) &middot; Buy (&ge;40, &le;20%, &ge;60%) &middot; Hold (&ge;25, &le;25%, &ge;50%) &middot; Avoid (everything else).
+    Trend Rings: <span class="ring ring-emerging"></span>Emerging (12-24wk) &middot; <span class="ring ring-validating"></span>Validating (4-12wk) &middot; <span class="ring ring-confirmed"></span>Confirmed (0-4wk).
+  </div>
+
+  <!-- ═══════════════════════════════════════ FOOTER ═══════════════════════════════════════ -->
+  <div class="footer">
+    <p><span class="brand">LATTICE.NET</span> &middot; Social Arbitrage Intelligence</p>
+    <p>Camillo Mosaic Theory &times; Data Storytelling &times; Information Arbitrage</p>
+    <p style="font-size:10px; margin-top:8px;">Generated March 13, 2026 &middot; All data from live portfolio scans</p>
+  </div>
+
+</div>
+</body>
+</html>

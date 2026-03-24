@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Architecture Analysis: From First Principles</title>
+<style>
+:root {
+  --bg: #0a0a0f; --surface: #111118; --card: #18181f; --elevated: #1e1e28;
+  --border: #2a2a35; --hover: #2a2a3a;
+  --violet: #7b6cf6; --cyan: #4fc3f7; --mint: #69f0ae;
+  --gold: #ffd740; --rose: #ff6e8a; --lavender: #b388ff;
+  --text: #e8e8f0; --muted: #9898b0; --dim: #5c5c70;
+  --green: #4caf50; --red: #ef5350;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, system-ui, sans-serif; line-height: 1.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+h1 { font-size: 32px; font-weight: 700; background: linear-gradient(135deg, var(--violet), var(--cyan), var(--mint)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 48px; }
+h2 { font-size: 22px; font-weight: 700; color: var(--cyan); margin: 48px 0 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 17px; font-weight: 600; color: var(--lavender); margin: 28px 0 12px; }
+h4 { font-size: 14px; font-weight: 600; color: var(--gold); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+p { color: var(--text); font-size: 14px; margin-bottom: 16px; }
+.muted { color: var(--muted); }
+strong { color: var(--text); }
+em { color: var(--lavender); font-style: normal; }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.card:hover { border-color: rgba(123,108,246,0.3); }
+.card-header { font-size: 15px; font-weight: 600; color: var(--violet); margin-bottom: 8px; }
+
+/* Flow diagrams */
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 24px 0; }
+.flow-step { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; text-align: center; min-width: 140px; }
+.flow-step .step-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.flow-step .step-name { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 4px; }
+.flow-arrow { color: var(--dim); font-size: 20px; padding: 0 8px; }
+
+/* Comparison tables */
+.comp-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+.comp-table th { text-align: left; padding: 12px 14px; background: var(--surface); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.comp-table td { padding: 12px 14px; border-bottom: 1px solid rgba(42,42,53,0.4); vertical-align: top; }
+.comp-table tr:hover td { background: rgba(123,108,246,0.04); }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-sw { background: rgba(79,195,247,0.12); color: var(--cyan); border: 1px solid rgba(79,195,247,0.25); }
+.badge-tt { background: rgba(255,215,64,0.12); color: var(--gold); border: 1px solid rgba(255,215,64,0.25); }
+.badge-lattice { background: rgba(123,108,246,0.12); color: var(--violet); border: 1px solid rgba(123,108,246,0.25); }
+.badge-camillo { background: rgba(255,110,138,0.12); color: var(--rose); border: 1px solid rgba(255,110,138,0.25); }
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* Highlight box */
+.highlight { background: linear-gradient(135deg, rgba(123,108,246,0.08), rgba(79,195,247,0.06)); border: 1px solid rgba(123,108,246,0.2); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.highlight-title { font-size: 13px; font-weight: 700; color: var(--violet); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Knowledge graph diagram */
+.kg-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin: 24px 0; position: relative; overflow: hidden; }
+.kg-node { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 4px; }
+.kg-node.primary { background: linear-gradient(135deg, var(--violet), var(--cyan)); color: #0a0a0f; font-size: 14px; padding: 10px 20px; }
+.kg-node.entity { background: var(--elevated); border: 1px solid var(--cyan); color: var(--cyan); }
+.kg-node.signal { background: var(--elevated); border: 1px solid var(--mint); color: var(--mint); }
+.kg-node.metric { background: var(--elevated); border: 1px solid var(--gold); color: var(--gold); }
+.kg-node.theme { background: var(--elevated); border: 1px solid var(--rose); color: var(--rose); }
+.kg-node.source { background: var(--elevated); border: 1px solid var(--lavender); color: var(--lavender); }
+.kg-edge { color: var(--dim); font-size: 11px; margin: 0 6px; }
+
+/* Section numbering */
+.section-num { display: inline-block; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--violet), var(--cyan)); color: #0a0a0f; font-size: 13px; font-weight: 700; text-align: center; line-height: 28px; margin-right: 10px; }
+
+/* Divider */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 48px 0; }
+
+/* Lists */
+ul { padding-left: 0; list-style: none; }
+ul li { padding: 6px 0 6px 20px; position: relative; font-size: 14px; }
+ul li::before { content: '›'; position: absolute; left: 0; color: var(--cyan); font-weight: 700; }
+
+/* Code-like */
+.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: var(--mint); background: rgba(105,240,174,0.06); padding: 2px 8px; border-radius: 4px; }
+
+/* TOC */
+.toc { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 40px; }
+.toc-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.toc a { color: var(--lavender); text-decoration: none; font-size: 14px; display: block; padding: 4px 0; }
+.toc a:hover { color: var(--cyan); }
+.toc .indent { padding-left: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>LATTICE.NET — Architecture From First Principles</h1>
+<p class="subtitle">How SimilarWeb's Data Collection + TickerTrends' Workflow + Camillo's Mosaic Theory Converge Into the Knowledge Graph</p>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <a href="#s1"><span class="section-num">1</span> SimilarWeb — Data Collection Anatomy</a>
+  <a href="#s2"><span class="section-num">2</span> TickerTrends — Workflow Anatomy</a>
+  <a href="#s3"><span class="section-num">3</span> Gap Analysis: What Neither Platform Does</a>
+  <a href="#s4"><span class="section-num">4</span> LATTICE Knowledge Graph Architecture</a>
+  <a href="#s5"><span class="section-num">5</span> Data Flow: From Raw Signal → Graph Edge → Alpha</a>
+  <a href="#s6"><span class="section-num">6</span> UI Blueprint: How the Dashboard Reads the Graph</a>
+  <a href="#s7"><span class="section-num">7</span> Implementation Mapping to Existing Codebase</a>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 1: SIMILARWEB -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s1"><span class="section-num">1</span> SimilarWeb — Data Collection Anatomy</h2>
+
+<h3>First Principle: How Do You Know What 4 Billion People Do Online?</h3>
+<p>SimilarWeb's core insight is that you don't need to observe everyone — you need a <em>representative panel</em> combined with <em>multiple independent data streams</em>, then you model the rest. This is the same principle behind political polling, Nielsen ratings, and credit scoring.</p>
+
+<h4>The 5-Layer Data Collection Stack</h4>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">Layer 1 — Contributory Network (Panel Data)</div>
+    <p>Browser extensions (Chrome, Firefox) installed by millions of users who opt in to share anonymized browsing data. This provides ground-truth clickstream: which URLs were visited, for how long, in what sequence. This is their highest-fidelity signal but smallest sample.</p>
+    <p class="muted">LATTICE parallel: Our StockTwits + Reddit connectors are panel-like — small, high-signal samples of sentiment.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Layer 2 — ISP Partnerships</div>
+    <p>Aggregated traffic data from Internet Service Providers worldwide. ISPs see DNS lookups and connection metadata (not page content). This gives volume estimates at massive scale but low granularity — you know "paypal.com got X visits" but not which pages or how long.</p>
+    <p class="muted">LATTICE parallel: Google Trends gives us volume without depth. Same trade-off.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Layer 3 — First-Party Analytics Integration</div>
+    <p>Millions of sites voluntarily share their analytics (via SDK integration) in exchange for SimilarWeb benchmarking data. This is a value exchange: you give your data, you get your competitors' data.</p>
+    <p class="muted">LATTICE parallel: We don't have this layer. Our web_traffic connector proxies SimilarWeb's output, not raw analytics.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Layer 4 — Public Web Crawling</div>
+    <p>Automated bots crawl millions of pages monthly, capturing page structure, links, content, meta tags, and technical signals. This provides the relationship graph: who links to whom, what content exists, how sites are structured.</p>
+    <p class="muted">LATTICE parallel: Our Wikipedia + YouTube connectors are crawl-like — scraping public pages for structured data.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Layer 5 — Machine Learning Synthesis</div>
+    <p>All four layers feed into ML models that extrapolate from samples to population estimates. The panel provides calibration data; the ISP data provides scale; the first-party data provides ground truth for validation; the crawl data provides structure. The model outputs the final numbers.</p>
+    <p class="muted">LATTICE parallel: Our aggregate_signal calculation in data_sources.py is a primitive version of this — weighted averaging across sources.</p>
+  </div>
+</div>
+
+<h4>SimilarWeb's UI Information Architecture</h4>
+<div class="flow">
+  <div class="flow-step"><div class="step-label">Level 0</div><div class="step-name">Domain Input</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="step-label">Level 1</div><div class="step-name">Traffic Overview</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="step-label">Level 2</div><div class="step-name">Source Breakdown</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="step-label">Level 3</div><div class="step-name">Channel Drill-Down</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="step-label">Level 4</div><div class="step-name">Competitive Compare</div></div>
+</div>
+
+<table class="comp-table">
+  <thead><tr><th>UI Section</th><th>Metrics</th><th>Visualization</th><th>LATTICE Mapping</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Traffic & Engagement</strong></td><td>Total visits, unique visitors, bounce rate, pages/visit, avg duration</td><td>Time-series line charts with toggle (bar/line)</td><td>→ <span class="mono">web_traffic</span> connector's monthly_visits, bounce_rate, global_rank</td></tr>
+    <tr><td><strong>Traffic Sources</strong></td><td>Direct, referral, search (organic/paid), social, display, email</td><td>Stacked bar chart with % breakdown</td><td>→ Not yet captured. Would need source-level traffic breakdown.</td></tr>
+    <tr><td><strong>Geography</strong></td><td>Country-by-country visit distribution</td><td>Heatmap + ranked table</td><td>→ Not captured. Could add geo dimension to DataPoint tags.</td></tr>
+    <tr><td><strong>Competitors</strong></td><td>Side-by-side metrics for up to 4 domains</td><td>Multi-series comparison charts</td><td>→ Our sector_registry groups competitors. Dashboard shows sector comparison bars.</td></tr>
+    <tr><td><strong>Search Keywords</strong></td><td>Top organic/paid keywords driving traffic</td><td>Sortable table with traffic share %</td><td>→ <span class="mono">google_trends</span> connector captures search interest, not keyword-level traffic.</td></tr>
+    <tr><td><strong>Referral Sources</strong></td><td>Top referring domains + outgoing links</td><td>Ranked table with traffic volume</td><td>→ Not captured. Referral graph would be a powerful knowledge graph edge type.</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight">
+  <div class="highlight-title">Key Insight From SimilarWeb</div>
+  <p>SimilarWeb's power comes from <em>triangulation</em> — no single data source is trusted alone. Every metric is cross-validated by at least 2 independent collection methods. Their ML layer doesn't just average; it weights sources by their reliability for each specific metric. This is the principle LATTICE must adopt: <strong>confidence scores per source per metric, not flat averages</strong>.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 2: TICKERTRENDS -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s2"><span class="section-num">2</span> TickerTrends — Workflow Anatomy</h2>
+
+<h3>First Principle: How Do You Turn Consumer Behavior Into Stock Predictions?</h3>
+<p>TickerTrends' insight is that consumer behavior data (search, social, app usage) is a <em>leading indicator</em> of revenue, and revenue is what drives stock prices. If you can measure the leading indicator in real-time, you have a 4-12 week information advantage over Wall Street, which waits for quarterly earnings.</p>
+
+<h4>The TickerTrends Workflow (User Journey)</h4>
+<div class="flow">
+  <div class="flow-step" style="border-color:var(--gold)"><div class="step-label">Phase 1</div><div class="step-name">Discover</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--cyan)"><div class="step-label">Phase 2</div><div class="step-name">Analyze</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--mint)"><div class="step-label">Phase 3</div><div class="step-name">Score</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--rose)"><div class="step-label">Phase 4</div><div class="step-name">Predict</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--violet)"><div class="step-label">Phase 5</div><div class="step-name">Manage</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">Phase 1: Discover — Exploding Trends</div>
+    <p>A real-time dashboard surfacing brands, products, and hashtags with exponential growth across search + social + app metrics. Velocity is king here: day-over-day, week-over-week, month-over-month acceleration. The user doesn't need to know what to look for — the system surfaces it.</p>
+    <p class="muted"><strong>LATTICE gap:</strong> We have no discovery/scan-all view that surfaces rising signals autonomously. The daily-lattice-scan task is backend-only. The dashboard requires manual ticker input.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Phase 2: Analyze — The "Google Search of Alt Data"</div>
+    <p>Type a ticker, get a unified view across 8-12 data sources. Each source rendered as its own panel with trend visualization. AI-generated summaries of the last 6 earnings calls. Cluster charts showing semantically related keywords. Historical financials for context.</p>
+    <p class="muted"><strong>LATTICE match:</strong> Our single-ticker scan view does this. 10 source cards with sparklines + metrics. But we lack earnings call summaries and keyword clustering.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Phase 3: Score — Social Arbitrage + Investor Saturation</div>
+    <p>Two proprietary composite scores. <em>Social Arbitrage Score (0-100)</em>: how strong is the multi-source signal? <em>Investor Saturation Score (0-100)</em>: how many institutional investors already know? High signal + low saturation = maximum alpha. This is the Camillo framework operationalized.</p>
+    <p class="muted"><strong>LATTICE match:</strong> Our Mosaic Gauge (aggregate_signal) maps to Social Arbitrage Score. We lack an Investor Saturation equivalent — could derive from StockTwits follower growth + analyst coverage count.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Phase 4: Predict — KPI Forecasting</div>
+    <p>ML models trained on historical alternative data vs. reported outcomes. Predicts next-quarter KPIs (revenue, users, bookings) 4-12 weeks early. Red dots on the dashboard show forecast values. This is where alternative data graduates from "interesting" to "actionable."</p>
+    <p class="muted"><strong>LATTICE gap:</strong> We have no predictive layer. Our divergence detection is descriptive ("price and traffic are diverging") not predictive ("next quarter revenue will beat by X%").</p>
+  </div>
+  <div class="card">
+    <div class="card-header">Phase 5: Manage — Consumer Interest Tracker</div>
+    <p>Weekly composite metric blending search + traffic + app + social into a single number per ticker. This is the "check once a week" metric that tells you if your thesis is on track without drowning in data. Updates every 7 days, not every 90.</p>
+    <p class="muted"><strong>LATTICE match:</strong> Our daily scan captures this data. But we don't distill it into a single trackable weekly metric with historical trend. The aggregate_signal is per-scan, not longitudinal.</p>
+  </div>
+</div>
+
+<h4>TickerTrends Data Sources vs. LATTICE Connectors</h4>
+<table class="comp-table">
+  <thead><tr><th>TickerTrends Source</th><th>Update Freq</th><th>LATTICE Connector</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Google Search Trends</td><td>Bi-weekly</td><td><span class="mono">google_trends</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>Google Shopping</td><td>Variable</td><td><span class="mono">google_shopping</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>Web Traffic (SimilarWeb)</td><td>Bi-weekly</td><td><span class="mono">web_traffic</span> / <span class="mono">similarweb_proxy</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>Wikipedia Page Views</td><td>Bi-weekly</td><td><span class="mono">wikipedia</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>TikTok Mentions</td><td>Weekly</td><td><span class="mono">tiktok_views</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>YouTube Search</td><td>Bi-weekly</td><td><span class="mono">youtube_search</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+    <tr><td>Reddit Posts</td><td>Weekly</td><td>—</td><td style="color:var(--rose)">✗ Not yet</td></tr>
+    <tr><td>Amazon Search</td><td>Monthly</td><td>—</td><td style="color:var(--rose)">✗ Not yet</td></tr>
+    <tr><td>Mobile App Metrics</td><td>Bi-weekly</td><td>—</td><td style="color:var(--rose)">✗ Not yet</td></tr>
+    <tr><td>News Sentiment</td><td>Daily</td><td><span class="mono">huggingface_nlp</span></td><td style="color:var(--gold)">◐ Partial (NLP, not news feed)</td></tr>
+    <tr><td>Social (X/Twitter)</td><td>Real-time</td><td><span class="mono">stocktwits</span></td><td style="color:var(--gold)">◐ StockTwits only, not X</td></tr>
+    <tr><td>ChatGPT Discussion</td><td>—</td><td><span class="mono">chatgpt_discussion</span></td><td style="color:var(--cyan)">★ Unique to LATTICE</td></tr>
+    <tr><td>CoinGecko</td><td>—</td><td><span class="mono">coingecko</span></td><td style="color:var(--cyan)">★ Unique to LATTICE</td></tr>
+    <tr><td>Yahoo Finance</td><td>—</td><td><span class="mono">yahoo_finance</span></td><td style="color:var(--mint)">✓ Implemented</td></tr>
+  </tbody>
+</table>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 3: GAP ANALYSIS -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s3"><span class="section-num">3</span> Gap Analysis: What Neither Platform Does (LATTICE's Edge)</h2>
+
+<div class="grid-3">
+  <div class="card" style="border-color: rgba(123,108,246,0.4)">
+    <div class="card-header" style="color:var(--violet)">SimilarWeb's Blindspot</div>
+    <p>SimilarWeb sees traffic but not intent. It tells you PayPal.com got 485M visits, but not whether those visitors were bullish or bearish. It has no connection to financial markets, no sentiment layer, no investment framework.</p>
+  </div>
+  <div class="card" style="border-color: rgba(255,215,64,0.4)">
+    <div class="card-header" style="color:var(--gold)">TickerTrends' Blindspot</div>
+    <p>TickerTrends sees signals but not relationships. It scores each ticker independently. It doesn't model cross-asset connections: that SOFI + MA + FOUR + PAYO all announcing stablecoin initiatives is a correlated signal, not four independent ones.</p>
+  </div>
+  <div class="card" style="border-color: rgba(105,240,174,0.4)">
+    <div class="card-header" style="color:var(--mint)">LATTICE's Opportunity</div>
+    <p>LATTICE can model the <em>relationships between signals</em>, not just the signals themselves. The knowledge graph is the structural advantage: it captures that a Google Trends spike for "BNPL" connects to AFRM, PYPL, SQ, and FOUR simultaneously, and that this cluster is gaining momentum.</p>
+  </div>
+</div>
+
+<h3>The Structural Gaps LATTICE Fills</h3>
+<table class="comp-table">
+  <thead><tr><th>Capability</th><th><span class="badge badge-sw">SimilarWeb</span></th><th><span class="badge badge-tt">TickerTrends</span></th><th><span class="badge badge-lattice">LATTICE</span></th></tr></thead>
+  <tbody>
+    <tr><td>Multi-source signal aggregation</td><td>✗ Traffic only</td><td>✓ 8-12 sources</td><td>✓ 12 connectors</td></tr>
+    <tr><td>Cross-asset relationship modeling</td><td>✗</td><td>✗</td><td>✓ Knowledge graph</td></tr>
+    <tr><td>Camillo 8-Atom framework</td><td>✗</td><td>Partial (Social Arb Score)</td><td>✓ Full 8-atom scoring</td></tr>
+    <tr><td>Divergence detection</td><td>✗</td><td>Partial (manual)</td><td>✓ Automated (_detect_divergences)</td></tr>
+    <tr><td>Gold Rush lifecycle</td><td>✗</td><td>✗ (Investor Saturation is similar)</td><td>✓ 4-stage lifecycle</td></tr>
+    <tr><td>Sector-level mosaic themes</td><td>Industry benchmarks</td><td>✗</td><td>✓ 6 cross-asset themes</td></tr>
+    <tr><td>Real-time dashboard</td><td>✓</td><td>✓</td><td>✓ (lattice_research.html)</td></tr>
+    <tr><td>Predictive KPI modeling</td><td>✗</td><td>✓ Red dot forecasts</td><td>✗ Not yet</td></tr>
+    <tr><td>Trend discovery (autonomous)</td><td>✗</td><td>✓ Exploding Trends</td><td>✗ Daily scan is passive</td></tr>
+  </tbody>
+</table>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 4: KNOWLEDGE GRAPH -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s4"><span class="section-num">4</span> LATTICE Knowledge Graph Architecture</h2>
+
+<h3>First Principle: Why a Graph?</h3>
+<p>Spreadsheets and dashboards show you <em>what</em> is happening. Graphs show you <em>why</em> and <em>what connects to what</em>. When FOUR, PAYO, SOFI, and PYPL all announce stablecoin settlement in the same month, a spreadsheet shows four independent events. A knowledge graph shows one phenomenon with four manifestations — and that phenomenon (stablecoin-as-payment-rail) is the actual investable thesis.</p>
+
+<h3>Node Types (Entities)</h3>
+<div class="kg-diagram">
+  <div style="text-align:center; margin-bottom:20px;">
+    <span class="kg-node primary">LATTICE GRAPH</span>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:20px;">
+    <span class="kg-node entity">TICKER (V, MA, PYPL...)</span>
+    <span class="kg-node signal">SIGNAL (search_spike, sentiment_shift...)</span>
+    <span class="kg-node metric">METRIC (price, volume, mcap...)</span>
+    <span class="kg-node theme">THEME (stablecoin_rail, agentic_commerce...)</span>
+    <span class="kg-node source">SOURCE (google_trends, stocktwits...)</span>
+  </div>
+  <table class="comp-table" style="margin:0">
+    <thead><tr><th>Node Type</th><th>Properties</th><th>Example</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td><span class="kg-node entity" style="font-size:11px">Ticker</span></td><td>symbol, name, subsector, mcap, price, fwdPE</td><td>PYPL — PayPal — Digital Wallets — $42B</td><td>sector_registry + yahoo_finance</td></tr>
+      <tr><td><span class="kg-node signal" style="font-size:11px">Signal</span></td><td>type, strength, direction, timestamp, confidence</td><td>search_interest_spike — 0.72 — bullish — 2026-03-11</td><td>data_sources.py scan output</td></tr>
+      <tr><td><span class="kg-node metric" style="font-size:11px">Metric</span></td><td>name, value, previous_value, delta_pct, source</td><td>monthly_visits — 485M — 461M — +5.2% — similarweb</td><td>DataPoint dataclass</td></tr>
+      <tr><td><span class="kg-node theme" style="font-size:11px">Theme</span></td><td>name, description, tickers[], confidence, lifecycle_stage</td><td>stablecoin_settlement — "4 companies building..." — [SOFI,FOUR,PAYO,PYPL]</td><td>Derived from divergence patterns</td></tr>
+      <tr><td><span class="kg-node source" style="font-size:11px">Source</span></td><td>name, reliability_weight, update_frequency, last_fetched</td><td>google_trends — 0.85 — bi-weekly — 2026-03-11</td><td>data_sources.py connector config</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Edge Types (Relationships)</h3>
+<table class="comp-table">
+  <thead><tr><th>Edge</th><th>From → To</th><th>Properties</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><strong>HAS_SIGNAL</strong></td><td>Ticker → Signal</td><td>timestamp, scan_id</td><td>PYPL → search_interest_spike (2026-03-11)</td></tr>
+    <tr><td><strong>HAS_METRIC</strong></td><td>Ticker → Metric</td><td>source, timestamp</td><td>V → price: $314.43 (yahoo_finance)</td></tr>
+    <tr><td><strong>MEASURED_BY</strong></td><td>Signal → Source</td><td>confidence</td><td>search_interest_spike → google_trends (0.85)</td></tr>
+    <tr><td><strong>BELONGS_TO</strong></td><td>Ticker → Theme</td><td>relevance_score</td><td>FOUR → stablecoin_settlement (0.9)</td></tr>
+    <tr><td><strong>DIVERGES_FROM</strong></td><td>Metric → Metric</td><td>divergence_type, strength, implication</td><td>traffic(+5.2%) → price(-3%) : bullish divergence</td></tr>
+    <tr><td><strong>COMPETES_WITH</strong></td><td>Ticker → Ticker</td><td>overlap_score, subsector</td><td>PYPL ↔ SQ (0.82, Digital Wallets)</td></tr>
+    <tr><td><strong>CORRELATES_WITH</strong></td><td>Signal → Signal</td><td>correlation, lag_weeks</td><td>AFRM_search_spike ↔ PYPL_search_spike (0.74, 1w lag)</td></tr>
+    <tr><td><strong>LIFECYCLE_STAGE</strong></td><td>Theme → Stage</td><td>entered_at, confidence</td><td>stablecoin_settlement → validating (2026-02-15)</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight">
+  <div class="highlight-title">The Graph's Unique Power: Cross-Asset Signal Correlation</div>
+  <p>When Google Trends shows "stablecoin payments" spiking, the graph doesn't just tag one ticker — it propagates the signal to every connected node: SOFI (via SoFiUSD), FOUR (via stablecoin settlement), PAYO (via stablecoin bank), PYPL (via PYPL USD), and MA (via SoFiUSD partnership). The <strong>CORRELATES_WITH</strong> and <strong>BELONGS_TO</strong> edges are what make this possible. TickerTrends would show you five independent trend lines. LATTICE shows you one theme with five exposure points.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 5: DATA FLOW -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s5"><span class="section-num">5</span> Data Flow: From Raw Signal → Graph Edge → Alpha</h2>
+
+<h3>The Complete Pipeline</h3>
+
+<div class="flow" style="flex-wrap:wrap; gap:4px;">
+  <div class="flow-step" style="border-color:var(--lavender); min-width:120px;"><div class="step-label">Raw</div><div class="step-name">12 Connectors</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--cyan); min-width:120px;"><div class="step-label">Structured</div><div class="step-name">DataPoints</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--mint); min-width:120px;"><div class="step-label">Aggregated</div><div class="step-name">SourceSnapshots</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--gold); min-width:120px;"><div class="step-label">Scored</div><div class="step-name">MultiSourceScan</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--rose); min-width:120px;"><div class="step-label">Connected</div><div class="step-name">Graph Edges</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--violet); min-width:120px;"><div class="step-label">Insight</div><div class="step-name">Themes + Divergences</div></div>
+</div>
+
+<h4>Stage 1: Raw Collection (SimilarWeb-Style Multi-Source)</h4>
+<div class="card">
+  <p>Each connector in <span class="mono">data_sources.py</span> fetches raw data from a public API or web endpoint. The connector's job is normalization: convert source-specific formats into the universal <span class="mono">DataPoint</span> dataclass with source, ticker, metric, value, previous_value, delta_pct, timestamp, confidence, and tags.</p>
+  <p>This mirrors SimilarWeb's Layer 4 (crawling) and Layer 1 (panel data). We're collecting from diverse, independent streams. The key principle from SimilarWeb: <strong>diversity of sources matters more than depth of any single source</strong>.</p>
+</div>
+
+<h4>Stage 2: Per-Source Aggregation (TickerTrends-Style Scoring)</h4>
+<div class="card">
+  <p>Multiple DataPoints from the same source for the same ticker get rolled up into a <span class="mono">SourceSnapshot</span> with a signal_strength score. This is analogous to TickerTrends' per-source trend visualization — each data source gets its own card showing velocity, direction, and confidence.</p>
+  <p>The signal_strength ranges 0-10 and considers: raw metric values, delta percentages, confidence of the data, and source-specific weighting from the DB.</p>
+</div>
+
+<h4>Stage 3: Cross-Source Synthesis (The LATTICE Advantage)</h4>
+<div class="card">
+  <p>All SourceSnapshots for a ticker get assembled into a <span class="mono">MultiSourceScan</span>. This is where the Camillo Mosaic Theory kicks in. The aggregate_signal is a weighted combination across all sources. But more importantly, <span class="mono">_detect_divergences()</span> runs pairwise comparisons to find <em>mismatches</em> — the alpha signals.</p>
+  <p>Current divergence types detected: volume/price, sentiment/price, dev_activity/price, attention/price, traffic/price. Each one is a potential graph edge.</p>
+</div>
+
+<h4>Stage 4: Graph Construction (What Makes LATTICE a Lattice)</h4>
+<div class="card">
+  <p>This is where LATTICE transcends both SimilarWeb and TickerTrends. Each scan result generates graph operations:</p>
+  <ul>
+    <li><strong>Upsert Ticker node</strong> with latest metrics (price, mcap, volume)</li>
+    <li><strong>Create Signal nodes</strong> for each notable data point (search spike, sentiment shift, traffic surge)</li>
+    <li><strong>Create HAS_SIGNAL edges</strong> connecting tickers to their signals</li>
+    <li><strong>Create DIVERGES_FROM edges</strong> for each detected divergence</li>
+    <li><strong>Update BELONGS_TO edges</strong> when theme membership changes</li>
+    <li><strong>Compute CORRELATES_WITH edges</strong> by comparing signal patterns across tickers in the same sector</li>
+  </ul>
+  <p>Over time, the graph accumulates history. A single scan is a data point. A month of daily scans is a thesis.</p>
+</div>
+
+<h4>Stage 5: Theme Emergence (Autonomous Discovery)</h4>
+<div class="card">
+  <p>Themes are <em>not hardcoded</em> — they emerge from graph analysis. When multiple tickers in the same sector show correlated signals (e.g., SOFI + FOUR + PAYO all show "stablecoin" keyword spikes within the same 2-week window), the graph's clustering algorithm should surface this as a nascent theme. The 6 themes currently in the dashboard are manually identified; the graph should identify them programmatically.</p>
+  <p>This is the Gold Rush Lifecycle: <em>emerging</em> (1-2 tickers showing signal) → <em>validating</em> (3+ tickers, cross-source confirmation) → <em>confirmed</em> (sector-wide, analyst coverage begins) → <em>saturated</em> (consensus priced in, TickerTrends Investor Saturation Score equivalent).</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 6: UI BLUEPRINT -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s6"><span class="section-num">6</span> UI Blueprint: How the Dashboard Reads the Graph</h2>
+
+<h3>Information Architecture (Combining SimilarWeb + TickerTrends Patterns)</h3>
+
+<div class="flow" style="flex-wrap:wrap; gap:4px;">
+  <div class="flow-step" style="border-color:var(--gold); min-width:130px;"><div class="step-label">Discovery</div><div class="step-name">Exploding Signals</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--cyan); min-width:130px;"><div class="step-label">Universe</div><div class="step-name">Sector Overview</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--mint); min-width:130px;"><div class="step-label">Ticker</div><div class="step-name">Multi-Source Scan</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--rose); min-width:130px;"><div class="step-label">Graph</div><div class="step-name">Knowledge Lattice</div></div>
+</div>
+
+<h4>Layer 1: Discovery View (TickerTrends "Exploding Trends" Pattern)</h4>
+<div class="card">
+  <p><strong>What the graph provides:</strong> Query all Signal nodes created in the last 7 days, ranked by delta_pct. Surface tickers with the highest-velocity positive signals that don't yet have high aggregate scores (i.e., the market hasn't priced them in). This is the "emerging" ring of the Gold Rush.</p>
+  <p><strong>UI elements:</strong> Rising signal feed (real-time list), velocity sparklines, "New This Week" badges, threshold-based alerts.</p>
+  <p class="muted">Currently missing from lattice_research.html. Would be a new top-level tab alongside "Payments."</p>
+</div>
+
+<h4>Layer 2: Universe View (SimilarWeb "Competitive Benchmark" Pattern)</h4>
+<div class="card">
+  <p><strong>What the graph provides:</strong> Query all Ticker nodes in a sector, join with their latest Metric nodes (price, mcap, YTD) and aggregate_signal from the most recent scan. Group by subsector. Rank by signal strength or upside.</p>
+  <p><strong>UI elements:</strong> Sortable table (implemented ✓), subsector pills (implemented ✓), mosaic themes (implemented ✓), divergence signals (implemented ✓).</p>
+  <p class="muted">This is what we just built into the dashboard. It shows the "Sector Overview" that SimilarWeb provides for competitive benchmarking.</p>
+</div>
+
+<h4>Layer 3: Ticker View (TickerTrends "Analyze" Pattern)</h4>
+<div class="card">
+  <p><strong>What the graph provides:</strong> Traverse from the Ticker node through HAS_SIGNAL edges to all Signal nodes, through MEASURED_BY to Source nodes, and through DIVERGES_FROM to find divergence pairs. The 8-Atom scoring comes from evaluating signals against the Camillo criteria.</p>
+  <p><strong>UI elements:</strong> Data Source Grid (10 cards with sparklines — implemented ✓), Camillo 8-Atom Framework (implemented ✓), Divergence Alerts (implemented ✓), Thesis Builder (implemented ✓), Sector Comparison Bars (implemented ✓).</p>
+</div>
+
+<h4>Layer 4: Graph View (LATTICE's Unique Contribution)</h4>
+<div class="card">
+  <p><strong>What the graph provides:</strong> The raw graph itself — nodes and edges visualized as a force-directed network. Ticker nodes sized by signal strength. Theme nodes as cluster centers. Edge opacity by correlation strength. This is the "lattice" that gives the platform its name.</p>
+  <p><strong>UI elements:</strong> Interactive force-directed graph (currently mock ✓). Click a node → navigate to its Ticker View. Click a Theme node → see all connected tickers. Edge tooltips show relationship type and strength.</p>
+  <p><strong>Graph queries that power insights:</strong></p>
+  <ul>
+    <li>"Which tickers are most connected to the stablecoin theme?" → traverse BELONGS_TO edges from stablecoin_settlement theme node</li>
+    <li>"What signals are diverging for PYPL?" → traverse HAS_SIGNAL → filter DIVERGES_FROM edges</li>
+    <li>"Which tickers correlate most with FOUR?" → traverse CORRELATES_WITH edges, rank by weight</li>
+    <li>"Is this theme emerging or saturated?" → check LIFECYCLE_STAGE edge, count connected tickers, measure signal velocity</li>
+  </ul>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 7: IMPLEMENTATION MAPPING -->
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="s7"><span class="section-num">7</span> Implementation Mapping to Existing Codebase</h2>
+
+<h3>What Exists Today vs. What's Needed</h3>
+
+<table class="comp-table">
+  <thead><tr><th>Component</th><th>File</th><th>Status</th><th>Graph Role</th></tr></thead>
+  <tbody>
+    <tr><td>Sector definitions + ticker registry</td><td><span class="mono">sector_registry.py</span></td><td style="color:var(--mint)">✓ Complete</td><td>Provides Ticker nodes + COMPETES_WITH edges (same subsector)</td></tr>
+    <tr><td>12 data source connectors</td><td><span class="mono">data_sources.py</span></td><td style="color:var(--mint)">✓ Complete</td><td>Generates DataPoint → Signal nodes + MEASURED_BY edges</td></tr>
+    <tr><td>DataPoint / SourceSnapshot / MultiSourceScan</td><td><span class="mono">data_sources.py</span></td><td style="color:var(--mint)">✓ Complete</td><td>The raw material for graph construction</td></tr>
+    <tr><td>Divergence detection</td><td><span class="mono">data_sources.py _detect_divergences()</span></td><td style="color:var(--mint)">✓ Complete</td><td>Generates DIVERGES_FROM edges</td></tr>
+    <tr><td>Time-series storage</td><td><span class="mono">timeseries_db.py</span></td><td style="color:var(--mint)">✓ Complete</td><td>Historical Metric values for longitudinal analysis</td></tr>
+    <tr><td>API routes (scan stock/crypto)</td><td><span class="mono">app.py</span></td><td style="color:var(--mint)">✓ Complete</td><td>REST interface for dashboard to trigger scans</td></tr>
+    <tr><td>Daily scan scheduler</td><td><span class="mono">daily-lattice-scan</span></td><td style="color:var(--mint)">✓ Complete</td><td>Automated graph refresh at 7 AM daily</td></tr>
+    <tr><td>Dashboard — Universe View</td><td><span class="mono">lattice_research.html</span></td><td style="color:var(--mint)">✓ Complete</td><td>Reads graph for sector-level view</td></tr>
+    <tr><td>Dashboard — Ticker View</td><td><span class="mono">lattice_research.html</span></td><td style="color:var(--mint)">✓ Complete</td><td>Reads graph for single-ticker deep dive</td></tr>
+    <tr><td><strong>Graph database layer</strong></td><td>—</td><td style="color:var(--rose)">✗ Needed</td><td>Persistent graph storage (SQLite graph tables or NetworkX serialization)</td></tr>
+    <tr><td><strong>Theme detection engine</strong></td><td>—</td><td style="color:var(--rose)">✗ Needed</td><td>Clustering algorithm to surface BELONGS_TO edges autonomously</td></tr>
+    <tr><td><strong>Cross-ticker correlation</strong></td><td>—</td><td style="color:var(--rose)">✗ Needed</td><td>Computes CORRELATES_WITH edge weights across scan history</td></tr>
+    <tr><td><strong>Lifecycle stage tracker</strong></td><td>—</td><td style="color:var(--rose)">✗ Needed</td><td>Advances theme lifecycle based on connected ticker count + signal velocity</td></tr>
+    <tr><td><strong>Discovery/alerts feed</strong></td><td>—</td><td style="color:var(--rose)">✗ Needed</td><td>Surfaces emerging signals from graph (TickerTrends "Exploding Trends")</td></tr>
+    <tr><td><strong>KPI prediction layer</strong></td><td>—</td><td style="color:var(--gold)">◐ Future</td><td>ML model: historical alt-data signals → reported earnings correlation</td></tr>
+    <tr><td><strong>Consumer Interest Tracker</strong></td><td>—</td><td style="color:var(--gold)">◐ Future</td><td>Weekly composite metric per ticker from graph traversal</td></tr>
+  </tbody>
+</table>
+
+<h3>Proposed Graph Storage Schema (SQLite)</h3>
+<div class="card" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--mint); line-height: 1.8;">
+  <pre style="white-space:pre-wrap; margin:0;">
+-- Nodes
+CREATE TABLE graph_nodes (
+  id TEXT PRIMARY KEY,     -- e.g., "ticker:PYPL", "theme:stablecoin_rail"
+  type TEXT NOT NULL,      -- ticker | signal | metric | theme | source
+  properties TEXT,         -- JSON blob
+  created_at TEXT,
+  updated_at TEXT
+);
+
+-- Edges
+CREATE TABLE graph_edges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_node TEXT NOT NULL,
+  to_node TEXT NOT NULL,
+  edge_type TEXT NOT NULL,  -- HAS_SIGNAL | DIVERGES_FROM | BELONGS_TO | etc.
+  weight REAL DEFAULT 1.0,
+  properties TEXT,          -- JSON blob (timestamp, confidence, scan_id)
+  created_at TEXT,
+  FOREIGN KEY (from_node) REFERENCES graph_nodes(id),
+  FOREIGN KEY (to_node) REFERENCES graph_nodes(id)
+);
+
+-- Indexes for graph traversal
+CREATE INDEX idx_edges_from ON graph_edges(from_node);
+CREATE INDEX idx_edges_to ON graph_edges(to_node);
+CREATE INDEX idx_edges_type ON graph_edges(edge_type);
+CREATE INDEX idx_nodes_type ON graph_nodes(type);
+  </pre>
+</div>
+
+<h3>Build Priority (First Principles Order)</h3>
+<div class="grid-2">
+  <div class="card" style="border-left: 3px solid var(--mint);">
+    <div class="card-header" style="color:var(--mint)">Priority 1 — Graph Storage</div>
+    <p>Add graph_nodes + graph_edges tables to the existing SQLite DB. Modify daily scan to write nodes/edges after each MultiSourceScan completes. This is the foundation everything else builds on.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--cyan);">
+    <div class="card-header" style="color:var(--cyan)">Priority 2 — Cross-Ticker Correlation</div>
+    <p>After 7+ days of daily scans, compute CORRELATES_WITH edges by comparing signal time-series across tickers in the same sector. This enables "which tickers move together?" queries.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--gold);">
+    <div class="card-header" style="color:var(--gold)">Priority 3 — Theme Detection</div>
+    <p>Cluster correlated tickers + shared keyword signals into Theme nodes. Use simple co-occurrence: if 3+ tickers in a sector share a signal keyword within 14 days, create a theme. This replaces the manual themes.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--rose);">
+    <div class="card-header" style="color:var(--rose)">Priority 4 — Discovery Feed</div>
+    <p>Query the graph for signals with high delta_pct but low aggregate_signal (early stage, not yet consensus). Surface these as "Exploding Signals" in the dashboard. This is the TickerTrends "Discover" equivalent.</p>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<div style="text-align:center; color:var(--dim); font-size:12px; padding: 20px 0;">
+  LATTICE.NET Architecture Analysis · March 12, 2026 · First Principles Decomposition<br>
+  SimilarWeb ∩ TickerTrends ∩ Camillo Mosaic Theory → Knowledge Graph
+</div>
+
+</div>
+</body>
+</html>

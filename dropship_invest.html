@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LATTICE.NET — Dropship Investment Thesis</title>
+<style>
+/* ── Design System: Quixel dark canvas + chrome-rainbow iridescence ── */
+:root {
+  --bg:       #0a0a0f;
+  --surface:  #111118;
+  --surface2: #1a1a24;
+  --border:   #2a2a3a;
+  --text:     #e0e0e8;
+  --muted:    #8888aa;
+  --violet:   #a882ff;
+  --cyan:     #00e5ff;
+  --mint:     #7fffd4;
+  --gold:     #ffd700;
+  --rose:     #ff8fab;
+  --lavender: #c4b5fd;
+  --red:      #ff4444;
+  --green:    #22c55e;
+  --orange:   #ff9f43;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter','Segoe UI',system-ui,sans-serif;line-height:1.5;overflow-x:hidden}
+a{color:var(--cyan);text-decoration:none}
+
+/* ── Layout ── */
+.header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;background:var(--surface)}
+.header h1{font-size:1.1rem;font-weight:600;background:linear-gradient(90deg,var(--violet),var(--cyan),var(--mint));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .subtitle{color:var(--muted);font-size:.8rem}
+.header .nav-back{color:var(--muted);font-size:.85rem}
+.header .nav-back:hover{color:var(--cyan)}
+
+.main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;gap:16px;padding:16px 24px;max-width:1600px;margin:0 auto}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:hidden}
+.panel h2{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.panel h2 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+.full-width{grid-column:1/-1}
+
+/* ── Scatter Plot (Risk vs Return) ── */
+#scatter-canvas{width:100%;height:400px;position:relative;background:var(--surface2);border-radius:8px;overflow:hidden}
+.scatter-dot{position:absolute;border-radius:50%;cursor:pointer;transition:transform .15s,box-shadow .15s;border:2px solid transparent}
+.scatter-dot:hover{transform:scale(1.3);box-shadow:0 0 16px rgba(0,229,255,.5);z-index:10}
+.scatter-dot.selected{border-color:#fff;box-shadow:0 0 20px rgba(168,130,255,.7)}
+.scatter-dot.flagged{border-color:var(--red)!important;opacity:.5}
+.axis-label{position:absolute;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:1px}
+.axis-label.x{bottom:4px;left:50%;transform:translateX(-50%)}
+.axis-label.y{top:50%;left:4px;transform:rotate(-90deg) translateX(-50%);transform-origin:left center}
+.grid-line{position:absolute;background:var(--border);opacity:.3}
+.grid-line.h{height:1px;left:0;right:0}
+.grid-line.v{width:1px;top:0;bottom:0}
+.quadrant-label{position:absolute;font-size:.65rem;color:var(--muted);opacity:.5;font-weight:600;text-transform:uppercase}
+
+/* ── Radar (Arbitrage Rings) ── */
+#radar-canvas{width:100%;height:400px;position:relative;background:var(--surface2);border-radius:8px}
+.radar-ring{position:absolute;border-radius:50%;border:1px dashed var(--border)}
+.radar-ring-label{position:absolute;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:1px}
+.radar-node{position:absolute;width:12px;height:12px;border-radius:50%;cursor:pointer;transition:transform .15s}
+.radar-node:hover{transform:scale(1.5)}
+.radar-node .tooltip{display:none;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:.7rem;white-space:nowrap;z-index:20;color:var(--text)}
+.radar-node:hover .tooltip{display:block}
+
+/* ── Heatmap ── */
+.heatmap-grid{display:grid;gap:2px}
+.heat-cell{border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:#000;padding:4px;cursor:pointer;transition:transform .1s}
+.heat-cell:hover{transform:scale(1.05)}
+.heat-label{font-size:.7rem;color:var(--muted);text-align:center;padding:2px}
+
+/* ── Thesis Card ── */
+.thesis-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;display:none}
+.thesis-card.active{display:block}
+.thesis-card h3{font-size:1rem;margin-bottom:8px}
+.thesis-card .gate-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;color:#000}
+.score-bar{display:flex;gap:4px;margin:8px 0}
+.score-bar .seg{height:6px;border-radius:3px;flex:1}
+
+/* ── Scoring Grids ── */
+.scoring-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.score-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px}
+.score-item .label{font-size:.7rem;color:var(--muted);margin-bottom:4px}
+.score-item .value{font-size:1.1rem;font-weight:700}
+.score-item .bar{height:4px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden}
+.score-item .bar .fill{height:100%;border-radius:2px;transition:width .4s}
+
+/* ── Risk Dimensions ── */
+.risk-meter{display:flex;align-items:center;gap:8px;margin:6px 0}
+.risk-meter .bar-bg{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.risk-meter .bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.risk-meter .lbl{font-size:.7rem;color:var(--muted);width:100px}
+.risk-meter .val{font-size:.75rem;font-weight:600;width:40px;text-align:right}
+
+/* ── Filters ── */
+.filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 0}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--text);font-size:.75rem;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:var(--cyan)}
+.filter-btn.active{background:var(--cyan);color:#000;border-color:var(--cyan)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted);cursor:pointer}
+.toggle input{accent-color:var(--cyan)}
+
+/* ── Metric Strip ── */
+.metric-strip{display:flex;gap:12px;flex-wrap:wrap}
+.metric-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;flex:1;min-width:120px}
+.metric-chip .val{font-size:1.2rem;font-weight:700}
+.metric-chip .lbl{font-size:.65rem;color:var(--muted);margin-top:2px}
+
+/* ── Privileged Moments ── */
+.moment-card{background:var(--surface);border-left:3px solid var(--violet);border-radius:0 8px 8px 0;padding:10px 14px;margin:6px 0}
+.moment-card .name{font-size:.8rem;font-weight:600;color:var(--violet)}
+.moment-card .desc{font-size:.7rem;color:var(--muted);margin-top:2px}
+.moment-card .strategy{font-size:.7rem;color:var(--cyan);margin-top:4px;font-style:italic}
+
+/* ── Legend ── */
+.legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:.7rem;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ── Satisfaction Filter Alert ── */
+.alert-bar{background:rgba(255,68,68,.1);border:1px solid var(--red);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--rose)}
+.alert-bar .icon{font-size:1.2rem}
+
+/* ── Loading ── */
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:.85rem}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Empty State ── */
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+.empty-state .icon{font-size:2rem;margin-bottom:8px}
+
+/* ── Responsive ── */
+@media(max-width:1024px){.main{grid-template-columns:1fr}.full-width{grid-column:1}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/" class="nav-back">&larr; LATTICE.NET</a>
+  <h1>Dropship Investment Thesis</h1>
+  <span class="subtitle">Treat every product like a Camillo stock pick — risk, return, virality, persuasion</span>
+</div>
+
+<!-- Metric Strip -->
+<div style="padding:12px 24px;max-width:1600px;margin:0 auto">
+  <div class="metric-strip" id="metric-strip">
+    <div class="metric-chip"><div class="val" id="ms-total">—</div><div class="lbl">Products Scanned</div></div>
+    <div class="metric-chip"><div class="val" id="ms-strong" style="color:var(--mint)">—</div><div class="lbl">Strong Buy</div></div>
+    <div class="metric-chip"><div class="val" id="ms-buy" style="color:var(--cyan)">—</div><div class="lbl">Buy</div></div>
+    <div class="metric-chip"><div class="val" id="ms-hold" style="color:var(--gold)">—</div><div class="lbl">Hold / Watch</div></div>
+    <div class="metric-chip"><div class="val" id="ms-avoid" style="color:var(--rose)">—</div><div class="lbl">Avoid</div></div>
+    <div class="metric-chip"><div class="val" id="ms-flagged" style="color:var(--red)">—</div><div class="lbl">Satisfaction Flagged</div></div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div style="padding:4px 24px;max-width:1600px;margin:0 auto">
+  <div class="filters">
+    <span style="font-size:.75rem;color:var(--muted)">Filter:</span>
+    <button class="filter-btn active" data-gate="all">All</button>
+    <button class="filter-btn" data-gate="Strong Buy">Strong Buy</button>
+    <button class="filter-btn" data-gate="Buy">Buy</button>
+    <button class="filter-btn" data-gate="Hold / Watch">Hold / Watch</button>
+    <button class="filter-btn" data-gate="Avoid">Avoid</button>
+    <label class="toggle"><input type="checkbox" id="toggle-flagged" checked> Show Flagged</label>
+    <label class="toggle"><input type="checkbox" id="toggle-satisfaction"> Hide Bad Satisfaction</label>
+  </div>
+</div>
+
+<!-- Satisfaction Alert (hidden until flagged products exist) -->
+<div style="padding:0 24px;max-width:1600px;margin:0 auto">
+  <div class="alert-bar" id="satisfaction-alert" style="display:none">
+    <span class="icon">&#9888;</span>
+    <span id="alert-text">—</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Panel 1: Risk vs Return Scatter -->
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--cyan)"></span> Risk vs Return — Investment Map</h2>
+    <div class="legend" id="scatter-legend"></div>
+    <div id="scatter-canvas">
+      <div class="axis-label x">RISK SCORE &rarr;</div>
+      <div class="axis-label y">&larr; PROJECTED ROI</div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Arbitrage Radar -->
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--violet)"></span> Arbitrage Radar — Market Position</h2>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:var(--mint)"></span>Confirmed</span>
+      <span><span class="legend-dot" style="background:var(--gold)"></span>Validating</span>
+      <span><span class="legend-dot" style="background:var(--violet)"></span>Emerging</span>
+    </div>
+    <div id="radar-canvas"></div>
+  </div>
+
+  <!-- Panel 3: Market Crowding Heatmap -->
+  <div class="panel full-width">
+    <h2><span class="dot" style="background:var(--gold)"></span> EU Market Crowding — Where Is the Blue Ocean?</h2>
+    <div id="heatmap-container"></div>
+  </div>
+
+  <!-- Panel 4: Investment Thesis (selected product) -->
+  <div class="panel" id="thesis-panel">
+    <h2><span class="dot" style="background:var(--mint)"></span> Investment Thesis</h2>
+    <div class="empty-state" id="thesis-empty">
+      <div class="icon">&#128270;</div>
+      <div>Click a product on the scatter plot or radar to see its full investment thesis</div>
+    </div>
+    <div class="thesis-card" id="thesis-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 id="tc-name">—</h3>
+        <span class="gate-badge" id="tc-gate">—</span>
+      </div>
+      <div id="tc-category" style="font-size:.75rem;color:var(--muted);margin-bottom:12px">—</div>
+
+      <!-- Gate Scores -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="metric-chip"><div class="val" id="tc-wealth">—</div><div class="lbl">Wealth Score</div></div>
+        <div class="metric-chip"><div class="val" id="tc-camillo">—</div><div class="lbl">Camillo Score</div></div>
+        <div class="metric-chip"><div class="val" id="tc-stepps">—</div><div class="lbl">STEPPS (/30)</div></div>
+        <div class="metric-chip"><div class="val" id="tc-presuasion">—</div><div class="lbl">Pre-suasion (/35)</div></div>
+      </div>
+      <!-- Monthly Profit -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="metric-chip"><div class="val" id="tc-monthly">—</div><div class="lbl">Monthly Profit (Raw)</div></div>
+        <div class="metric-chip"><div class="val" id="tc-riskadjmonthly">—</div><div class="lbl">Monthly (Risk-Adj)</div></div>
+        <div class="metric-chip"><div class="val" id="tc-phasemult">—</div><div class="lbl">Phase Multiplier</div></div>
+      </div>
+
+      <!-- Combined Score Bar -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">Combined Virality + Persuasion (<span id="tc-combined-val">—</span> / <span id="tc-combined-max">—</span>)</div>
+        <div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden">
+          <div id="tc-combined-bar" style="height:100%;border-radius:5px;transition:width .5s"></div>
+        </div>
+      </div>
+
+      <!-- Risk Dimensions -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">Risk Assessment</div>
+        <div id="tc-risks"></div>
+      </div>
+
+      <!-- Unit Economics -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">Unit Economics</div>
+        <div class="scoring-grid" id="tc-economics"></div>
+      </div>
+
+      <!-- Satisfaction Gate -->
+      <div id="tc-satisfaction-flag" style="display:none;margin-bottom:16px">
+        <div class="alert-bar">
+          <span class="icon">&#9888;</span>
+          <span id="tc-sat-text">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 5: STEPPS + Pre-suasion Scoring -->
+  <div class="panel" id="scoring-panel">
+    <h2><span class="dot" style="background:var(--rose)"></span> Persuasion Profile</h2>
+    <div class="empty-state" id="scoring-empty">
+      <div class="icon">&#127919;</div>
+      <div>Select a product to see its STEPPS + Pre-suasion breakdown</div>
+    </div>
+    <div id="scoring-detail" style="display:none">
+      <!-- STEPPS -->
+      <div style="font-size:.75rem;color:var(--gold);font-weight:600;margin-bottom:8px">STEPPS Virality</div>
+      <div id="stepps-bars"></div>
+      <!-- Pre-suasion -->
+      <div style="font-size:.75rem;color:var(--violet);font-weight:600;margin:16px 0 8px">Cialdini Pre-suasion</div>
+      <div id="presuasion-bars"></div>
+      <!-- Privileged Moments -->
+      <div style="font-size:.75rem;color:var(--cyan);font-weight:600;margin:16px 0 8px">Privileged Moments to Exploit</div>
+      <div id="priv-moments"></div>
+    </div>
+  </div>
+
+  <!-- Panel 6: Wealth Creation Engine -->
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--mint)"></span> Wealth Creation Engine</h2>
+    <div id="wealth-summary">
+      <div class="metric-strip" style="margin-bottom:16px">
+        <div class="metric-chip"><div class="val" id="ws-portfolio" style="color:var(--mint)">—</div><div class="lbl">Portfolio Monthly (Risk-Adj)</div></div>
+        <div class="metric-chip"><div class="val" id="ws-tier" style="color:var(--gold)">—</div><div class="lbl">Income Tier</div></div>
+        <div class="metric-chip"><div class="val" id="ws-active">—</div><div class="lbl">Active Products</div></div>
+        <div class="metric-chip"><div class="val" id="ws-categories">—</div><div class="lbl">Categories</div></div>
+      </div>
+      <!-- Revenue targets -->
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">Revenue Targets</div>
+      <div id="ws-targets"></div>
+      <!-- Portfolio rules -->
+      <div style="font-size:.75rem;color:var(--muted);margin:12px 0 8px">Portfolio Rules</div>
+      <div id="ws-rules" style="font-size:.7rem;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <!-- Panel 7: Wealth Leaderboard -->
+  <div class="panel">
+    <h2><span class="dot" style="background:var(--gold)"></span> Product Leaderboard — Wealth Score</h2>
+    <div id="wealth-leaderboard"></div>
+  </div>
+
+  <!-- Panel 8: Contrarian Signals -->
+  <div class="panel full-width">
+    <h2><span class="dot" style="background:var(--orange)"></span> Smart Money Contrarian Signals</h2>
+    <div id="contrarian-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DROPSHIP INVESTMENT DASHBOARD — LATTICE.NET
+   All config from /api/dropship/invest-config. Zero hardcoded values.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let CFG = null;       // full config
+let PRODUCTS = [];    // from /api/dropship/products
+let SELECTED = null;  // selected product
+let ACTIVE_GATE = 'all';
+let SHOW_FLAGGED = true;
+let HIDE_BAD_SAT = false;
+
+// ── Config accessor: c(obj, 'path.to.key', fallback) ──
+function c(obj, path, fb) {
+  if (!obj) return fb;
+  const parts = path.split('.');
+  let cur = obj;
+  for (const p of parts) {
+    if (cur === null || cur === undefined) return fb;
+    cur = cur[p];
+  }
+  return cur !== undefined && cur !== null ? cur : fb;
+}
+
+// ── Init ──
+async function init() {
+  try {
+    const [cfgRes, prodRes] = await Promise.all([
+      fetch('/api/dropship/invest-config'),
+      fetch('/api/dropship/products')
+    ]);
+    CFG = await cfgRes.json();
+    const prodData = await prodRes.json();
+    PRODUCTS = (prodData.products || []).map(enrichProduct);
+
+    renderMetricStrip();
+    renderScatter();
+    renderRadar();
+    renderHeatmap();
+    renderContrarianGrid();
+    renderScatterLegend();
+    renderWealthEngine();
+    renderLeaderboard();
+    setupFilters();
+
+    if (PRODUCTS.length === 0) {
+      document.getElementById('scatter-canvas').innerHTML = '<div class="empty-state"><div class="icon">&#128202;</div><div>No products in database yet. Run a scan to populate.</div></div>';
+    }
+  } catch (e) {
+    console.error('Init error:', e);
+    document.querySelector('.main').innerHTML = '<div class="loading"><div class="spinner"></div> Error loading data: ' + e.message + '</div>';
+  }
+}
+
+// ── Enrich product with calculated scores ──
+function enrichProduct(p) {
+  const kpi = c(CFG, 'dropship_kpi', {});
+  const pre = c(CFG, 'presuasion', {});
+  const gates = c(pre, 'investment_gates', {});
+  const satFilter = c(gates, 'satisfaction_filter', {});
+
+  // Map DB field names: product_name→name, stepps_composite→stepps_total, etc.
+  if (!p.name && p.product_name) p.name = p.product_name;
+  if (!p.stepps_total && p.stepps_composite) p.stepps_total = p.stepps_composite;
+  if (!p.competitor_density && p.competitor_count) p.competitor_density = p.competitor_count;
+  if (!p.return_rate && p.margin_pct) p.return_rate = Math.max(0, 100 - (p.margin_pct || 60));
+
+  // Extract raw scores
+  const camillo = p.camillo_score || 0;
+  const stepps = p.stepps_total || 0;
+  const steppMax = c(kpi, 'stepps_badge_thresholds.max_score', 30);
+
+  // Pre-suasion: pull from product or estimate from category signals
+  const preMax = c(pre, 'max_score', 35);
+  const preScore = p.presuasion_score || estimatePresuasion(p, pre);
+
+  const combined = stepps + preScore;
+  const combinedMax = c(gates, 'combined_score_max', 65);
+
+  // Risk scoring
+  const returnRate = p.return_rate || c(kpi, 'simulator_defaults.return_rate_pct', 10);
+  const satisfaction = p.satisfaction_score || 100 - returnRate * 2;
+  const competitorDensity = p.competitor_density || 25;
+  const phase = p.gold_rush_phase || 'growth';
+  const phaseRisk = phase === 'decline' ? 90 : phase === 'peak' ? 60 : phase === 'growth' ? 30 : 50;
+
+  const riskDims = c(gates, 'risk_dimensions', []);
+  const returnWeight = riskDims.length > 0 ? riskDims[0].weight : 0.30;
+  const satWeight = riskDims.length > 1 ? riskDims[1].weight : 0.25;
+  const crowdWeight = riskDims.length > 2 ? riskDims[2].weight : 0.25;
+  const lcWeight = riskDims.length > 3 ? riskDims[3].weight : 0.20;
+
+  const riskScore = Math.round(
+    (Math.min(returnRate / 40 * 100, 100) * returnWeight) +
+    (Math.max(0, 100 - satisfaction) * satWeight) +
+    (Math.min(competitorDensity / 100 * 100, 100) * crowdWeight) +
+    (phaseRisk * lcWeight)
+  );
+
+  // ROI estimate
+  const supplierCost = p.supplier_cost || c(kpi, 'simulator_defaults.supplier_cost', 8);
+  const retailPrice = p.retail_price || c(kpi, 'simulator_defaults.retail_price', 35);
+  const shippingCost = p.shipping_cost || c(kpi, 'simulator_defaults.shipping_cost', 3);
+  const procRate = c(kpi, 'processing_fee.rate_pct', 2.9) / 100;
+  const procFlat = c(kpi, 'processing_fee.flat_fee', 0.30);
+  const processingFee = retailPrice * procRate + procFlat;
+  const returnCost = retailPrice * (returnRate / 100);
+  const cogs = supplierCost + shippingCost + processingFee + returnCost;
+  const grossProfit = retailPrice - cogs;
+  const cm = retailPrice > 0 ? (grossProfit / retailPrice * 100) : 0;
+  const markup = supplierCost > 0 ? (retailPrice / supplierCost) : 0;
+  const projectedROI = Math.round(cm * (combined / combinedMax) * (1 - riskScore / 100));
+
+  // Satisfaction flagging
+  const satMin = c(satFilter, 'satisfaction_min', 50);
+  const retMax = c(satFilter, 'return_rate_max', 25);
+  const flagged = satisfaction < satMin && returnRate > retMax;
+
+  // Investment gate
+  const gateList = c(gates, 'gates', []);
+  let gate = gateList.length > 0 ? gateList[gateList.length - 1] : { gate: 'Avoid', color: '#ff8fab' };
+  if (!flagged) {
+    for (const g of gateList) {
+      if (combined >= (g.min_combined || 0) && returnRate <= (g.max_return_rate || 100) && satisfaction >= (g.min_satisfaction || 0)) {
+        gate = g;
+        break;
+      }
+    }
+  }
+
+  // Arbitrage gap
+  const arbGap = p.arbitrage_gap || 0;
+  const arbStrong = c(kpi, 'arbitrage_gap.strong_min', 200);
+  const arbMonitor = c(kpi, 'arbitrage_gap.monitor_min', 50);
+  const arbRing = arbGap >= arbStrong ? 'confirmed' : arbGap >= arbMonitor ? 'validating' : 'emerging';
+
+  // ── Wealth Score (composite benchmark) ──
+  const bench = c(CFG, 'composite_benchmarks.wealth_score', {});
+  const bWeights = c(bench, 'weights', {});
+  const wCamillo = (bWeights.camillo_pct || 0.30);
+  const wVirality = (bWeights.virality_pct || 0.20);
+  const wPersuasion = (bWeights.persuasion_pct || 0.15);
+  const wMargin = (bWeights.margin_pct || 0.20);
+  const wArb = (bWeights.arbitrage_gap_pct || 0.15);
+
+  const wealthScore = Math.round(
+    (camillo / 100 * 100 * wCamillo) +
+    (stepps / steppMax * 100 * wVirality) +
+    (preScore / preMax * 100 * wPersuasion) +
+    (Math.min(cm, 80) / 80 * 100 * wMargin) +
+    (Math.min(arbGap, 300) / 300 * 100 * wArb)
+  );
+
+  const benchMax = c(bench, 'max', 100);
+  const tiers = c(bench, 'tiers', []);
+  let wealthTier = tiers.length > 0 ? tiers[tiers.length - 1] : { label: 'Dead Money', color: '#ff8fab', action: '' };
+  for (const t of tiers) {
+    if (wealthScore >= (t.min || 0)) { wealthTier = t; break; }
+  }
+
+  // Monthly profit estimate (risk-adjusted)
+  const dailyOrders = p.estimated_daily_volume || c(kpi, 'simulator_defaults.orders_per_day', 5);
+  const monthlyProfit = grossProfit * dailyOrders * 30;
+  const phaseMultipliers = c(CFG, 'composite_benchmarks.risk_adjusted_return.phase_multipliers', {});
+  const phaseMult = phaseMultipliers[phase] || 0.6;
+  const riskAdjProfit = Math.round(monthlyProfit * (1 - riskScore / 100) * phaseMult);
+
+  return {
+    ...p,
+    camillo, stepps, preScore, preMax, steppMax,
+    combined, combinedMax,
+    riskScore, returnRate, satisfaction, competitorDensity, phase, phaseRisk,
+    grossProfit, cm, markup, supplierCost, retailPrice, shippingCost, processingFee, returnCost,
+    projectedROI,
+    flagged, gate, gateLabel: gate.gate, gateColor: gate.color,
+    arbGap, arbRing,
+    wealthScore, wealthTier, benchMax,
+    dailyOrders, monthlyProfit, riskAdjProfit, phaseMult
+  };
+}
+
+function estimatePresuasion(p, preCfg) {
+  // Heuristic estimation when no manual score exists
+  // Based on category signals and available product data
+  const dims = c(preCfg, 'dimensions', []);
+  let score = 0;
+  const cat = (p.category || '').toLowerCase();
+  // Simple heuristic per dimension based on category/data
+  dims.forEach(d => {
+    let s = 2; // baseline
+    if (d.key === 'reciprocity' && (cat.includes('health') || cat.includes('beauty') || cat.includes('kit'))) s = 4;
+    if (d.key === 'commitment' && (cat.includes('fitness') || cat.includes('eco') || cat.includes('vegan') || cat.includes('gaming'))) s = 4;
+    if (d.key === 'social_proof' && (p.stepps_total || p.stepps_composite || 0) > 18) s = 4;
+    if (d.key === 'authority' && (cat.includes('safety') || cat.includes('health') || cat.includes('cert'))) s = 4;
+    if (d.key === 'scarcity' && p.gold_rush_phase === 'growth') s = 3;
+    if (d.key === 'unity' && (cat.includes('community') || cat.includes('craft') || cat.includes('outdoor'))) s = 4;
+    if (d.key === 'attention_priming' && (p.stepps_total || 0) > c(preCfg, 'badge_thresholds.moderate', 15)) s = 4;
+    score += s * (d.weight || 1);
+  });
+  return Math.round(Math.min(score, c(preCfg, 'max_score', 35)));
+}
+
+// ── Metric Strip ──
+function renderMetricStrip() {
+  const visible = getVisibleProducts();
+  const all = PRODUCTS;
+  document.getElementById('ms-total').textContent = all.length;
+  document.getElementById('ms-strong').textContent = all.filter(p => p.gateLabel === 'Strong Buy').length;
+  document.getElementById('ms-buy').textContent = all.filter(p => p.gateLabel === 'Buy').length;
+  document.getElementById('ms-hold').textContent = all.filter(p => p.gateLabel === 'Hold / Watch').length;
+  document.getElementById('ms-avoid').textContent = all.filter(p => p.gateLabel === 'Avoid').length;
+  const flaggedCount = all.filter(p => p.flagged).length;
+  document.getElementById('ms-flagged').textContent = flaggedCount;
+
+  // Satisfaction alert
+  const alertEl = document.getElementById('satisfaction-alert');
+  if (flaggedCount > 0) {
+    const satFilter = c(CFG, 'presuasion.investment_gates.satisfaction_filter', {});
+    alertEl.style.display = 'flex';
+    document.getElementById('alert-text').textContent =
+      flaggedCount + ' product(s) flagged: satisfaction < ' + c(satFilter, 'satisfaction_min', 50) +
+      '% AND return rate > ' + c(satFilter, 'return_rate_max', 25) + '% — ' + c(satFilter, 'flag_label', 'High Risk');
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+// ── Visible products after filters ──
+function getVisibleProducts() {
+  return PRODUCTS.filter(p => {
+    if (ACTIVE_GATE !== 'all' && p.gateLabel !== ACTIVE_GATE) return false;
+    if (!SHOW_FLAGGED && p.flagged) return false;
+    if (HIDE_BAD_SAT && p.flagged) return false;
+    return true;
+  });
+}
+
+// ── SCATTER PLOT ──
+function renderScatter() {
+  const canvas = document.getElementById('scatter-canvas');
+  // Clear existing dots (keep axis labels)
+  canvas.querySelectorAll('.scatter-dot,.grid-line,.quadrant-label').forEach(e => e.remove());
+
+  const products = getVisibleProducts();
+  if (products.length === 0) return;
+
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  const PAD = 40;
+
+  // Grid lines
+  for (let i = 1; i < 4; i++) {
+    const hl = document.createElement('div');
+    hl.className = 'grid-line h';
+    hl.style.top = (PAD + (H - 2 * PAD) * i / 4) + 'px';
+    canvas.appendChild(hl);
+    const vl = document.createElement('div');
+    vl.className = 'grid-line v';
+    vl.style.left = (PAD + (W - 2 * PAD) * i / 4) + 'px';
+    canvas.appendChild(vl);
+  }
+
+  // Quadrant labels
+  const quads = [
+    { text: 'HIGH RETURN / LOW RISK', x: PAD + 10, y: PAD + 10, color: 'var(--mint)' },
+    { text: 'HIGH RETURN / HIGH RISK', x: W - PAD - 160, y: PAD + 10, color: 'var(--gold)' },
+    { text: 'LOW RETURN / LOW RISK', x: PAD + 10, y: H - PAD - 20, color: 'var(--muted)' },
+    { text: 'LOW RETURN / HIGH RISK', x: W - PAD - 150, y: H - PAD - 20, color: 'var(--rose)' }
+  ];
+  quads.forEach(q => {
+    const ql = document.createElement('div');
+    ql.className = 'quadrant-label';
+    ql.style.left = q.x + 'px';
+    ql.style.top = q.y + 'px';
+    ql.style.color = q.color;
+    ql.textContent = q.text;
+    canvas.appendChild(ql);
+  });
+
+  // Scale
+  const maxRisk = Math.max(...products.map(p => p.riskScore), 80);
+  const maxROI = Math.max(...products.map(p => p.projectedROI), 50);
+
+  products.forEach(p => {
+    const dot = document.createElement('div');
+    dot.className = 'scatter-dot' + (p.flagged ? ' flagged' : '') + (SELECTED && SELECTED.id === p.id ? ' selected' : '');
+    const x = PAD + (p.riskScore / maxRisk) * (W - 2 * PAD);
+    const y = H - PAD - (p.projectedROI / maxROI) * (H - 2 * PAD);
+    const size = 10 + (p.combined / p.combinedMax) * 20; // size = combined score
+    dot.style.width = size + 'px';
+    dot.style.height = size + 'px';
+    dot.style.left = (x - size / 2) + 'px';
+    dot.style.top = (y - size / 2) + 'px';
+    dot.style.background = p.gateColor;
+    dot.title = p.name + ' | Risk:' + p.riskScore + ' ROI:' + p.projectedROI + ' Gate:' + p.gateLabel;
+    dot.onclick = () => selectProduct(p);
+    canvas.appendChild(dot);
+  });
+}
+
+// ── SCATTER LEGEND ──
+function renderScatterLegend() {
+  const gateList = c(CFG, 'presuasion.investment_gates.gates', []);
+  const el = document.getElementById('scatter-legend');
+  el.innerHTML = gateList.map(g =>
+    '<span><span class="legend-dot" style="background:' + g.color + '"></span>' + g.gate + '</span>'
+  ).join('') + '<span style="margin-left:16px">Size = Combined STEPPS + Pre-suasion</span>';
+}
+
+// ── RADAR ──
+function renderRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  canvas.querySelectorAll('.radar-ring,.radar-ring-label,.radar-node').forEach(e => e.remove());
+
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.min(W, H) / 2 - 30;
+
+  // Rings
+  const rings = [
+    { label: 'Confirmed', r: maxR * 0.33, color: 'var(--mint)' },
+    { label: 'Validating', r: maxR * 0.66, color: 'var(--gold)' },
+    { label: 'Emerging', r: maxR, color: 'var(--violet)' }
+  ];
+  rings.forEach(ring => {
+    const el = document.createElement('div');
+    el.className = 'radar-ring';
+    el.style.width = (ring.r * 2) + 'px';
+    el.style.height = (ring.r * 2) + 'px';
+    el.style.left = (cx - ring.r) + 'px';
+    el.style.top = (cy - ring.r) + 'px';
+    el.style.borderColor = ring.color;
+    canvas.appendChild(el);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'radar-ring-label';
+    lbl.textContent = ring.label;
+    lbl.style.color = ring.color;
+    lbl.style.left = (cx + ring.r * 0.7) + 'px';
+    lbl.style.top = (cy - ring.r + 2) + 'px';
+    canvas.appendChild(lbl);
+  });
+
+  // Place products
+  const products = getVisibleProducts();
+  products.forEach((p, i) => {
+    const ringR = p.arbRing === 'confirmed' ? rings[0].r * 0.5
+      : p.arbRing === 'validating' ? rings[0].r + (rings[1].r - rings[0].r) * 0.5
+      : rings[1].r + (rings[2].r - rings[1].r) * 0.5;
+    const angle = (i / Math.max(products.length, 1)) * Math.PI * 2 - Math.PI / 2;
+    const jitter = (Math.random() - 0.5) * 30;
+    const x = cx + Math.cos(angle) * (ringR + jitter);
+    const y = cy + Math.sin(angle) * (ringR + jitter);
+
+    const node = document.createElement('div');
+    node.className = 'radar-node';
+    node.style.left = (x - 6) + 'px';
+    node.style.top = (y - 6) + 'px';
+    node.style.background = p.gateColor;
+    if (p.flagged) node.style.border = '2px solid var(--red)';
+    node.innerHTML = '<div class="tooltip">' + p.name + '<br>Gap: ' + p.arbGap + '% | Gate: ' + p.gateLabel + '</div>';
+    node.onclick = () => selectProduct(p);
+    canvas.appendChild(node);
+  });
+}
+
+// ── HEATMAP ──
+function renderHeatmap() {
+  const container = document.getElementById('heatmap-container');
+  const markets = c(CFG, 'eu_dropship.markets', []);
+  const products = PRODUCTS;
+
+  if (markets.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">&#127758;</div><div>No EU market config loaded</div></div>';
+    return;
+  }
+
+  // Create a crowding matrix: markets × product categories
+  const categories = [...new Set(products.map(p => p.category || 'Uncategorized'))].slice(0, 8);
+  if (categories.length === 0) categories.push('General');
+
+  const cols = markets.length + 1;
+  const grid = document.createElement('div');
+  grid.className = 'heatmap-grid';
+  grid.style.gridTemplateColumns = '100px ' + markets.map(() => '1fr').join(' ');
+
+  // Header row
+  const corner = document.createElement('div');
+  corner.className = 'heat-label';
+  corner.textContent = '';
+  grid.appendChild(corner);
+  markets.forEach(m => {
+    const hdr = document.createElement('div');
+    hdr.className = 'heat-label';
+    hdr.textContent = m.code;
+    hdr.title = m.name + ' (VAT ' + m.vat_pct + '%)';
+    grid.appendChild(hdr);
+  });
+
+  // Data rows
+  categories.forEach(cat => {
+    const catLabel = document.createElement('div');
+    catLabel.className = 'heat-label';
+    catLabel.style.textAlign = 'right';
+    catLabel.style.paddingRight = '8px';
+    catLabel.textContent = cat.substring(0, 15);
+    grid.appendChild(catLabel);
+
+    markets.forEach(m => {
+      // Crowding score heuristic: based on products in this category + market rank
+      const catProds = products.filter(p => (p.category || 'Uncategorized') === cat);
+      const avgDensity = catProds.reduce((s, p) => s + (p.competitor_density || 25), 0) / Math.max(catProds.length, 1);
+      const rankFactor = m.ecom_rank <= 3 ? 1.3 : m.ecom_rank <= 5 ? 1.0 : 0.7;
+      const crowding = Math.round(avgDensity * rankFactor);
+      const score = Math.min(100, crowding);
+
+      // Color: green (low crowding = opportunity) → red (high crowding = saturated)
+      const heatColors = c(CFG, 'dropship_kpi.heat_color_thresholds', {});
+      const excellent = heatColors.excellent || 80;
+      const good = heatColors.good || 60;
+      const fair = heatColors.fair || 40;
+      let bg, fg;
+      if (score < fair) { bg = 'var(--mint)'; fg = '#000'; }
+      else if (score < good) { bg = 'var(--gold)'; fg = '#000'; }
+      else if (score < excellent) { bg = 'var(--orange)'; fg = '#000'; }
+      else { bg = 'var(--rose)'; fg = '#000'; }
+
+      const cell = document.createElement('div');
+      cell.className = 'heat-cell';
+      cell.style.background = bg;
+      cell.style.color = fg;
+      cell.style.height = '36px';
+      cell.textContent = score;
+      cell.title = cat + ' in ' + m.name + ': Crowding ' + score + '/100';
+      grid.appendChild(cell);
+    });
+  });
+
+  container.appendChild(grid);
+
+  // Legend
+  const leg = document.createElement('div');
+  leg.className = 'legend';
+  leg.style.marginTop = '8px';
+  leg.innerHTML = '<span><span class="legend-dot" style="background:var(--mint)"></span>Blue Ocean</span>' +
+    '<span><span class="legend-dot" style="background:var(--gold)"></span>Moderate</span>' +
+    '<span><span class="legend-dot" style="background:var(--orange)"></span>Crowding</span>' +
+    '<span><span class="legend-dot" style="background:var(--rose)"></span>Saturated</span>' +
+    '<span style="margin-left:8px;font-size:.65rem">(Lower = better opportunity)</span>';
+  container.appendChild(leg);
+}
+
+// ── CONTRARIAN SIGNALS ──
+function renderContrarianGrid() {
+  const grid = document.getElementById('contrarian-grid');
+  const indicators = c(CFG, 'eu_dropship.contrarian_signals.smart_money_indicators', []);
+  const weights = c(CFG, 'eu_dropship.contrarian_signals.anti_pattern_scoring.weights', {});
+
+  indicators.forEach(ind => {
+    const card = document.createElement('div');
+    card.style.background = 'var(--surface2)';
+    card.style.border = '1px solid var(--border)';
+    card.style.borderLeft = '3px solid var(--orange)';
+    card.style.borderRadius = '0 8px 8px 0';
+    card.style.padding = '12px 14px';
+
+    const weightKey = ind.name.toLowerCase().replace(/[\s-]+/g, '_').replace(/[^a-z_]/g, '');
+    const wt = weights[weightKey] || '—';
+
+    card.innerHTML =
+      '<div style="font-size:.8rem;font-weight:600;color:var(--orange)">' + ind.name + ' <span style="color:var(--muted);font-weight:400;font-size:.7rem">(wt: ' + wt + ')</span></div>' +
+      '<div style="font-size:.7rem;color:var(--muted);margin-top:4px">' + ind.formula + '</div>' +
+      '<div style="font-size:.7rem;color:var(--mint);margin-top:4px">' + ind.edge + '</div>' +
+      '<div style="font-size:.65rem;color:var(--border);margin-top:4px">Source: ' + ind.data_source + '</div>';
+    grid.appendChild(card);
+  });
+}
+
+// ── SELECT PRODUCT ──
+function selectProduct(p) {
+  SELECTED = p;
+
+  // Update thesis card
+  document.getElementById('thesis-empty').style.display = 'none';
+  const card = document.getElementById('thesis-card');
+  card.classList.add('active');
+
+  document.getElementById('tc-wealth').textContent = p.wealthScore;
+  document.getElementById('tc-wealth').style.color = p.wealthTier.color;
+  document.getElementById('tc-monthly').textContent = '\u20AC' + Math.round(p.monthlyProfit).toLocaleString();
+  document.getElementById('tc-monthly').style.color = p.monthlyProfit > 0 ? 'var(--mint)' : 'var(--red)';
+  document.getElementById('tc-riskadjmonthly').textContent = '\u20AC' + p.riskAdjProfit.toLocaleString();
+  document.getElementById('tc-riskadjmonthly').style.color = p.riskAdjProfit > 0 ? 'var(--mint)' : 'var(--red)';
+  document.getElementById('tc-phasemult').textContent = p.phaseMult + '\u00D7 (' + p.phase + ')';
+
+  document.getElementById('tc-name').textContent = p.name || 'Product #' + p.id;
+  document.getElementById('tc-category').textContent = (p.category || 'Uncategorized') + ' | Phase: ' + (p.phase || '—') + ' | Arb Gap: ' + p.arbGap + '%';
+
+  const badge = document.getElementById('tc-gate');
+  badge.textContent = p.gateLabel;
+  badge.style.background = p.gateColor;
+
+  document.getElementById('tc-camillo').textContent = p.camillo;
+  const camilloHigh = c(CFG, 'dropship_kpi.verdict_thresholds.test_now_min_camillo', 70);
+  const camilloMid = c(CFG, 'dropship_kpi.verdict_thresholds.watchlist_min_camillo', 60);
+  document.getElementById('tc-camillo').style.color = p.camillo >= camilloHigh ? 'var(--mint)' : p.camillo >= camilloMid ? 'var(--gold)' : 'var(--rose)';
+
+  document.getElementById('tc-stepps').textContent = p.stepps + '/' + p.steppMax;
+  const steppsHigh = c(CFG, 'dropship_kpi.stepps_badge_thresholds.high', 22);
+  const steppsMod = c(CFG, 'dropship_kpi.stepps_badge_thresholds.moderate', 14);
+  document.getElementById('tc-stepps').style.color = p.stepps >= steppsHigh ? 'var(--mint)' : p.stepps >= steppsMod ? 'var(--gold)' : 'var(--rose)';
+
+  document.getElementById('tc-presuasion').textContent = p.preScore + '/' + p.preMax;
+  const preHigh = c(CFG, 'presuasion.badge_thresholds.high', 25);
+  const preMod = c(CFG, 'presuasion.badge_thresholds.moderate', 15);
+  document.getElementById('tc-presuasion').style.color = p.preScore >= preHigh ? 'var(--mint)' : p.preScore >= preMod ? 'var(--gold)' : 'var(--rose)';
+
+  document.getElementById('tc-combined-val').textContent = p.combined;
+  document.getElementById('tc-combined-max').textContent = p.combinedMax;
+  const comBar = document.getElementById('tc-combined-bar');
+  comBar.style.width = (p.combined / p.combinedMax * 100) + '%';
+  comBar.style.background = 'linear-gradient(90deg, var(--violet), var(--cyan), var(--mint))';
+
+  // Risk dimensions
+  const risksEl = document.getElementById('tc-risks');
+  risksEl.innerHTML = '';
+  const riskDims = c(CFG, 'presuasion.investment_gates.risk_dimensions', []);
+  const riskValues = [
+    Math.min(p.returnRate / 40 * 100, 100),
+    Math.max(0, 100 - p.satisfaction),
+    Math.min(p.competitorDensity / 100 * 100, 100),
+    p.phaseRisk
+  ];
+  riskDims.forEach((rd, i) => {
+    const val = Math.round(riskValues[i] || 0);
+    const riskHigh = c(CFG, 'dropship_kpi.heat_color_thresholds.good', 60);
+    const riskMid = c(CFG, 'dropship_kpi.heat_color_thresholds.fair', 40);
+    const color = val > riskHigh ? 'var(--red)' : val > riskMid ? 'var(--gold)' : 'var(--mint)';
+    risksEl.innerHTML +=
+      '<div class="risk-meter">' +
+      '<div class="lbl">' + rd.name.replace(' Risk', '') + '</div>' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + val + '%;background:' + color + '"></div></div>' +
+      '<div class="val" style="color:' + color + '">' + val + '</div>' +
+      '</div>';
+  });
+
+  // Unit economics
+  const ecoEl = document.getElementById('tc-economics');
+  ecoEl.innerHTML = '';
+  const ecoItems = [
+    { label: 'Retail Price', value: '\u20AC' + p.retailPrice.toFixed(2), color: 'var(--cyan)' },
+    { label: 'Supplier Cost', value: '\u20AC' + p.supplierCost.toFixed(2), color: 'var(--muted)' },
+    { label: 'Shipping', value: '\u20AC' + p.shippingCost.toFixed(2), color: 'var(--muted)' },
+    { label: 'Processing Fee', value: '\u20AC' + p.processingFee.toFixed(2), color: 'var(--muted)' },
+    { label: 'Return Cost', value: '\u20AC' + p.returnCost.toFixed(2), color: p.returnRate > c(CFG, 'dropship_kpi.benchmarks.return_rate_ceiling', 20) ? 'var(--red)' : 'var(--muted)' },
+    { label: 'Gross Profit', value: '\u20AC' + p.grossProfit.toFixed(2), color: p.grossProfit > 0 ? 'var(--mint)' : 'var(--red)' },
+    { label: 'Contribution Margin', value: p.cm.toFixed(1) + '%', color: p.cm > c(CFG, 'dropship_kpi.benchmarks.contribution_margin_min', 25) ? 'var(--mint)' : p.cm > 15 ? 'var(--gold)' : 'var(--red)' },
+    { label: 'Markup Multiple', value: p.markup.toFixed(1) + '\u00D7', color: p.markup >= c(CFG, 'dropship_kpi.benchmarks.markup_multiple.min', 4) ? 'var(--mint)' : 'var(--gold)' }
+  ];
+  ecoItems.forEach(it => {
+    ecoEl.innerHTML +=
+      '<div class="score-item"><div class="label">' + it.label + '</div><div class="value" style="color:' + it.color + '">' + it.value + '</div></div>';
+  });
+
+  // Satisfaction flag
+  const satFlag = document.getElementById('tc-satisfaction-flag');
+  const satText = document.getElementById('tc-sat-text');
+  if (p.flagged) {
+    satFlag.style.display = 'block';
+    const fl = c(CFG, 'presuasion.investment_gates.satisfaction_filter.flag_label', 'Flagged');
+    satText.textContent = fl + ' — Satisfaction: ' + Math.round(p.satisfaction) + '%, Return Rate: ' + p.returnRate + '%';
+  } else {
+    satFlag.style.display = 'none';
+  }
+
+  // Scoring panel
+  renderScoringDetail(p);
+
+  // Re-render scatter to show selection
+  renderScatter();
+}
+
+// ── SCORING DETAIL (STEPPS + Pre-suasion) ──
+function renderScoringDetail(p) {
+  document.getElementById('scoring-empty').style.display = 'none';
+  document.getElementById('scoring-detail').style.display = 'block';
+
+  // STEPPS bars
+  const steppsBars = document.getElementById('stepps-bars');
+  steppsBars.innerHTML = '';
+  const steppsLabels = c(CFG, 'stepps_labels', {});
+  const steppsKeys = ['SC', 'TR', 'EM', 'PU', 'PV', 'ST'];
+  steppsKeys.forEach(key => {
+    const val = p['stepps_' + key.toLowerCase()] || Math.round(p.stepps / 6);
+    const maxDim = 5;
+    const pct = (val / maxDim) * 100;
+    steppsBars.innerHTML +=
+      '<div class="risk-meter">' +
+      '<div class="lbl">' + (steppsLabels[key] || key) + '</div>' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:var(--gold)"></div></div>' +
+      '<div class="val" style="color:var(--gold)">' + val + '/5</div>' +
+      '</div>';
+  });
+
+  // Pre-suasion bars
+  const preBars = document.getElementById('presuasion-bars');
+  preBars.innerHTML = '';
+  const preDims = c(CFG, 'presuasion.dimensions', []);
+  preDims.forEach(d => {
+    const val = p['pre_' + d.key] || Math.round(p.preScore / preDims.length);
+    const pct = (val / 5) * 100;
+    preBars.innerHTML +=
+      '<div class="risk-meter">' +
+      '<div class="lbl" title="' + d.question + '">' + d.name + '</div>' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:var(--violet)"></div></div>' +
+      '<div class="val" style="color:var(--violet)">' + val + '/5</div>' +
+      '</div>';
+  });
+
+  // Privileged moments
+  const momentsEl = document.getElementById('priv-moments');
+  momentsEl.innerHTML = '';
+  const moments = c(CFG, 'presuasion.privileged_moments.moments', []);
+  moments.forEach(m => {
+    momentsEl.innerHTML +=
+      '<div class="moment-card">' +
+      '<div class="name">' + m.name + '</div>' +
+      '<div class="desc">' + m.description + '</div>' +
+      '<div class="strategy">' + m.ad_strategy + '</div>' +
+      '</div>';
+  });
+}
+
+// ── FILTERS ──
+function setupFilters() {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ACTIVE_GATE = btn.dataset.gate;
+      renderScatter();
+      renderRadar();
+    };
+  });
+
+  document.getElementById('toggle-flagged').onchange = (e) => {
+    SHOW_FLAGGED = e.target.checked;
+    renderScatter();
+    renderRadar();
+  };
+
+  document.getElementById('toggle-satisfaction').onchange = (e) => {
+    HIDE_BAD_SAT = e.target.checked;
+    renderScatter();
+    renderRadar();
+  };
+}
+
+// ── WEALTH CREATION ENGINE ──
+function renderWealthEngine() {
+  const products = PRODUCTS.filter(p => !p.flagged && p.gateLabel !== 'Avoid');
+  const totalRiskAdj = products.reduce((s, p) => s + p.riskAdjProfit, 0);
+  const activeCount = products.length;
+  const categories = new Set(products.map(p => p.category || 'Unknown'));
+
+  document.getElementById('ws-portfolio').textContent = '\u20AC' + totalRiskAdj.toLocaleString();
+  document.getElementById('ws-active').textContent = activeCount;
+  document.getElementById('ws-categories').textContent = categories.size;
+
+  // Income tier
+  const targets = c(CFG, 'composite_benchmarks.monthly_revenue_targets', {});
+  const tiers = Object.entries(targets).sort((a, b) => (b[1].monthly_eur || 0) - (a[1].monthly_eur || 0));
+  let incomeTier = 'Pre-Revenue';
+  for (const [key, t] of tiers) {
+    if (totalRiskAdj >= (t.monthly_eur || 0)) { incomeTier = t.label; break; }
+  }
+  document.getElementById('ws-tier').textContent = incomeTier;
+
+  // Revenue target bars
+  const targetsEl = document.getElementById('ws-targets');
+  targetsEl.innerHTML = '';
+  const allTiers = Object.values(targets).sort((a, b) => (a.monthly_eur || 0) - (b.monthly_eur || 0));
+  const maxTarget = allTiers.length > 0 ? allTiers[allTiers.length - 1].monthly_eur || 10000 : 10000;
+  allTiers.forEach(t => {
+    const pct = Math.min(totalRiskAdj / (t.monthly_eur || 1) * 100, 100);
+    const achieved = totalRiskAdj >= (t.monthly_eur || 0);
+    targetsEl.innerHTML +=
+      '<div class="risk-meter">' +
+      '<div class="lbl" style="width:120px">' + t.label + '</div>' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (achieved ? 'var(--mint)' : 'var(--border)') + '"></div></div>' +
+      '<div class="val" style="color:' + (achieved ? 'var(--mint)' : 'var(--muted)') + ';width:80px">\u20AC' + (t.monthly_eur || 0).toLocaleString() + '</div>' +
+      '</div>';
+  });
+
+  // Portfolio rules
+  const rules = c(CFG, 'composite_benchmarks.portfolio_rules', {});
+  const rulesEl = document.getElementById('ws-rules');
+  const ruleItems = [
+    ['Max Active Products', rules.max_products_active || 8],
+    ['Max Single Product %', (rules.max_pct_single_product || 30) + '%'],
+    ['Min Categories', rules.diversification_min_categories || 3],
+    ['Rebalance Trigger', (rules.rebalance_trigger_pct || 15) + '% shift'],
+    ['Stop-Loss Below', (rules.stop_loss_margin_below || 10) + '% margin'],
+    ['Take-Profit Above', (rules.take_profit_margin_above || 50) + '% margin'],
+  ];
+  rulesEl.innerHTML = ruleItems.map(([k, v]) =>
+    '<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;margin:2px;font-size:.65rem">' + k + ': <strong style="color:var(--cyan)">' + v + '</strong></span>'
+  ).join('');
+}
+
+// ── WEALTH LEADERBOARD ──
+function renderLeaderboard() {
+  const el = document.getElementById('wealth-leaderboard');
+  const sorted = [...PRODUCTS].sort((a, b) => b.wealthScore - a.wealthScore);
+  el.innerHTML = '';
+
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '10px';
+    row.style.padding = '8px 10px';
+    row.style.borderBottom = '1px solid var(--border)';
+    row.style.cursor = 'pointer';
+    row.style.transition = 'background .15s';
+    row.onmouseenter = () => row.style.background = 'var(--surface2)';
+    row.onmouseleave = () => row.style.background = 'transparent';
+    row.onclick = () => selectProduct(p);
+
+    const rank = document.createElement('div');
+    rank.style.cssText = 'width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#000;background:' + p.wealthTier.color;
+    rank.textContent = i + 1;
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.innerHTML = '<div style="font-size:.8rem;font-weight:600">' + (p.name || 'Product #' + p.id) + '</div>' +
+      '<div style="font-size:.65rem;color:var(--muted)">' + (p.category || '') + ' \u00B7 ' + p.phase + ' \u00B7 ' + p.gateLabel + '</div>';
+
+    const scoreBox = document.createElement('div');
+    scoreBox.style.textAlign = 'right';
+    scoreBox.innerHTML = '<div style="font-size:1rem;font-weight:700;color:' + p.wealthTier.color + '">' + p.wealthScore + '</div>' +
+      '<div style="font-size:.6rem;color:var(--muted)">' + p.wealthTier.label + '</div>';
+
+    const profitBox = document.createElement('div');
+    profitBox.style.textAlign = 'right';
+    profitBox.style.width = '90px';
+    profitBox.innerHTML = '<div style="font-size:.8rem;font-weight:600;color:' + (p.riskAdjProfit > 0 ? 'var(--mint)' : 'var(--red)') + '">\u20AC' + p.riskAdjProfit.toLocaleString() + '</div>' +
+      '<div style="font-size:.6rem;color:var(--muted)">monthly (adj)</div>';
+
+    row.appendChild(rank);
+    row.appendChild(info);
+    row.appendChild(scoreBox);
+    row.appendChild(profitBox);
+    el.appendChild(row);
+  });
+}
+
+// ── Boot ──
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

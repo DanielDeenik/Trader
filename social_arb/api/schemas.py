@@ -347,3 +347,48 @@ class SourceHealthResponse(BaseModel):
     """Health status of all data sources."""
     sources: List[SourceHealth]
     as_of: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+
+# ─── STEPPS Classifier ────────────────────────────────────────────────────────
+
+
+class SteppsScoreCreate(BaseModel):
+    signal_id: int
+    social_currency: float = Field(ge=0, le=1)
+    triggers: float = Field(ge=0, le=1)
+    emotion: float = Field(ge=0, le=1)
+    public_visibility: float = Field(ge=0, le=1)
+    practical_value: float = Field(ge=0, le=1)
+    stories: float = Field(ge=0, le=1)
+
+
+class SteppsScoreResponse(BaseModel):
+    id: int
+    signal_id: int
+    social_currency: float
+    triggers: float
+    emotion: float
+    public_visibility: float
+    practical_value: float
+    stories: float
+    composite: float
+    scored_by: str
+    model_version: Optional[str]
+    created_at: str
+
+
+class SteppsCorrectionCreate(BaseModel):
+    signal_id: int
+    social_currency: float = Field(ge=0, le=1)
+    triggers: float = Field(ge=0, le=1)
+    emotion: float = Field(ge=0, le=1)
+    public_visibility: float = Field(ge=0, le=1)
+    practical_value: float = Field(ge=0, le=1)
+    stories: float = Field(ge=0, le=1)
+
+
+class SteppsTrainResponse(BaseModel):
+    success: bool
+    training_count: int
+    model_version: Optional[str]
+    error: Optional[str]

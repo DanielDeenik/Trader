@@ -201,3 +201,44 @@ async def handle_backfill(
         msg = f"Backfill error: {str(e)}"
         logger.error(msg, exc_info=True)
         return {"bar_count": 0, "error": msg}
+
+
+async def handle_train_stepps(
+    params: Dict[str, Any],
+    db_path: str = DEFAULT_DB_PATH,
+) -> Dict[str, Any]:
+    """
+    Handle a 'train_stepps' task. Retrains STEPPS classifier on labeled data.
+
+    Params:
+        None (uses all available training data from stepps_training table)
+    """
+    from social_arb.engine.stepps_classifier import SteppsClassifier
+
+    logger.info("STEPPS training task starting")
+
+    try:
+        classifier = SteppsClassifier(db_path=db_path)
+        result = classifier.train(db_path=db_path)
+
+        logger.info(f"STEPPS training complete: {result}")
+
+        return result
+
+    except Exception as e:
+        msg = f"STEPPS training error: {str(e)}"
+        logger.error(msg, exc_info=True)
+        return {
+            "success": False,
+            "training_count": 0,
+            "model_version": None,
+            "error": msg,
+        }
+
+
+HANDLER_MAP = {
+    "collect": handle_collect,
+    "analyze": handle_analyze,
+    "backfill": handle_backfill,
+    "train_stepps": handle_train_stepps,
+}

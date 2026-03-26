@@ -27,8 +27,10 @@ class TaskScheduler:
         # Scheduling config (in seconds)
         self.collect_interval = 4 * 3600  # 4 hours
         self.analyze_interval = 6 * 3600  # 6 hours
+        self.train_stepps_interval = 7 * 24 * 3600  # 7 days
         self.last_collect_at: Optional[datetime] = None
         self.last_analyze_at: Optional[datetime] = None
+        self.last_train_stepps_at: Optional[datetime] = None
 
     async def start(self) -> None:
         """Start the scheduler."""
@@ -62,6 +64,10 @@ class TaskScheduler:
                     await self._create_analyze_task()
                     self.last_analyze_at = now
 
+                if self._should_train_stepps(now):
+                    await self._create_train_stepps_task()
+                    self.last_train_stepps_at = now
+
         except asyncio.CancelledError:
             logger.info("Scheduler loop cancelled")
         except Exception as e:
@@ -80,6 +86,12 @@ class TaskScheduler:
         if self.last_analyze_at is None:
             return True
         return (now - self.last_analyze_at).total_seconds() >= self.analyze_interval
+
+    def _should_train_stepps(self, now: datetime) -> bool:
+        """Check if it's time to create a train_stepps task."""
+        if self.last_train_stepps_at is None:
+            return True
+        return (now - self.last_train_stepps_at).total_seconds() >= self.train_stepps_interval
 
     async def _create_collect_task(self) -> None:
         """Create a collection task for all public sources."""
@@ -129,3 +141,17 @@ class TaskScheduler:
 
         except Exception as e:
             logger.error(f"Failed to create analyze task: {e}", exc_info=True)
+
+    async def _create_train_stepps_task(self) -> None:
+        """Create a weekly STEPPS retraining task."""
+        logger.info("Scheduler: creating STEPPS training task")
+        try:
+            await self.queue.enqueue(
+                task_type="train_stepps",
+                params={},
+                max_attempts=2,
+            )
+            logger.info("Scheduled STEPPS training task")
+
+        except Exception as e:
+            logger.error(f"Failed to create STEPPS training task: {e}", exc_info=True)

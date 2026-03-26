@@ -1,5 +1,6 @@
 """Tests for instruments CRUD API."""
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from social_arb.api.main import create_app
 
@@ -10,33 +11,39 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture
+def unique_symbol():
+    """Generate unique symbol to avoid test conflicts."""
+    return f"TST{uuid.uuid4().hex[:6].upper()}"
+
+
 def test_list_instruments_empty(client):
     resp = client.get("/api/v1/instruments")
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
 
 
-def test_create_instrument(client):
+def test_create_instrument(client, unique_symbol):
     resp = client.post("/api/v1/instruments", json={
-        "symbol": "TEST", "name": "Test Corp", "type": "stock",
+        "symbol": unique_symbol, "name": "Test Corp", "type": "stock",
     })
     assert resp.status_code == 201
-    assert resp.json()["symbol"] == "TEST"
+    assert resp.json()["symbol"] == unique_symbol
 
 
-def test_create_and_list(client):
+def test_create_and_list(client, unique_symbol):
     client.post("/api/v1/instruments", json={
-        "symbol": "TEST2", "name": "Test2", "type": "crypto",
+        "symbol": unique_symbol, "name": "Test2", "type": "crypto",
     })
     resp = client.get("/api/v1/instruments?type=crypto")
     data = resp.json()
     symbols = [i["symbol"] for i in data]
-    assert "TEST2" in symbols
+    assert unique_symbol in symbols
 
 
-def test_delete_instrument(client):
+def test_delete_instrument(client, unique_symbol):
     resp = client.post("/api/v1/instruments", json={
-        "symbol": "DEL", "name": "Delete Me", "type": "stock",
+        "symbol": unique_symbol, "name": "Delete Me", "type": "stock",
     })
     inst_id = resp.json()["id"]
     del_resp = client.delete(f"/api/v1/instruments/{inst_id}")

@@ -1,19 +1,50 @@
 """FastAPI application factory."""
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from social_arb.api.deps import ensure_db, get_config
+from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
     health, instruments, signals, reviews, analysis, mosaics, theses, positions,
 )
+from social_arb.tasks.queue import TaskQueue
+from social_arb.tasks.scheduler import TaskScheduler
+from social_arb.tasks.workers import handle_collect, handle_analyze, handle_backfill
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize DB on startup."""
+    """Startup: init DB, start task queue and scheduler. Shutdown: stop them."""
     ensure_db()
+
+    # Initialize task queue
+    db_path = get_db_path()
+    queue = TaskQueue(db_path=db_path)
+    queue.register_handler("collect", handle_collect)
+    queue.register_handler("analyze", handle_analyze)
+    queue.register_handler("backfill", handle_backfill)
+    await queue.start()
+
+    # Initialize scheduler
+    scheduler = TaskScheduler(queue=queue, db_path=db_path)
+    await scheduler.start()
+
+    # Store in app state
+    app.state.queue = queue
+    app.state.scheduler = scheduler
+
+    logger.info("TaskQueue and TaskScheduler started")
+
     yield
+
+    # Shutdown
+    logger.info("Shutting down")
+    await scheduler.stop()
+    await queue.stop()
+    logger.info("TaskQueue and TaskScheduler stopped")
 
 
 def create_app() -> FastAPI:

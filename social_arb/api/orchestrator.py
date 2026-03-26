@@ -24,6 +24,7 @@ from social_arb.engine.kelly_sizer import KellyCriterionSizer
 from social_arb.engine.irr_simulator import IRRMOICSim
 from social_arb.engine.regulatory_moat import RegulatoryMoatScorer
 from social_arb.engine.cross_domain_amplifier import CrossDomainAmplifier
+from social_arb.engine.stepps_classifier import SteppsClassifier
 from social_arb.core.protocols import ConvictionLevel
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class EngineOrchestrator:
         self.irr = IRRMOICSim()
         self.moat = RegulatoryMoatScorer()
         self.amplifier = CrossDomainAmplifier()
+        self.stepps = SteppsClassifier(db_path=db_path)
 
     def run_all(self, symbol: str, portfolio_value: float = 100_000) -> Dict[str, Any]:
         """Run all engines for a symbol. Returns engine_name → result dict."""
@@ -67,6 +69,9 @@ class EngineOrchestrator:
 
         # 6. Cross-Domain Amplifier
         results["cross_domain_amplifier"] = self._run_amplifier(signals)
+
+        # 7. STEPPS Classifier
+        results["stepps_classifier"] = self._run_stepps(signals)
 
         return results
 
@@ -174,4 +179,35 @@ class EngineOrchestrator:
             return result.to_dict() if hasattr(result, "to_dict") else {"error": "no result"}
         except Exception as e:
             logger.error(f"Cross-domain amplifier error: {e}")
+            return {"error": str(e)}
+
+    def _run_stepps(self, signals: list) -> dict:
+        """Run STEPPS classifier on signals."""
+        try:
+            if not signals:
+                return {"error": "no signals to score"}
+
+            # Score each signal
+            scores = []
+            for signal in signals[:10]:  # Score top 10 most recent
+                signal_dict = {
+                    "id": signal.get("id"),
+                    "strength": signal.get("strength", 0.5),
+                    "confidence": signal.get("confidence", 0.5),
+                    "direction": signal.get("direction", "neutral"),
+                    "source": signal.get("source", "unknown"),
+                    "signal_type": signal.get("signal_type", "general"),
+                }
+                result = self.stepps.score(signal_dict)
+                scores.append(result.to_dict())
+
+            avg_composite = sum(s["composite"] for s in scores) / len(scores) if scores else 0.5
+
+            return {
+                "scores": scores,
+                "avg_composite": round(avg_composite, 2),
+                "signal_count": len(scores),
+            }
+        except Exception as e:
+            logger.error(f"STEPPS classifier error: {e}")
             return {"error": str(e)}

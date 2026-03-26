@@ -425,6 +425,198 @@ def query_positions(
         return [dict(row) for row in cursor.fetchall()]
 
 
+# TIER 1: INSTRUMENTS
+
+
+def insert_instrument(
+    *,
+    symbol: str,
+    name: str,
+    type: str,
+    sector: Optional[str] = None,
+    vertical: Optional[str] = None,
+    exchange: Optional[str] = None,
+    market_cap_b: Optional[float] = None,
+    data_class: str = "public",
+    metadata_json: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert an instrument. Returns lastrowid. Raises on duplicate symbol."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(9)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO instruments
+            (symbol, name, type, sector, vertical, exchange, market_cap_b, data_class, metadata_json)
+            VALUES ({ph})
+            """,
+            (symbol, name, type, sector, vertical, exchange, market_cap_b, data_class, metadata_json),
+        )
+        return cursor.lastrowid
+
+
+def query_instruments(
+    *,
+    symbol: Optional[str] = None,
+    type: Optional[str] = None,
+    data_class: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query instruments with optional filters."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = "SELECT * FROM instruments WHERE 1=1"
+        params = []
+        if symbol:
+            query += f" AND symbol = {ph}"
+            params.append(symbol)
+        if type:
+            query += f" AND type = {ph}"
+            params.append(type)
+        if data_class:
+            query += f" AND data_class = {ph}"
+            params.append(data_class)
+        query += " ORDER BY symbol ASC"
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def update_instrument(
+    *,
+    instrument_id: int,
+    sector: Optional[str] = None,
+    vertical: Optional[str] = None,
+    exchange: Optional[str] = None,
+    market_cap_b: Optional[float] = None,
+    metadata_json: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Update mutable fields on an instrument."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        updates = []
+        params = []
+        if sector is not None:
+            updates.append(f"sector = {ph}")
+            params.append(sector)
+        if vertical is not None:
+            updates.append(f"vertical = {ph}")
+            params.append(vertical)
+        if exchange is not None:
+            updates.append(f"exchange = {ph}")
+            params.append(exchange)
+        if market_cap_b is not None:
+            updates.append(f"market_cap_b = {ph}")
+            params.append(market_cap_b)
+        if metadata_json is not None:
+            updates.append(f"metadata_json = {ph}")
+            params.append(metadata_json)
+        if not updates:
+            return
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(instrument_id)
+        conn.execute(
+            f"UPDATE instruments SET {', '.join(updates)} WHERE id = {ph}",
+            params,
+        )
+
+
+def delete_instrument(
+    *,
+    instrument_id: int,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Delete an instrument by ID."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        conn.execute(f"DELETE FROM instruments WHERE id = {ph}", (instrument_id,))
+
+
+def query_data_freshness(
+    *,
+    symbol: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Get latest signal timestamp per source per symbol for staleness tracking."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = """
+            SELECT symbol, source, MAX(timestamp) as last_signal,
+                   COUNT(*) as signal_count
+            FROM signals WHERE 1=1
+        """
+        params = []
+        if symbol:
+            query += f" AND symbol = {ph}"
+            params.append(symbol)
+        query += " GROUP BY symbol, source ORDER BY symbol, source"
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+# TIER 3: REVIEWS (HITL)
+
+
+def insert_review(
+    *,
+    gate: str,
+    symbol: str,
+    entity_id: int,
+    entity_type: str,
+    scores_json: str,
+    total_score: float,
+    threshold: float = 12.0,
+    narrative: Optional[str] = None,
+    dominant_narrative: Optional[str] = None,
+    market_pricing: Optional[str] = None,
+    invalidation: Optional[str] = None,
+    decision: str,
+    position_size: Optional[str] = None,
+    risk_note: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert a HITL review. Returns lastrowid."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(14)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO reviews
+            (gate, symbol, entity_id, entity_type, scores_json, total_score,
+             threshold, narrative, dominant_narrative, market_pricing,
+             invalidation, decision, position_size, risk_note)
+            VALUES ({ph})
+            """,
+            (gate, symbol, entity_id, entity_type, scores_json, total_score,
+             threshold, narrative, dominant_narrative, market_pricing,
+             invalidation, decision, position_size, risk_note),
+        )
+        return cursor.lastrowid
+
+
+def query_reviews(
+    *,
+    gate: Optional[str] = None,
+    symbol: Optional[str] = None,
+    limit: int = 100,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query HITL reviews with optional filters."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = "SELECT * FROM reviews WHERE 1=1"
+        params = []
+        if gate:
+            query += f" AND gate = {ph}"
+            params.append(gate)
+        if symbol:
+            query += f" AND symbol = {ph}"
+            params.append(symbol)
+        query += f" ORDER BY created_at DESC LIMIT {ph}"
+        params.append(limit)
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
 # TIER 5: SCANS (Meta)
 
 

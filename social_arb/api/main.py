@@ -1,9 +1,12 @@
 """FastAPI application factory."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
     health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps,
@@ -83,6 +86,26 @@ def create_app() -> FastAPI:
     @app.get("/")
     def root():
         return {"app": "Social Arb", "version": "2.0.0", "docs": "/docs"}
+
+    # Serve static frontend (production mode)
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.isdir(static_dir):
+        app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="static-assets")
+
+        @app.get("/{full_path:path}")
+        async def serve_spa(full_path: str):
+            """Serve SPA index.html for all non-API routes."""
+            if full_path.startswith("api/") or full_path in ("docs", "openapi.json", "redoc"):
+                return {"error": "Not found"}
+            # Try to serve static file first
+            file_path = os.path.join(static_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+            # Fall back to index.html for SPA routing
+            index_path = os.path.join(static_dir, "index.html")
+            if os.path.isfile(index_path):
+                return FileResponse(index_path)
+            return {"error": "Frontend not built. Run: ./build-frontend.sh"}
 
     return app
 

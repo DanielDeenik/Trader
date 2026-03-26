@@ -5,5 +5,6 @@ and backfill jobs with DB-backed persistence and retry logic.
 """
 
 from .queue import TaskQueue
+from .scheduler import TaskScheduler
 
-__all__ = ["TaskQueue"]
+__all__ = ["TaskQueue", "TaskScheduler"]

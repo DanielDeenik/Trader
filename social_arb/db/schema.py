@@ -144,6 +144,27 @@ def _init_db_sqlite(c, conn) -> None:
     """)
 
     c.execute("""
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gate TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            entity_id INTEGER,
+            entity_type TEXT CHECK(entity_type IN ('signal_cluster','mosaic','thesis','position')),
+            scores_json TEXT,
+            total_score REAL,
+            threshold REAL DEFAULT 12.0,
+            narrative TEXT,
+            dominant_narrative TEXT,
+            market_pricing TEXT,
+            invalidation TEXT,
+            decision TEXT CHECK(decision IN ('promote','watch','discard','forge','hold','reject','execute','defer')) NOT NULL,
+            position_size TEXT,
+            risk_note TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    c.execute("""
         CREATE TABLE IF NOT EXISTS positions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             thesis_id INTEGER NOT NULL,
@@ -205,6 +226,9 @@ def _init_db_sqlite(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_theses_status ON theses(status)",
         "CREATE INDEX IF NOT EXISTS idx_theses_symbol ON theses(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_decisions_thesis ON decisions(thesis_id)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_gate ON reviews(gate)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_symbol ON reviews(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_decision ON reviews(decision)",
         "CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(status)",
         "CREATE INDEX IF NOT EXISTS idx_positions_symbol ON positions(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_audit_symbol ON audit_trail(symbol)",
@@ -343,6 +367,27 @@ def _init_db_postgres(c, conn) -> None:
     """)
 
     c.execute("""
+        CREATE TABLE IF NOT EXISTS reviews (
+            id SERIAL PRIMARY KEY,
+            gate TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            entity_id INTEGER,
+            entity_type TEXT CHECK(entity_type IN ('signal_cluster','mosaic','thesis','position')),
+            scores_json TEXT,
+            total_score NUMERIC,
+            threshold NUMERIC DEFAULT 12.0,
+            narrative TEXT,
+            dominant_narrative TEXT,
+            market_pricing TEXT,
+            invalidation TEXT,
+            decision TEXT CHECK(decision IN ('promote','watch','discard','forge','hold','reject','execute','defer')) NOT NULL,
+            position_size TEXT,
+            risk_note TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+    """)
+
+    c.execute("""
         CREATE TABLE IF NOT EXISTS positions (
             id SERIAL PRIMARY KEY,
             thesis_id INTEGER NOT NULL,
@@ -389,6 +434,9 @@ def _init_db_postgres(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_theses_status ON theses(status)",
         "CREATE INDEX IF NOT EXISTS idx_theses_symbol ON theses(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_decisions_thesis ON decisions(thesis_id)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_gate ON reviews(gate)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_symbol ON reviews(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_reviews_decision ON reviews(decision)",
         "CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(status)",
         "CREATE INDEX IF NOT EXISTS idx_positions_symbol ON positions(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_audit_symbol ON audit_trail(symbol)",

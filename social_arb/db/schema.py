@@ -231,6 +231,41 @@ def _init_db_sqlite(c, conn) -> None:
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS stepps_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_id INTEGER NOT NULL,
+            social_currency REAL,
+            triggers REAL,
+            emotion REAL,
+            public_visibility REAL,
+            practical_value REAL,
+            stories REAL,
+            composite REAL,
+            scored_by TEXT CHECK(scored_by IN ('llm','classifier','human')) DEFAULT 'classifier',
+            model_version TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(signal_id) REFERENCES signals(id),
+            UNIQUE(signal_id, scored_by)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS stepps_training (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_id INTEGER NOT NULL,
+            social_currency REAL,
+            triggers REAL,
+            emotion REAL,
+            public_visibility REAL,
+            practical_value REAL,
+            stories REAL,
+            source TEXT CHECK(source IN ('llm_seed','human_correction')) DEFAULT 'human_correction',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(signal_id) REFERENCES signals(id)
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -252,6 +287,11 @@ def _init_db_sqlite(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_status_created ON tasks(status, created_at)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_next_retry ON tasks(next_retry_at)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_signal ON stepps_scores(signal_id)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_scored_by ON stepps_scores(scored_by)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_composite ON stepps_scores(composite DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_training_signal ON stepps_training(signal_id)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_training_source ON stepps_training(source)",
     ]
     for idx in indexes:
         c.execute(idx)
@@ -459,6 +499,41 @@ def _init_db_postgres(c, conn) -> None:
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS stepps_scores (
+            id SERIAL PRIMARY KEY,
+            signal_id INTEGER NOT NULL,
+            social_currency NUMERIC,
+            triggers NUMERIC,
+            emotion NUMERIC,
+            public_visibility NUMERIC,
+            practical_value NUMERIC,
+            stories NUMERIC,
+            composite NUMERIC,
+            scored_by TEXT CHECK(scored_by IN ('llm','classifier','human')) DEFAULT 'classifier',
+            model_version TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            FOREIGN KEY(signal_id) REFERENCES signals(id),
+            UNIQUE(signal_id, scored_by)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS stepps_training (
+            id SERIAL PRIMARY KEY,
+            signal_id INTEGER NOT NULL,
+            social_currency NUMERIC,
+            triggers NUMERIC,
+            emotion NUMERIC,
+            public_visibility NUMERIC,
+            practical_value NUMERIC,
+            stories NUMERIC,
+            source TEXT CHECK(source IN ('llm_seed','human_correction')) DEFAULT 'human_correction',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            FOREIGN KEY(signal_id) REFERENCES signals(id)
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -480,6 +555,11 @@ def _init_db_postgres(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_status_created ON tasks(status, created_at)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_next_retry ON tasks(next_retry_at)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_signal ON stepps_scores(signal_id)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_scored_by ON stepps_scores(scored_by)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_scores_composite ON stepps_scores(composite DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_training_signal ON stepps_training(signal_id)",
+        "CREATE INDEX IF NOT EXISTS idx_stepps_training_source ON stepps_training(source)",
     ]
     for idx in indexes:
         try:

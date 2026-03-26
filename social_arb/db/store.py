@@ -869,3 +869,141 @@ def query_source_health(
             """
         )
         return [dict(row) for row in cursor.fetchall()]
+
+
+# ─── TIER 3: STEPPS SCORES & TRAINING ───────────────────────────────────────
+
+
+def insert_stepps_score(
+    *,
+    signal_id: int,
+    social_currency: float,
+    triggers: float,
+    emotion: float,
+    public_visibility: float,
+    practical_value: float,
+    stories: float,
+    composite: float,
+    scored_by: str = "classifier",
+    model_version: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert a STEPPS score row. Returns lastrowid."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(11)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO stepps_scores
+            (signal_id, social_currency, triggers, emotion, public_visibility, practical_value, stories, composite, scored_by, model_version, created_at)
+            VALUES ({ph})
+            """,
+            (signal_id, social_currency, triggers, emotion, public_visibility, practical_value, stories, composite, scored_by, model_version, datetime.utcnow().isoformat() + "Z"),
+        )
+        return cursor.lastrowid
+
+
+def query_stepps_scores(
+    *,
+    signal_id: Optional[int] = None,
+    scored_by: Optional[str] = None,
+    limit: int = 100,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query STEPPS scores with optional filters. Returns list of dicts."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = "SELECT * FROM stepps_scores WHERE 1=1"
+        params = []
+
+        if signal_id is not None:
+            query += f" AND signal_id = {ph}"
+            params.append(signal_id)
+        if scored_by:
+            query += f" AND scored_by = {ph}"
+            params.append(scored_by)
+
+        query += f" ORDER BY created_at DESC LIMIT {ph}"
+        params.append(limit)
+
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def query_stepps_scores_by_symbol(
+    *,
+    symbol: str,
+    limit: int = 100,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query STEPPS scores for all signals of a symbol."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        cursor = conn.execute(
+            f"""
+            SELECT ss.* FROM stepps_scores ss
+            JOIN signals s ON ss.signal_id = s.id
+            WHERE s.symbol = {ph}
+            ORDER BY ss.composite DESC LIMIT {ph}
+            """,
+            (symbol, limit),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def insert_stepps_training(
+    *,
+    signal_id: int,
+    social_currency: float,
+    triggers: float,
+    emotion: float,
+    public_visibility: float,
+    practical_value: float,
+    stories: float,
+    source: str = "human_correction",
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert STEPPS training data (ground truth from human correction). Returns lastrowid."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(9)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO stepps_training
+            (signal_id, social_currency, triggers, emotion, public_visibility, practical_value, stories, source, created_at)
+            VALUES ({ph})
+            """,
+            (signal_id, social_currency, triggers, emotion, public_visibility, practical_value, stories, source, datetime.utcnow().isoformat() + "Z"),
+        )
+        return cursor.lastrowid
+
+
+def query_stepps_training(
+    *,
+    source: Optional[str] = None,
+    limit: int = 10000,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query STEPPS training data (for model retraining). Returns list of dicts."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = "SELECT * FROM stepps_training WHERE 1=1"
+        params = []
+
+        if source:
+            query += f" AND source = {ph}"
+            params.append(source)
+
+        query += f" ORDER BY created_at DESC LIMIT {ph}"
+        params.append(limit)
+
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def count_stepps_training(
+    *,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Count total STEPPS training records (for cold-start detection)."""
+    with get_connection(db_path) as conn:
+        cursor = conn.execute("SELECT COUNT(*) as cnt FROM stepps_training")
+        return cursor.fetchone()["cnt"]

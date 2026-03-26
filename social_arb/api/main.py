@@ -53,6 +53,9 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+    from social_arb.logging_config import setup_logging
+    setup_logging()
+
     cfg = get_config()
 
     app = FastAPI(
@@ -70,6 +73,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Request logging
+    from social_arb.api.middleware import RequestLoggingMiddleware, add_rate_limiting
+    app.add_middleware(RequestLoggingMiddleware)
+    add_rate_limiting(app)
 
     # Routes
     app.include_router(health.router, prefix="/api/v1", tags=["health"])

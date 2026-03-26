@@ -4,7 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from social_arb.api.deps import ensure_db, get_config
-from social_arb.api.routes import health, instruments, signals
+from social_arb.api.routes import (
+    health, instruments, signals, reviews, analysis, mosaics, theses, positions,
+)
 
 
 @asynccontextmanager
@@ -38,6 +40,11 @@ def create_app() -> FastAPI:
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(instruments.router, prefix="/api/v1", tags=["instruments"])
     app.include_router(signals.router, prefix="/api/v1", tags=["signals"])
+    app.include_router(mosaics.router, prefix="/api/v1", tags=["mosaics"])
+    app.include_router(theses.router, prefix="/api/v1", tags=["theses"])
+    app.include_router(reviews.router, prefix="/api/v1", tags=["reviews"])
+    app.include_router(positions.router, prefix="/api/v1", tags=["positions"])
+    app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
 
     @app.get("/")
     def root():

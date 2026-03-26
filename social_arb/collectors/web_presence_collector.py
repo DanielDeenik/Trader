@@ -2,6 +2,7 @@
 
 import logging
 import time
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 import requests
@@ -84,6 +85,8 @@ class WebPresenceCollector(BaseCollector):
                     "direction": "bullish" if maturity_score > 0.6 else "neutral",
                     "strength": maturity_score,
                     "confidence": 0.7,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "data_class": "private",
                     "raw_json": {
                         "url": url,
                         "server": server,
@@ -117,9 +120,9 @@ class WebPresenceCollector(BaseCollector):
         try:
             resp = requests.get(sitemap_url, headers=HEADERS, timeout=10)
             if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, "xml")
+                soup = BeautifulSoup(resp.text, "lxml-xml")
                 urls = soup.find_all("url")
                 return len(urls)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not fetch sitemap {sitemap_url}: {e}")
         return 0

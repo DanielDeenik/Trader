@@ -42,7 +42,7 @@ class NewsCollector(BaseCollector):
         feeds = feeds or list(RSS_FEEDS.keys())
         signals = []
         errors = []
-        symbols_scanned = []
+        symbols_scanned = set()
 
         for feed_name in feeds:
             try:
@@ -75,6 +75,8 @@ class NewsCollector(BaseCollector):
                                 "direction": "neutral",
                                 "strength": 0.6,
                                 "confidence": 0.7,
+                                "timestamp": datetime.utcnow().isoformat(),
+                                "data_class": "private",
                                 "raw_json": {
                                     "feed": feed_name,
                                     "title": title,
@@ -82,8 +84,7 @@ class NewsCollector(BaseCollector):
                                     "published": published,
                                 },
                             })
-                            if symbol not in symbols_scanned:
-                                symbols_scanned.append(symbol)
+                            symbols_scanned.add(symbol)
 
                 time.sleep(1)
 
@@ -115,6 +116,8 @@ class NewsCollector(BaseCollector):
                         "direction": "neutral",
                         "strength": 0.5,
                         "confidence": 0.7,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "data_class": "private",
                         "raw_json": {
                             "feed": "google_news",
                             "title": title,
@@ -122,8 +125,7 @@ class NewsCollector(BaseCollector):
                             "published": published,
                         },
                     })
-                    if symbol not in symbols_scanned:
-                        symbols_scanned.append(symbol)
+                    symbols_scanned.add(symbol)
 
                 time.sleep(2)
 
@@ -134,5 +136,5 @@ class NewsCollector(BaseCollector):
             source=self.source_name,
             signals=signals,
             errors=errors,
-            symbols_scanned=symbols_scanned,
+            symbols_scanned=list(symbols_scanned),
         )

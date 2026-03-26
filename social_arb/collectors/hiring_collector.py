@@ -2,6 +2,7 @@
 
 import logging
 import time
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 import requests
@@ -68,8 +69,8 @@ class HiringCollector(BaseCollector):
                     all_links = soup.find_all("a")
                     job_links = [
                         a for a in all_links
-                        if a.get("href", "").lower().__contains__("job")
-                        or a.text.lower().__contains__("position")
+                        if "job" in a.get("href", "").lower()
+                        or "position" in a.text.lower()
                     ]
                     job_count = len(job_links)
 
@@ -82,10 +83,11 @@ class HiringCollector(BaseCollector):
                     "direction": "bullish" if job_count > 10 else "neutral",
                     "strength": strength,
                     "confidence": 0.8,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "data_class": "private",
                     "raw_json": {
                         "job_count": job_count,
                         "url": url,
-                        "timestamp": time.time(),
                     },
                 })
 

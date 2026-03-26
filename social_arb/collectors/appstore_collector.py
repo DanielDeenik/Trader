@@ -2,6 +2,7 @@
 
 import logging
 import time
+from datetime import datetime
 from typing import List, Optional, Dict
 
 import requests
@@ -111,6 +112,8 @@ class AppStoreCollector(BaseCollector):
                                 "direction": "bullish" if rating_val >= 4.0 else "neutral",
                                 "strength": rating_val / 5.0,
                                 "confidence": 0.8,
+                                "timestamp": datetime.utcnow().isoformat(),
+                                "data_class": "private",
                                 "raw_json": {
                                     "platform": "google_play",
                                     "app_name": title_text,
@@ -158,6 +161,8 @@ class AppStoreCollector(BaseCollector):
                                 "direction": "bullish" if rating_val >= 4.0 else "neutral",
                                 "strength": rating_val / 5.0,
                                 "confidence": 0.8,
+                                "timestamp": datetime.utcnow().isoformat(),
+                                "data_class": "private",
                                 "raw_json": {
                                     "platform": "apple_app_store",
                                     "app_name": title_text,

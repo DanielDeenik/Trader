@@ -49,6 +49,8 @@ class PatentCollector(BaseCollector):
                         "direction": "bullish",
                         "strength": min(issued_count / 5.0, 1.0),
                         "confidence": 0.9,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "data_class": "private",
                         "raw_json": {
                             "patent_count": issued_count,
                             "type": "issued",
@@ -65,6 +67,8 @@ class PatentCollector(BaseCollector):
                         "direction": "bullish",
                         "strength": min(app_count / 10.0, 1.0),
                         "confidence": 0.8,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "data_class": "private",
                         "raw_json": {
                             "patent_count": app_count,
                             "type": "application",

@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/signals" element={<Layout title="L1: Signal Radar"><SignalRadar /></Layout>} />
         <Route path="/mosaics" element={<Layout title="L2: Mosaic Cards"><MosaicCards /></Layout>} />
         <Route path="/theses" element={<Layout title="L3: Thesis Forge"><ThesisForge /></Layout>} />
-        <Route path="/gate/:gate/:symbol/:entityId" element={<Layout title="HITL Gate Review"><GateReview /></Layout>} />
+        <Route path="/gate/review" element={<Layout title="HITL Gate Review"><GateReview /></Layout>} />
         <Route path="/decisions" element={<Layout title="L4: Decisions"><Decisions /></Layout>} />
         <Route path="/positions" element={<Layout title="L5: Portfolio"><Positions /></Layout>} />
         <Route path="/tasks" element={<Layout title="Task Queue"><TaskQueue /></Layout>} />

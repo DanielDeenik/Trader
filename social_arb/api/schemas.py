@@ -1,7 +1,7 @@
 """Pydantic v2 models for API request/response validation."""
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional, Any, List
 from datetime import datetime
 from pydantic import BaseModel, Field, computed_field, model_validator
 from enum import Enum
@@ -287,3 +287,63 @@ class AnalyzeResponse(BaseModel):
     mosaics_created: int
     theses_created: int
     errors: list[str] = []
+
+
+# ===== TASK QUEUE SCHEMAS =====
+
+
+class TaskParamsCollect(BaseModel):
+    """Parameters for a 'collect' task."""
+    sources: List[str] = Field(..., description="List of data sources: yfinance, reddit, sec_edgar, google_trends, github, coingecko, defillama")
+    symbols: Optional[List[str]] = Field(None, description="Specific symbols to collect; if None, collects all tracked instruments")
+    domain: str = Field("public", description="public or private")
+
+
+class TaskParamsAnalyze(BaseModel):
+    """Parameters for an 'analyze' task."""
+    symbols: Optional[List[str]] = Field(None, description="Specific symbols to analyze; if None, analyzes all")
+
+
+class TaskParamsBackfill(BaseModel):
+    """Parameters for a 'backfill' task."""
+    source: str = Field(..., description="Data source to backfill")
+    symbol: str = Field(..., description="Symbol to backfill")
+    start_date: str = Field(..., description="ISO date: 2026-01-01")
+    end_date: str = Field(..., description="ISO date: 2026-03-26")
+
+
+class TaskCreate(BaseModel):
+    """Request to enqueue a new task."""
+    task_type: str = Field(..., description="Task type: 'collect', 'analyze', 'backfill'")
+    params: dict[str, Any] = Field(default_factory=dict, description="Task-specific parameters as dict")
+    max_attempts: int = Field(3, ge=1, le=10, description="Max retry attempts")
+
+
+class TaskResponse(BaseModel):
+    """Task status response."""
+    id: int
+    task_type: str
+    status: str  # pending, running, completed, failed, cancelled
+    params_json: Optional[str] = None
+    result_json: Optional[str] = None
+    error: Optional[str] = None
+    attempts: int
+    max_attempts: int
+    next_retry_at: Optional[str] = None
+    created_at: str
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class TaskListResponse(BaseModel):
+    """List of tasks with pagination."""
+    tasks: List[TaskResponse]
+    total_count: int
+
+
+class SourceHealthResponse(BaseModel):
+    """Health status of all data sources."""
+    sources: List[SourceHealth]
+    as_of: str = Field(default_factory=lambda: datetime.utcnow().isoformat())

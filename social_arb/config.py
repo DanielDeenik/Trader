@@ -33,6 +33,31 @@ class Config:
             "CRYPTO_SYMBOLS", "BTC,ETH,SOL,AVAX,LINK,AAVE,UNI,ARB,OP,MATIC"
         ).split(",")
 
+        # Private company domain mappings
+        self.private_company_domains: dict = {
+            "databricks": "https://www.databricks.com",
+            "stripe": "https://stripe.com",
+            "anduril": "https://www.anduril.com",
+            "coreweave": "https://www.coreweave.com",
+            "anthropic": "https://www.anthropic.com",
+        }
+
+        self.private_company_career_urls: dict = {
+            "databricks": "https://www.databricks.com/careers/",
+            "stripe": "https://stripe.com/jobs/",
+            "anduril": "https://www.anduril.com/careers/",
+            "coreweave": "https://www.coreweave.com/careers/",
+            "anthropic": "https://www.anthropic.com/careers/",
+        }
+
+        self.private_company_apps: dict = {
+            "databricks": [],
+            "stripe": [],
+            "anduril": [],
+            "coreweave": [],
+            "anthropic": ["Claude"],
+        }
+
         # Reddit config
         self.reddit_subreddits: list = os.getenv(
             "REDDIT_SUBREDDITS", "wallstreetbets,stocks,investing,SecurityAnalysis,cryptocurrency,defi,ethereum"

@@ -12,6 +12,11 @@ from social_arb.collectors.trends_collector import TrendsCollector
 from social_arb.collectors.github_collector import GitHubCollector
 from social_arb.collectors.coingecko_collector import CoinGeckoCollector
 from social_arb.collectors.defillama_collector import DeFiLlamaCollector
+from social_arb.collectors.news_collector import NewsCollector
+from social_arb.collectors.hiring_collector import HiringCollector
+from social_arb.collectors.patent_collector import PatentCollector
+from social_arb.collectors.appstore_collector import AppStoreCollector
+from social_arb.collectors.web_presence_collector import WebPresenceCollector
 from social_arb.pipeline import run_analysis
 
 logger = logging.getLogger(__name__)
@@ -25,6 +30,12 @@ COLLECTORS = {
     "github": GitHubCollector(),
     "coingecko": CoinGeckoCollector(),
     "defillama": DeFiLlamaCollector(),
+    # Phase 5: Private company collectors
+    "news": NewsCollector(),
+    "hiring": HiringCollector(),
+    "patents": PatentCollector(),
+    "appstore": AppStoreCollector(),
+    "web_presence": WebPresenceCollector(),
 }
 
 

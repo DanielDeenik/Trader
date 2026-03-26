@@ -28,9 +28,11 @@ class TaskScheduler:
         self.collect_interval = 4 * 3600  # 4 hours
         self.analyze_interval = 6 * 3600  # 6 hours
         self.train_stepps_interval = 7 * 24 * 3600  # 7 days
+        self.private_collect_interval = 24 * 3600  # Daily
         self.last_collect_at: Optional[datetime] = None
         self.last_analyze_at: Optional[datetime] = None
         self.last_train_stepps_at: Optional[datetime] = None
+        self.last_private_collect_at: Optional[datetime] = None
 
     async def start(self) -> None:
         """Start the scheduler."""
@@ -68,6 +70,10 @@ class TaskScheduler:
                     await self._create_train_stepps_task()
                     self.last_train_stepps_at = now
 
+                if self._should_private_collect(now):
+                    await self._create_private_collect_task()
+                    self.last_private_collect_at = now
+
         except asyncio.CancelledError:
             logger.info("Scheduler loop cancelled")
         except Exception as e:
@@ -92,6 +98,12 @@ class TaskScheduler:
         if self.last_train_stepps_at is None:
             return True
         return (now - self.last_train_stepps_at).total_seconds() >= self.train_stepps_interval
+
+    def _should_private_collect(self, now: datetime) -> bool:
+        """Check if it's time to create a private company collection task."""
+        if self.last_private_collect_at is None:
+            return True
+        return (now - self.last_private_collect_at).total_seconds() >= self.private_collect_interval
 
     async def _create_collect_task(self) -> None:
         """Create a collection task for all public sources."""
@@ -155,3 +167,29 @@ class TaskScheduler:
 
         except Exception as e:
             logger.error(f"Failed to create STEPPS training task: {e}", exc_info=True)
+
+    async def _create_private_collect_task(self) -> None:
+        """Create a collection task for private company sources."""
+        logger.info("Scheduler: creating private company collection task")
+        try:
+            from social_arb.config import config
+
+            symbols = config.private_symbols
+
+            if not symbols:
+                logger.warning("No private company symbols to collect")
+                return
+
+            await self.queue.enqueue(
+                task_type="collect",
+                params={
+                    "sources": ["news", "hiring", "patents", "appstore", "web_presence"],
+                    "symbols": symbols,
+                    "domain": "private",
+                },
+                max_attempts=3,
+            )
+            logger.info(f"Scheduled private company collection for {len(symbols)} symbols")
+
+        except Exception as e:
+            logger.error(f"Failed to create private collect task: {e}", exc_info=True)

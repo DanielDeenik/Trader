@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-arb"
+version = "1.0.0"
+description = "Information arbitrage platform — Camillo cognitive architecture"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "yfinance>=0.2.0",
+    "requests>=2.28",
+    "pytrends>=4.9",
+    "praw>=7.7",
+]
+
+[project.scripts]
+social-arb = "social_arb.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["social_arb*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

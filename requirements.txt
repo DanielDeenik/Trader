@@ -1,0 +1,15 @@
+# Social Arb — Information Arbitrage Engine
+
+# Core
+pandas>=2.0.0
+numpy>=1.24.0
+click>=8.0.0
+rich>=13.0.0
+
+# Data collectors
+yfinance>=0.2.30
+pytrends>=4.9.0
+requests>=2.28.0
+
+# Optional
+praw>=7.7.0

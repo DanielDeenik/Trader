@@ -1,0 +1,58 @@
+# Database
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Generated / build artifacts
+dashboard_live.html
+dashboard_data.json
+theses_report.txt
+social_arb/db/seed_data/
+social_arb/dashboard_data.json
+node_modules/
+package-lock.json
+
+# Old cruft — never track again
+social_arb/data/
+social_arb/dashboard/
+social_arb/scrapers/
+social_arb/research_agents/
+social_arb/investment_pipeline_enhanced.py
+demo_flow.py
+example_usage.py
+run_scan.py
+run_social_arb.py
+test_enhanced_db.py
+TASKS.md
+
+# Pytest
+.pytest_cache/

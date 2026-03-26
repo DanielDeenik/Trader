@@ -14,6 +14,10 @@ from social_arb.db.store import (
     query_signals, insert_mosaic, insert_thesis, query_mosaics
 )
 from social_arb.engine.sentiment_divergence import SentimentDivergenceCalculator
+from social_arb.engine.irr_simulator import IRRMOICSim
+from social_arb.engine.regulatory_moat import RegulatoryMoatScorer
+from social_arb.engine.technical_analyzer import calculate_all_indicators
+from social_arb.engine.cross_domain_amplifier import CrossDomainAmplifier
 
 logger = logging.getLogger(__name__)
 
@@ -211,6 +215,40 @@ def run_analysis(
                 kelly = _compute_kelly(roi, confidence)
                 lifecycle = _infer_lifecycle(coherence, divergence_strength, source_count)
 
+                # Run vulnerability engine
+                vulnerability_json = None
+                try:
+                    moat_scorer = RegulatoryMoatScorer()
+                    vuln = moat_scorer.scan(
+                        target=symbol,
+                        data={
+                            "esg_score": avg_strength * 80,
+                            "carbon_intensity": 50,
+                            "patent_count": source_count * 5,
+                            "regulatory_burden": 0.5,
+                            "institutional_ownership": 0.3,
+                        },
+                    )
+                    vulnerability_json = json.dumps(vuln.to_dict())
+                except Exception as e:
+                    logger.warning(f"[pipeline] {symbol}: vulnerability scan failed: {e}")
+
+                # Run simulation engine
+                simulation_json = None
+                try:
+                    simulator = IRRMOICSim()
+                    sim = simulator.simulate(params={
+                        "initial_investment": 50000,
+                        "stage": "series_a" if domain == "private_markets" else "growth",
+                        "sector": "ai",
+                        "team_score": min(10, avg_strength * 12),
+                        "market_size_score": 7,
+                        "moat_score": 6,
+                    })
+                    simulation_json = json.dumps(sim.to_dict())
+                except Exception as e:
+                    logger.warning(f"[pipeline] {symbol}: simulation failed: {e}")
+
                 thesis_id = insert_thesis(
                     db_path=db_path,
                     mosaic_id=mosaic_id,
@@ -222,8 +260,8 @@ def run_analysis(
                     kelly_fraction=kelly,
                     lifecycle_stage=lifecycle,
                     status="pending_review",
-                    vulnerability_json=None,
-                    simulation_json=None,
+                    vulnerability_json=vulnerability_json,
+                    simulation_json=simulation_json,
                 )
                 stats["theses_created"] += 1
                 logger.info(f"[pipeline] {symbol}: thesis created (coh={coherence:.0f}, div={divergence_strength:.1f}, ROI={roi['bear']:+.1%}/{roi['base']:+.1%}/{roi['bull']:+.1%}, kelly={kelly:.2f})")

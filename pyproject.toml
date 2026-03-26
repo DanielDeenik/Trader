@@ -30,7 +30,12 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary>=2.9.0"]
-cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0"]
+production = [
+    "gunicorn>=21.0",
+    "python-json-logger>=2.0",
+    "slowapi>=0.1.9",
+]
+cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0", "python-json-logger>=2.0", "slowapi>=0.1.9"]
 
 [project.scripts]
 social-arb = "social_arb.cli:cli"

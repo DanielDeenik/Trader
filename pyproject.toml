@@ -16,6 +16,10 @@ dependencies = [
     "praw>=7.7",
 ]
 
+[project.optional-dependencies]
+postgres = ["psycopg2-binary>=2.9.0"]
+cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0"]
+
 [project.scripts]
 social-arb = "social_arb.cli:cli"
 

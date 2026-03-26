@@ -10,10 +10,17 @@ class Config:
         self.db_path: str = os.getenv("SOCIAL_ARB_DB", str(Path(db_default).resolve()))
         self.log_level: str = os.getenv("LOG_LEVEL", "INFO")
         self._db_url: str = os.getenv("DATABASE_URL", "")
+        self.api_port: int = int(os.getenv("API_PORT", "8000"))
+        self.api_host: str = os.getenv("API_HOST", "0.0.0.0")
+        self.cors_origins: list = os.getenv(
+            "CORS_ORIGINS", "http://localhost:3000,http://localhost:8000"
+        ).split(",")
 
         # Default tracked symbols (public)
         self.public_symbols: list = os.getenv(
-            "PUBLIC_SYMBOLS", "NVDA,PLTR,MSFT,AAPL,AMD,TSLA,SHOP,SQ,DDOG,GOOGL"
+            "PUBLIC_SYMBOLS",
+            "NVDA,PLTR,MSFT,AAPL,AMD,TSLA,SHOP,SQ,DDOG,GOOGL,"
+            "META,AMZN,INTC,NFLX,V,MA,COST,CRM,OKTA,ROKU,MELI,ARM,APP,PAY,FDX,UPS",
         ).split(",")
 
         # Private companies (tracked separately)

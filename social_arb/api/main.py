@@ -88,7 +88,7 @@ def create_app() -> FastAPI:
         return {"app": "Social Arb", "version": "2.0.0", "docs": "/docs"}
 
     # Serve static frontend (production mode)
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
     if os.path.isdir(static_dir):
         app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="static-assets")
 

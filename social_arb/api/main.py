@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from social_arb.api.deps import ensure_db, get_config
-from social_arb.api.routes import health
+from social_arb.api.routes import health, instruments
 
 
 @asynccontextmanager
@@ -36,6 +36,7 @@ def create_app() -> FastAPI:
 
     # Routes
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
+    app.include_router(instruments.router, prefix="/api/v1", tags=["instruments"])
 
     @app.get("/")
     def root():

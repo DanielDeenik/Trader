@@ -662,3 +662,210 @@ def complete_scan(
             """,
             (signal_count, errors_json, scan_id),
         )
+
+
+# TIER 5: TASKS (META)
+
+
+def insert_task(
+    *,
+    task_type: str,
+    params_json: str,
+    max_attempts: int = 3,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert a new task with 'pending' status. Returns task id."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(4)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO tasks
+            (task_type, status, params_json, max_attempts)
+            VALUES ({ph})
+            """,
+            (task_type, "pending", params_json, max_attempts),
+        )
+        return cursor.lastrowid
+
+
+def query_tasks(
+    *,
+    limit: int = 100,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query all tasks, most recent first. Returns list of dicts."""
+    with get_connection(db_path) as conn:
+        cursor = conn.execute(
+            """
+            SELECT * FROM tasks
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def query_tasks_by_status(
+    *,
+    status: str,
+    limit: int = 100,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query tasks by status. Returns list of dicts ordered by created_at."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        cursor = conn.execute(
+            f"""
+            SELECT * FROM tasks
+            WHERE status = {ph}
+            ORDER BY created_at ASC
+            LIMIT ?
+            """,
+            (status, limit),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def claim_task(
+    *,
+    db_path: str = DEFAULT_DB_PATH,
+) -> Optional[Dict]:
+    """
+    Atomically claim the next pending task.
+    Updates it to 'running' status and returns the task dict.
+    Returns None if no pending tasks exist.
+    """
+    with get_connection(db_path) as conn:
+        cursor = conn.execute(
+            """
+            SELECT id FROM tasks
+            WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= datetime('now'))
+            ORDER BY created_at ASC
+            LIMIT 1
+            """
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        task_id = row[0]
+        cursor.execute(
+            """
+            UPDATE tasks
+            SET status = 'running'
+            WHERE id = ?
+            """,
+            (task_id,),
+        )
+        conn.commit()
+
+        # Fetch and return the updated task
+        cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+        return dict(cursor.fetchone())
+
+
+def update_task_started_at(
+    *,
+    task_id: int,
+    started_at: str,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Update the started_at timestamp for a task."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        conn.execute(
+            f"""
+            UPDATE tasks
+            SET started_at = {ph}
+            WHERE id = {ph}
+            """,
+            (started_at, task_id),
+        )
+        conn.commit()
+
+
+def complete_task(
+    *,
+    task_id: int,
+    result_json: str,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Mark task as completed with result."""
+    with get_connection(db_path) as conn:
+        now = datetime.utcnow().isoformat()
+        ph = get_placeholder()
+        conn.execute(
+            f"""
+            UPDATE tasks
+            SET status = 'completed', result_json = {ph}, completed_at = {ph}
+            WHERE id = {ph}
+            """,
+            (result_json, now, task_id),
+        )
+        conn.commit()
+
+
+def fail_task(
+    *,
+    task_id: int,
+    error: str,
+    next_retry_at: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Mark task as failed, increment attempts, set next_retry_at."""
+    with get_connection(db_path) as conn:
+        cursor = conn.cursor()
+        # Get current attempts
+        cursor.execute("SELECT attempts, max_attempts FROM tasks WHERE id = ?", (task_id,))
+        row = cursor.fetchone()
+        if not row:
+            return
+
+        current_attempts = (row[0] or 0) + 1
+        max_attempts = row[1] or 3
+
+        # If exhausted, mark as failed; otherwise keep as 'pending' for retry
+        new_status = "failed" if current_attempts >= max_attempts else "pending"
+
+        ph = get_placeholder()
+        cursor.execute(
+            f"""
+            UPDATE tasks
+            SET status = {ph}, error = {ph}, attempts = {ph}, next_retry_at = {ph}
+            WHERE id = {ph}
+            """,
+            (new_status, error, current_attempts, next_retry_at, task_id),
+        )
+        conn.commit()
+
+
+def query_source_health(
+    *,
+    hours: int = 24,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """
+    Query per-source health based on recent signals.
+    Returns list of dicts with: source, signal_count, avg_confidence, last_timestamp, status.
+    """
+    with get_connection(db_path) as conn:
+        cursor = conn.execute(
+            f"""
+            SELECT
+                source,
+                COUNT(*) as signal_count,
+                ROUND(AVG(confidence), 2) as avg_confidence,
+                MAX(timestamp) as last_timestamp,
+                CASE
+                    WHEN COUNT(*) > 0 AND ROUND(AVG(confidence), 2) > 0.7 THEN 'healthy'
+                    WHEN COUNT(*) > 0 THEN 'degraded'
+                    ELSE 'unknown'
+                END as status
+            FROM signals
+            WHERE datetime(timestamp) > datetime('now', '-{hours} hours')
+            GROUP BY source
+            ORDER BY signal_count DESC
+            """
+        )
+        return [dict(row) for row in cursor.fetchall()]

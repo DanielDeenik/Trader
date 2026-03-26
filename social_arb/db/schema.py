@@ -214,6 +214,23 @@ def _init_db_sqlite(c, conn) -> None:
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_type TEXT NOT NULL,
+            status TEXT CHECK(status IN ('pending','running','completed','failed','cancelled')) DEFAULT 'pending',
+            params_json TEXT,
+            result_json TEXT,
+            error TEXT,
+            attempts INTEGER DEFAULT 0,
+            max_attempts INTEGER DEFAULT 3,
+            next_retry_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            started_at TEXT,
+            completed_at TEXT
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -232,6 +249,9 @@ def _init_db_sqlite(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(status)",
         "CREATE INDEX IF NOT EXISTS idx_positions_symbol ON positions(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_audit_symbol ON audit_trail(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_status_created ON tasks(status, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_next_retry ON tasks(next_retry_at)",
     ]
     for idx in indexes:
         c.execute(idx)
@@ -422,6 +442,23 @@ def _init_db_postgres(c, conn) -> None:
         )
     """)
 
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id SERIAL PRIMARY KEY,
+            task_type TEXT NOT NULL,
+            status TEXT CHECK(status IN ('pending','running','completed','failed','cancelled')) DEFAULT 'pending',
+            params_json TEXT,
+            result_json TEXT,
+            error TEXT,
+            attempts INTEGER DEFAULT 0,
+            max_attempts INTEGER DEFAULT 3,
+            next_retry_at TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            started_at TIMESTAMP WITH TIME ZONE,
+            completed_at TIMESTAMP WITH TIME ZONE
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -440,6 +477,9 @@ def _init_db_postgres(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(status)",
         "CREATE INDEX IF NOT EXISTS idx_positions_symbol ON positions(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_audit_symbol ON audit_trail(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_status_created ON tasks(status, created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_tasks_next_retry ON tasks(next_retry_at)",
     ]
     for idx in indexes:
         try:

@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
-    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment, scheduler, lattice,
+    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment, scheduler, lattice, alerts, auth,
 )
 from social_arb.tasks.queue import TaskQueue
 from social_arb.tasks.scheduler import TaskScheduler
@@ -82,6 +82,7 @@ def create_app() -> FastAPI:
 
     # Routes
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
+    app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
     app.include_router(instruments.router, prefix="/api/v1", tags=["instruments"])
     app.include_router(signals.router, prefix="/api/v1", tags=["signals"])
     app.include_router(mosaics.router, prefix="/api/v1", tags=["mosaics"])
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(positions.router, prefix="/api/v1", tags=["positions"])
     app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
     app.include_router(tasks.router, prefix="/api/v1", tags=["tasks"])
+    app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
     app.include_router(lattice.router)
     app.include_router(stepps.router)
     app.include_router(sentiment.router)

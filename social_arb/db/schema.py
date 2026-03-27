@@ -199,6 +199,29 @@ def _init_db_sqlite(c, conn) -> None:
         )
     """)
 
+    # AUTH: Users and watchlists
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            settings_json TEXT DEFAULT '{}',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS watchlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            added_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, symbol)
+        )
+    """)
+
     # TIER 5: META
     c.execute("""
         CREATE TABLE IF NOT EXISTS scans (
@@ -324,6 +347,9 @@ def _init_db_sqlite(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_symbol ON lattice_edges(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_source ON lattice_edges(source_node_id)",
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_target ON lattice_edges(target_node_id)",
+        "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)",
+        "CREATE INDEX IF NOT EXISTS idx_watchlists_user_id ON watchlists(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_watchlists_symbol ON watchlists(symbol)",
     ]
     for idx in indexes:
         c.execute(idx)
@@ -514,6 +540,29 @@ def _init_db_postgres(c, conn) -> None:
         )
     """)
 
+    # AUTH: Users and watchlists
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            settings_json TEXT DEFAULT '{}',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS watchlists (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, symbol)
+        )
+    """)
+
     c.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id SERIAL PRIMARY KEY,
@@ -624,6 +673,9 @@ def _init_db_postgres(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_symbol ON lattice_edges(symbol)",
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_source ON lattice_edges(source_node_id)",
         "CREATE INDEX IF NOT EXISTS idx_lattice_edges_target ON lattice_edges(target_node_id)",
+        "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)",
+        "CREATE INDEX IF NOT EXISTS idx_watchlists_user_id ON watchlists(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_watchlists_symbol ON watchlists(symbol)",
     ]
     for idx in indexes:
         try:

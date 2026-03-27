@@ -234,4 +234,34 @@ export const api = {
     })
     return handleResponse(res)
   },
+
+  // Alerts
+  async getAlerts(params = {}) {
+    const query = new URLSearchParams(params).toString()
+    const res = await fetch(`${API_BASE}/v1/alerts?${query}`)
+    return handleResponse(res)
+  },
+
+  async getAlertThresholds() {
+    const res = await fetch(`${API_BASE}/v1/alerts/thresholds`)
+    return handleResponse(res)
+  },
+
+  async updateAlertThresholds(thresholds) {
+    const res = await fetch(`${API_BASE}/v1/alerts/thresholds`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ thresholds }),
+    })
+    return handleResponse(res)
+  },
+
+  async clearAlerts() {
+    const res = await fetch(`${API_BASE}/v1/alerts`, { method: 'DELETE' })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
+    }
+    return { success: true }
+  },
 }

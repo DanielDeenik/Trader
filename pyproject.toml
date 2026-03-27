@@ -26,6 +26,7 @@ dependencies = [
     "feedparser>=6.0",
     "beautifulsoup4>=4.12",
     "lxml>=4.9",
+    "vaderSentiment>=3.3",
 ]
 
 [project.optional-dependencies]
@@ -35,7 +36,11 @@ production = [
     "python-json-logger>=2.0",
     "slowapi>=0.1.9",
 ]
-cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0", "python-json-logger>=2.0", "slowapi>=0.1.9"]
+cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0", "python-json-logger>=2.0", "slowapi>=0.1.9", "vaderSentiment>=3.3"]
+nlp = [
+    "transformers>=4.35",
+    "torch>=2.0",
+]
 
 [project.scripts]
 social-arb = "social_arb.cli:cli"

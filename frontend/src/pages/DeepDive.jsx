@@ -433,6 +433,12 @@ export default function DeepDive() {
           <span className="text-lg font-bold text-emerald-400 font-mono">{symbol}</span>
           <span className="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-300">Deep Dive</span>
         </div>
+        <Link
+          to={`/lattice/${symbol}`}
+          className="text-xs px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white no-underline transition-colors"
+        >
+          Build Lattice &rarr;
+        </Link>
       </div>
 
       {/* Tab bar */}

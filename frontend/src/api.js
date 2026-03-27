@@ -195,4 +195,28 @@ export const api = {
     })
     return handleResponse(res)
   },
+
+  // Lattice Graph
+  async getLattice(symbol) {
+    const res = await fetch(`${API_BASE}/v1/lattice/${symbol}`)
+    return handleResponse(res)
+  },
+
+  async addLatticeNode(symbol, data) {
+    const res = await fetch(`${API_BASE}/v1/lattice/${symbol}/node`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+
+  async addLatticeEdge(symbol, data) {
+    const res = await fetch(`${API_BASE}/v1/lattice/${symbol}/edge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
 }

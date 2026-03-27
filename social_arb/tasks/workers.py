@@ -247,9 +247,57 @@ async def handle_train_stepps(
         }
 
 
+async def handle_enrich_sentiment(
+    params: Dict[str, Any],
+    db_path: str = DEFAULT_DB_PATH,
+) -> Dict[str, Any]:
+    """
+    Handle an 'enrich_sentiment' task. Scores signals with NLP.
+
+    Params:
+        symbols: Optional[List[str]] - specific symbols; if None, enrich all
+        use_finbert: bool - whether to use FinBERT (default False for batch)
+    """
+    from social_arb.nlp.sentiment_enricher import SentimentEnricher
+
+    symbols = params.get("symbols")
+    use_finbert = params.get("use_finbert", False)
+
+    logger.info(f"Sentiment enrichment starting: symbols={symbols}, finbert={use_finbert}")
+
+    enricher = SentimentEnricher(use_finbert=use_finbert)
+
+    # Get signals to enrich
+    if symbols:
+        all_signals = []
+        for sym in symbols:
+            all_signals.extend(store.query_signals(db_path=db_path, symbol=sym, limit=500))
+    else:
+        all_signals = store.query_signals(db_path=db_path, limit=5000)
+
+    if not all_signals:
+        return {"enriched_count": 0, "errors": ["No signals to enrich"]}
+
+    enriched = enricher.enrich_batch(all_signals)
+    enriched_count = sum(
+        1 for orig, enr in zip(all_signals, enriched)
+        if orig.get("direction") != enr.get("direction")
+        or orig.get("strength") != enr.get("strength")
+    )
+
+    logger.info(f"Sentiment enrichment complete: {enriched_count}/{len(all_signals)} signals updated")
+
+    return {
+        "enriched_count": enriched_count,
+        "total_signals": len(all_signals),
+        "errors": [],
+    }
+
+
 HANDLER_MAP = {
     "collect": handle_collect,
     "analyze": handle_analyze,
     "backfill": handle_backfill,
     "train_stepps": handle_train_stepps,
+    "enrich_sentiment": handle_enrich_sentiment,
 }

@@ -123,6 +123,15 @@ def run_analysis(
         logger.warning("No signals found for analysis")
         return stats
 
+    # Enrich text-based signals with NLP sentiment
+    try:
+        from social_arb.nlp.sentiment_enricher import SentimentEnricher
+        enricher = SentimentEnricher(use_finbert=False)  # VADER-only in batch mode
+        all_signals = enricher.enrich_batch(all_signals)
+        logger.info(f"Enriched {len(all_signals)} signals with sentiment scores")
+    except Exception as e:
+        logger.warning(f"Sentiment enrichment failed (continuing without): {e}")
+
     # Group by symbol
     by_symbol: Dict[str, List[Dict]] = {}
     for sig in all_signals:

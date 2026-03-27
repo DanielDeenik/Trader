@@ -1,6 +1,7 @@
 """Crypto price collector via CoinGecko API. Free, no auth required."""
 
 import logging
+import time
 from datetime import datetime
 from typing import List
 
@@ -21,9 +22,19 @@ TOKEN_MAP = {
     "ARB": "arbitrum",
     "OP": "optimism",
     "MATIC": "matic-network",
+    "CRV": "curve-dao-token",
+    "LIDO": "lido",
+    "MKR": "maker",
+    "COMP": "compound-governance-token",
+    "DOGE": "dogecoin",
+    "ADA": "cardano",
+    "NEAR": "near",
+    "FIL": "filecoin",
+    "ATOM": "cosmos",
 }
 
 BASE_URL = "https://api.coingecko.com/api/v3"
+RATE_LIMIT_DELAY = 0.2  # 200ms delay between requests
 
 
 class CoinGeckoCollector(BaseCollector):
@@ -70,11 +81,11 @@ class CoinGeckoCollector(BaseCollector):
                     logger.warning(f"[coingecko] {symbol}: price data unavailable")
                     continue
 
-                # Determine direction based on 7d change
-                if price_change_7d is not None:
-                    if price_change_7d > 5:
+                # Determine direction based on 24h change
+                if price_change_24h is not None:
+                    if price_change_24h > 2:
                         direction = "bullish"
-                    elif price_change_7d < -5:
+                    elif price_change_24h < -2:
                         direction = "bearish"
                     else:
                         direction = "neutral"
@@ -83,18 +94,18 @@ class CoinGeckoCollector(BaseCollector):
 
                 # Calculate strength: normalized absolute change
                 strength = 0.0
-                if price_change_7d is not None:
-                    strength = min(1.0, abs(price_change_7d) / 20)
+                if price_change_24h is not None:
+                    strength = min(1.0, abs(price_change_24h) / 10)
 
-                # Create signal
+                # Create price action signal
                 signal = {
                     "timestamp": datetime.utcnow().isoformat(),
                     "symbol": symbol,
                     "source": "coingecko",
-                    "signal_type": "token_ohlcv",
+                    "signal_type": "price_action",
                     "direction": direction,
                     "strength": strength,
-                    "confidence": 0.8,
+                    "confidence": 0.85,
                     "data_class": "public",
                     "raw": {
                         "price": current_price,
@@ -108,7 +119,68 @@ class CoinGeckoCollector(BaseCollector):
                 }
 
                 signals.append(signal)
-                logger.info(f"[coingecko] {symbol} ({gecko_id}): price=${current_price}, 7d={price_change_7d}%")
+
+                # Volume spike signal
+                if volume_24h is not None and market_cap is not None and market_cap > 0:
+                    volume_to_mcap = volume_24h / market_cap
+                    if volume_to_mcap > 0.3:
+                        vol_direction = "bullish" if price_change_24h and price_change_24h > 0 else "bearish"
+                        signals.append({
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "symbol": symbol,
+                            "source": "coingecko",
+                            "signal_type": "volume_spike",
+                            "direction": vol_direction,
+                            "strength": min(1.0, volume_to_mcap / 0.5),
+                            "confidence": 0.7,
+                            "data_class": "public",
+                            "raw": {"volume_24h": volume_24h, "volume_to_mcap_ratio": volume_to_mcap},
+                        })
+
+                # Market cap change signal
+                if price_change_7d is not None:
+                    mcap_direction = "bullish" if price_change_7d > 0 else "bearish"
+                    signals.append({
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "symbol": symbol,
+                        "source": "coingecko",
+                        "signal_type": "market_cap_change",
+                        "direction": mcap_direction,
+                        "strength": min(1.0, abs(price_change_7d) / 20),
+                        "confidence": 0.75,
+                        "data_class": "public",
+                        "raw": {"price_change_7d": price_change_7d, "market_cap_rank": market_cap_rank},
+                    })
+
+                # Fetch historical OHLCV data (30 days)
+                time.sleep(RATE_LIMIT_DELAY)
+                chart_url = f"{BASE_URL}/coins/{gecko_id}/market_chart?vs_currency=usd&days=30"
+                chart_response = requests.get(chart_url, timeout=10)
+                chart_response.raise_for_status()
+                chart_data = chart_response.json()
+
+                prices = chart_data.get("prices", [])
+                for price_point in prices:
+                    ts_ms, price_val = price_point
+                    price_date = datetime.utcfromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
+                    # Create daily OHLCV signals (simplified: using price as close)
+                    signals.append({
+                        "timestamp": price_date,
+                        "symbol": symbol,
+                        "source": "coingecko",
+                        "signal_type": "ohlcv",
+                        "direction": "neutral",
+                        "strength": 0.5,
+                        "confidence": 0.6,
+                        "close": float(price_val),
+                        "data_class": "public",
+                        "raw": {"price": price_val},
+                    })
+
+                logger.info(f"[coingecko] {symbol} ({gecko_id}): price=${current_price}, 24h={price_change_24h}%, {len(prices)} OHLCV bars")
+
+                # Rate limiting
+                time.sleep(RATE_LIMIT_DELAY)
 
             except requests.exceptions.RequestException as e:
                 errors.append(f"{symbol}: request failed - {str(e)}")

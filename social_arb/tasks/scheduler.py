@@ -139,7 +139,7 @@ class TaskScheduler:
             await self.queue.enqueue(
                 task_type="collect",
                 params={
-                    "sources": ["yfinance", "reddit", "google_trends", "sec_edgar", "github", "coingecko", "defillama"],
+                    "sources": ["yfinance", "reddit", "google_trends", "sec_edgar", "github", "coingecko", "crypto_sentiment", "defillama"],
                     "symbols": symbols,
                     "domain": "public",
                 },

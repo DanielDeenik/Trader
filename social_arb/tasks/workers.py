@@ -11,6 +11,7 @@ from social_arb.collectors.sec_edgar_collector import SECEdgarCollector
 from social_arb.collectors.trends_collector import TrendsCollector
 from social_arb.collectors.github_collector import GitHubCollector
 from social_arb.collectors.coingecko_collector import CoinGeckoCollector
+from social_arb.collectors.crypto_sentiment_collector import CryptoSentimentCollector
 from social_arb.collectors.defillama_collector import DeFiLlamaCollector
 from social_arb.collectors.news_collector import NewsCollector
 from social_arb.collectors.hiring_collector import HiringCollector
@@ -29,6 +30,7 @@ COLLECTORS = {
     "google_trends": TrendsCollector(),
     "github": GitHubCollector(),
     "coingecko": CoinGeckoCollector(),
+    "crypto_sentiment": CryptoSentimentCollector(),
     "defillama": DeFiLlamaCollector(),
     # Phase 5: Private company collectors
     "news": NewsCollector(),

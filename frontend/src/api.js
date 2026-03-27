@@ -219,4 +219,19 @@ export const api = {
     })
     return handleResponse(res)
   },
+
+  // Scheduler
+  async getSchedulerStatus() {
+    const res = await fetch(`${API_BASE}/v1/scheduler/status`)
+    return handleResponse(res)
+  },
+
+  async triggerSchedule(data) {
+    const res = await fetch(`${API_BASE}/v1/scheduler/trigger`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
 }

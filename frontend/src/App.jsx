@@ -10,6 +10,7 @@ import GateReview from './pages/GateReview'
 import Decisions from './pages/Decisions'
 import Positions from './pages/Positions'
 import TaskQueue from './pages/TaskQueue'
+import DeepDive from './pages/DeepDive'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/" element={<Layout title="Overview"><Overview /></Layout>} />
         <Route path="/tickers" element={<Layout title="Tickers"><Tickers /></Layout>} />
         <Route path="/tickers/:symbol" element={<Layout title="Ticker Detail"><TickerDetail /></Layout>} />
+        <Route path="/deepdive/:symbol" element={<Layout title="Deep Dive"><DeepDive /></Layout>} />
         <Route path="/signals" element={<Layout title="L1: Signal Radar"><SignalRadar /></Layout>} />
         <Route path="/mosaics" element={<Layout title="L2: Mosaic Cards"><MosaicCards /></Layout>} />
         <Route path="/theses" element={<Layout title="L3: Thesis Forge"><ThesisForge /></Layout>} />

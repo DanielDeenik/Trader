@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useApi } from '../hooks'
 import { api } from '../api'
 import { EngineCard } from '../components/EngineCard'
@@ -28,6 +28,12 @@ export default function TickerDetail() {
       <div className="flex items-center gap-3">
         <span className="text-lg font-bold text-emerald-400 font-mono">{symbol}</span>
         <span className="text-xs text-gray-400">{(signals || []).length} signals</span>
+        <Link
+          to={`/deepdive/${symbol}`}
+          className="ml-auto text-xs px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white no-underline transition-colors"
+        >
+          Deep Dive &rarr;
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

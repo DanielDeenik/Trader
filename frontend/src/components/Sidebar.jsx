@@ -4,6 +4,7 @@ const navItems = [
   { path: '/', label: 'Overview', icon: '◉' },
   { path: '/tickers', label: 'Tickers', icon: '⊞' },
   { path: '/signals', label: 'L1: Signal Radar', icon: '◈' },
+  { path: '/gate/review', label: 'HITL Gate Review', icon: '⊘' },
   { path: '/mosaics', label: 'L2: Mosaic Cards', icon: '◆' },
   { path: '/theses', label: 'L3: Thesis Forge', icon: '◇' },
   { path: '/decisions', label: 'L4: Decisions', icon: '▷' },

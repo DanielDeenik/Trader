@@ -5,12 +5,35 @@
 
 const API_BASE = '/api'
 
+// Token storage (in memory, not localStorage)
+let authToken = null
+
+export function setAuthToken(token) {
+  authToken = token
+}
+
+export function getAuthToken() {
+  return authToken
+}
+
+export function clearAuthToken() {
+  authToken = null
+}
+
 export class ApiError extends Error {
   constructor(status, message, data) {
     super(message)
     this.status = status
     this.data = data
   }
+}
+
+function getHeaders(includeAuth = true) {
+  const headers = { 'Content-Type': 'application/json' }
+  if (includeAuth && authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
+  return headers
 }
 
 async function handleResponse(res) {
@@ -22,6 +45,77 @@ async function handleResponse(res) {
 }
 
 export const api = {
+  // Auth
+  async register(email, password, displayName) {
+    const res = await fetch(`${API_BASE}/v1/auth/register`, {
+      method: 'POST',
+      headers: getHeaders(false),
+      body: JSON.stringify({ email, password, display_name: displayName }),
+    })
+    const data = await handleResponse(res)
+    if (data.token) {
+      setAuthToken(data.token)
+    }
+    return data
+  },
+
+  async login(email, password) {
+    const res = await fetch(`${API_BASE}/v1/auth/login`, {
+      method: 'POST',
+      headers: getHeaders(false),
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await handleResponse(res)
+    if (data.token) {
+      setAuthToken(data.token)
+    }
+    return data
+  },
+
+  async getMe() {
+    const res = await fetch(`${API_BASE}/v1/auth/me`, {
+      headers: getHeaders(true),
+    })
+    return handleResponse(res)
+  },
+
+  async updateSettings(data) {
+    const res = await fetch(`${API_BASE}/v1/auth/settings`, {
+      method: 'PUT',
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+
+  async getWatchlist() {
+    const res = await fetch(`${API_BASE}/v1/auth/watchlist`, {
+      headers: getHeaders(true),
+    })
+    return handleResponse(res)
+  },
+
+  async addToWatchlist(symbol) {
+    const res = await fetch(`${API_BASE}/v1/auth/watchlist`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify({ symbol }),
+    })
+    return handleResponse(res)
+  },
+
+  async removeFromWatchlist(symbol) {
+    const res = await fetch(`${API_BASE}/v1/auth/watchlist/${symbol}`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
+    }
+    return { success: true }
+  },
+
   // Health
   async getHealth() {
     const res = await fetch(`${API_BASE}/v1/health`)
@@ -38,7 +132,7 @@ export const api = {
   async createInstrument(data) {
     const res = await fetch(`${API_BASE}/v1/instruments`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -47,14 +141,17 @@ export const api = {
   async updateInstrument(id, data) {
     const res = await fetch(`${API_BASE}/v1/instruments/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
   },
 
   async deleteInstrument(id) {
-    const res = await fetch(`${API_BASE}/v1/instruments/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API_BASE}/v1/instruments/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+    })
     if (!res.ok) {
       const data = await res.json()
       throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
@@ -99,7 +196,7 @@ export const api = {
   async createReview(data) {
     const res = await fetch(`${API_BASE}/v1/reviews`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -115,7 +212,7 @@ export const api = {
   async createPosition(data) {
     const res = await fetch(`${API_BASE}/v1/positions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -125,7 +222,7 @@ export const api = {
   async runAnalysis(data = {}) {
     const res = await fetch(`${API_BASE}/v1/analyze`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -146,7 +243,7 @@ export const api = {
   async createTask(data) {
     const res = await fetch(`${API_BASE}/v1/tasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -158,7 +255,10 @@ export const api = {
   },
 
   async deleteTask(id) {
-    const res = await fetch(`${API_BASE}/v1/tasks/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API_BASE}/v1/tasks/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+    })
     if (!res.ok) {
       const data = await res.json()
       throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
@@ -175,7 +275,7 @@ export const api = {
   async scoreStepps(data) {
     const res = await fetch(`${API_BASE}/v1/stepps/score`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -190,7 +290,7 @@ export const api = {
   async correctStepps(data) {
     const res = await fetch(`${API_BASE}/v1/stepps/correct`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -205,7 +305,7 @@ export const api = {
   async addLatticeNode(symbol, data) {
     const res = await fetch(`${API_BASE}/v1/lattice/${symbol}/node`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -214,7 +314,7 @@ export const api = {
   async addLatticeEdge(symbol, data) {
     const res = await fetch(`${API_BASE}/v1/lattice/${symbol}/edge`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -229,7 +329,7 @@ export const api = {
   async triggerSchedule(data) {
     const res = await fetch(`${API_BASE}/v1/scheduler/trigger`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify(data),
     })
     return handleResponse(res)
@@ -250,14 +350,17 @@ export const api = {
   async updateAlertThresholds(thresholds) {
     const res = await fetch(`${API_BASE}/v1/alerts/thresholds`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(true),
       body: JSON.stringify({ thresholds }),
     })
     return handleResponse(res)
   },
 
   async clearAlerts() {
-    const res = await fetch(`${API_BASE}/v1/alerts`, { method: 'DELETE' })
+    const res = await fetch(`${API_BASE}/v1/alerts`, {
+      method: 'DELETE',
+      headers: getHeaders(true),
+    })
     if (!res.ok) {
       const data = await res.json()
       throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)

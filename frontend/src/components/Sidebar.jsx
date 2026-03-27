@@ -10,6 +10,7 @@ const navItems = [
   { path: '/decisions', label: 'L4: Decisions', icon: '▷' },
   { path: '/positions', label: 'L5: Portfolio', icon: '▣' },
   { path: '/tasks', label: 'Task Queue', icon: '⟳' },
+  { path: '/settings', label: 'Settings', icon: '⚙' },
 ]
 
 export function Sidebar() {

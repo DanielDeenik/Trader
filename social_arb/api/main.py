@@ -9,11 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
-    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps,
+    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment,
 )
 from social_arb.tasks.queue import TaskQueue
 from social_arb.tasks.scheduler import TaskScheduler
-from social_arb.tasks.workers import handle_collect, handle_analyze, handle_backfill, handle_train_stepps
+from social_arb.tasks.workers import handle_collect, handle_analyze, handle_backfill, handle_train_stepps, handle_enrich_sentiment
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     queue.register_handler("analyze", handle_analyze)
     queue.register_handler("backfill", handle_backfill)
     queue.register_handler("train_stepps", handle_train_stepps)
+    queue.register_handler("enrich_sentiment", handle_enrich_sentiment)
     await queue.start()
 
     # Initialize scheduler
@@ -90,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
     app.include_router(tasks.router, prefix="/api/v1", tags=["tasks"])
     app.include_router(stepps.router)
+    app.include_router(sentiment.router)
 
     @app.get("/")
     def root():

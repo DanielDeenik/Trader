@@ -11,6 +11,10 @@ const ENGINE_LABELS = {
   regulatory_moat: 'Regulatory Moat',
   cross_domain_amplifier: 'Cross-Domain Amplifier',
   stepps_classifier: 'STEPPS Classifier',
+  gold_rush_scorer: 'Gold Rush Lifecycle',
+  asymmetry_scanner: 'Information Asymmetry',
+  catalyst_engine: 'Catalyst Timeline',
+  conviction_scorer: 'Conviction Scorecard',
 }
 
 export default function TickerDetail() {

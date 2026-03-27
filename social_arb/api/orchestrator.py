@@ -1,16 +1,23 @@
-"""Engine Orchestrator — auto-runs all 6 engines for a given symbol.
+"""Engine Orchestrator — auto-runs all 11 engines for a given symbol.
 
 This is the core of the auto-stack architecture. When a signal cluster
 gets promoted through a gate, the orchestrator runs every relevant engine
 and assembles the combined result.
 
-Engines:
+Engines (7 original):
 1. Sentiment Divergence — social vs institutional signal gap
 2. Technical Analyzer — 7 price indicators (SMA, EMA, RSI, MACD, BBands, ATR, Momentum)
 3. Kelly Criterion Sizer — position sizing from ROI scenarios
 4. IRR/MOIC Simulator — bear/base/bull private market scenarios
 5. Regulatory Moat Scorer — ESG + patent + regulatory burden
 6. Cross-Domain Amplifier — multi-domain signal convergence
+7. STEPPS Classifier — signal virality scoring
+
+New Engines (4 Chris Camillo Mosaic Theory):
+8. Gold Rush Lifecycle Scorer — trend lifecycle stage (Emerging → Validating → Confirmed → Saturated)
+9. Information Asymmetry Scanner — retail vs institutional signal gap
+10. Catalyst Timeline Engine — identify upcoming catalysts and timing
+11. Conviction Scorecard — structured HITL decision support (6 weighted dimensions)
 """
 
 import logging
@@ -25,13 +32,17 @@ from social_arb.engine.irr_simulator import IRRMOICSim
 from social_arb.engine.regulatory_moat import RegulatoryMoatScorer
 from social_arb.engine.cross_domain_amplifier import CrossDomainAmplifier
 from social_arb.engine.stepps_classifier import SteppsClassifier
+from social_arb.engine.gold_rush_scorer import GoldRushScorer
+from social_arb.engine.asymmetry_scanner import AsymmetryScanner
+from social_arb.engine.catalyst_engine import CatalystEngine
+from social_arb.engine.conviction_scorer import ConvictionScorer
 from social_arb.core.protocols import ConvictionLevel
 
 logger = logging.getLogger(__name__)
 
 
 class EngineOrchestrator:
-    """Runs all 6 engines for a symbol and returns combined results."""
+    """Runs all 11 engines for a symbol and returns combined results."""
 
     def __init__(self, db_path: str = DEFAULT_DB_PATH):
         self.db_path = db_path
@@ -41,9 +52,13 @@ class EngineOrchestrator:
         self.moat = RegulatoryMoatScorer()
         self.amplifier = CrossDomainAmplifier()
         self.stepps = SteppsClassifier(db_path=db_path)
+        self.gold_rush = GoldRushScorer()
+        self.asymmetry = AsymmetryScanner()
+        self.catalyst = CatalystEngine()
+        self.conviction = ConvictionScorer()
 
     def run_all(self, symbol: str, portfolio_value: float = 100_000) -> Dict[str, Any]:
-        """Run all engines for a symbol. Returns engine_name → result dict."""
+        """Run all 11 engines for a symbol. Returns engine_name → result dict."""
         results = {}
 
         # Fetch data once
@@ -72,6 +87,18 @@ class EngineOrchestrator:
 
         # 7. STEPPS Classifier
         results["stepps_classifier"] = self._run_stepps(signals)
+
+        # 8. Gold Rush Lifecycle Scorer
+        results["gold_rush_scorer"] = self._run_gold_rush(signals, mosaics)
+
+        # 9. Information Asymmetry Scanner
+        results["asymmetry_scanner"] = self._run_asymmetry(signals, ohlcv)
+
+        # 10. Catalyst Timeline Engine
+        results["catalyst_engine"] = self._run_catalyst(signals, symbol)
+
+        # 11. Conviction Scorecard (runs after all others)
+        results["conviction_scorer"] = self._run_conviction(signals, mosaics, theses, results)
 
         return results
 
@@ -210,4 +237,40 @@ class EngineOrchestrator:
             }
         except Exception as e:
             logger.error(f"STEPPS classifier error: {e}")
+            return {"error": str(e)}
+
+    def _run_gold_rush(self, signals: list, mosaics: list) -> dict:
+        """Run Gold Rush Lifecycle Scorer."""
+        try:
+            result = self.gold_rush.score(signals, mosaics)
+            return result
+        except Exception as e:
+            logger.error(f"Gold Rush scorer error: {e}")
+            return {"error": str(e)}
+
+    def _run_asymmetry(self, signals: list, ohlcv: list) -> dict:
+        """Run Information Asymmetry Scanner."""
+        try:
+            result = self.asymmetry.scan(signals, ohlcv)
+            return result
+        except Exception as e:
+            logger.error(f"Asymmetry scanner error: {e}")
+            return {"error": str(e)}
+
+    def _run_catalyst(self, signals: list, symbol: str) -> dict:
+        """Run Catalyst Timeline Engine."""
+        try:
+            result = self.catalyst.analyze(signals, symbol)
+            return result
+        except Exception as e:
+            logger.error(f"Catalyst engine error: {e}")
+            return {"error": str(e)}
+
+    def _run_conviction(self, signals: list, mosaics: list, theses: list, engine_results: dict) -> dict:
+        """Run Conviction Scorecard (meta-engine that aggregates all others)."""
+        try:
+            result = self.conviction.score(signals, mosaics, theses, engine_results)
+            return result
+        except Exception as e:
+            logger.error(f"Conviction scorer error: {e}")
             return {"error": str(e)}

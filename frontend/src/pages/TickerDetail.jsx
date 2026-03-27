@@ -29,8 +29,14 @@ export default function TickerDetail() {
         <span className="text-lg font-bold text-emerald-400 font-mono">{symbol}</span>
         <span className="text-xs text-gray-400">{(signals || []).length} signals</span>
         <Link
+          to={`/mosaic/${symbol}`}
+          className="ml-auto text-xs px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white no-underline transition-colors"
+        >
+          Mosaic Workbench &rarr;
+        </Link>
+        <Link
           to={`/deepdive/${symbol}`}
-          className="ml-auto text-xs px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white no-underline transition-colors"
+          className="text-xs px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white no-underline transition-colors"
         >
           Deep Dive &rarr;
         </Link>

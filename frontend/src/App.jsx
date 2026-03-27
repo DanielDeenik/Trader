@@ -15,6 +15,7 @@ import Positions from './pages/Positions'
 import TaskQueue from './pages/TaskQueue'
 import DeepDive from './pages/DeepDive'
 import LatticeGraph from './pages/LatticeGraph'
+import MosaicWorkbench from './pages/MosaicWorkbench'
 import NotFound from './pages/NotFound'
 
 function ProtectedRoute({ children }) {
@@ -79,6 +80,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout title="Lattice Network">
               <LatticeGraph />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mosaic/:symbol"
+        element={
+          <ProtectedRoute>
+            <Layout title="Mosaic Workbench">
+              <MosaicWorkbench />
             </Layout>
           </ProtectedRoute>
         }

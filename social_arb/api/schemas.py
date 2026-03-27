@@ -392,3 +392,50 @@ class SteppsTrainResponse(BaseModel):
     training_count: int
     model_version: Optional[str]
     error: Optional[str]
+
+
+# ─── Lattice (HITL Graph Visualization) ───────────────────────────────────────
+
+
+class LatticeNodeResponse(BaseModel):
+    id: str
+    type: str
+    label: str
+    data: Optional[Any] = None
+
+    model_config = {"from_attributes": True}
+
+
+class LatticeEdgeResponse(BaseModel):
+    id: str
+    source: str
+    target: str
+    label: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class LatticeGraphResponse(BaseModel):
+    symbol: str
+    nodes: List[LatticeNodeResponse]
+    edges: List[LatticeEdgeResponse]
+    stats: dict[str, int] = Field(
+        default_factory=dict,
+        description="Counts of each node type"
+    )
+
+
+class LatticeNodeCreate(BaseModel):
+    type: str = Field(..., description="Node type: custom, or ref to existing type")
+    label: str = Field(..., description="Display label for the node")
+    data: Optional[dict[str, Any]] = None
+    connect_to: Optional[List[str]] = Field(
+        default=None,
+        description="List of node IDs to connect to (source→target)"
+    )
+
+
+class LatticeEdgeCreate(BaseModel):
+    source: str = Field(..., description="Source node ID")
+    target: str = Field(..., description="Target node ID")
+    label: Optional[str] = Field(None, description="Edge label (e.g., 'fragment', 'supports')")

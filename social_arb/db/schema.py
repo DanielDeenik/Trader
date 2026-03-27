@@ -266,6 +266,33 @@ def _init_db_sqlite(c, conn) -> None:
         )
     """)
 
+    # TIER 5: LATTICE (HITL graph visualization)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS lattice_nodes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            node_id TEXT NOT NULL,
+            node_type TEXT CHECK(node_type IN ('instrument','signal','mosaic','thesis','decision','position','custom')) NOT NULL,
+            label TEXT NOT NULL,
+            data_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(symbol, node_id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS lattice_edges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            edge_id TEXT NOT NULL,
+            source_node_id TEXT NOT NULL,
+            target_node_id TEXT NOT NULL,
+            label TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(symbol, edge_id)
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -292,6 +319,11 @@ def _init_db_sqlite(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_stepps_scores_composite ON stepps_scores(composite DESC)",
         "CREATE INDEX IF NOT EXISTS idx_stepps_training_signal ON stepps_training(signal_id)",
         "CREATE INDEX IF NOT EXISTS idx_stepps_training_source ON stepps_training(source)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_nodes_symbol ON lattice_nodes(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_nodes_type ON lattice_nodes(node_type)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_symbol ON lattice_edges(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_source ON lattice_edges(source_node_id)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_target ON lattice_edges(target_node_id)",
     ]
     for idx in indexes:
         c.execute(idx)
@@ -534,6 +566,33 @@ def _init_db_postgres(c, conn) -> None:
         )
     """)
 
+    # TIER 5: LATTICE (HITL graph visualization)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS lattice_nodes (
+            id SERIAL PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            node_id TEXT NOT NULL,
+            node_type TEXT CHECK(node_type IN ('instrument','signal','mosaic','thesis','decision','position','custom')) NOT NULL,
+            label TEXT NOT NULL,
+            data_json TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(symbol, node_id)
+        )
+    """)
+
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS lattice_edges (
+            id SERIAL PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            edge_id TEXT NOT NULL,
+            source_node_id TEXT NOT NULL,
+            target_node_id TEXT NOT NULL,
+            label TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE(symbol, edge_id)
+        )
+    """)
+
     # INDEXES
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_signals_symbol_ts ON signals(symbol, timestamp DESC)",
@@ -560,6 +619,11 @@ def _init_db_postgres(c, conn) -> None:
         "CREATE INDEX IF NOT EXISTS idx_stepps_scores_composite ON stepps_scores(composite DESC)",
         "CREATE INDEX IF NOT EXISTS idx_stepps_training_signal ON stepps_training(signal_id)",
         "CREATE INDEX IF NOT EXISTS idx_stepps_training_source ON stepps_training(source)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_nodes_symbol ON lattice_nodes(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_nodes_type ON lattice_nodes(node_type)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_symbol ON lattice_edges(symbol)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_source ON lattice_edges(source_node_id)",
+        "CREATE INDEX IF NOT EXISTS idx_lattice_edges_target ON lattice_edges(target_node_id)",
     ]
     for idx in indexes:
         try:

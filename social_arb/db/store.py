@@ -999,6 +999,85 @@ def query_stepps_training(
         return [dict(row) for row in cursor.fetchall()]
 
 
+# LATTICE: HITL Graph Visualization
+
+
+def insert_lattice_node(
+    *,
+    symbol: str,
+    node_id: str,
+    node_type: str,
+    label: str,
+    data_json: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert a lattice node. Returns lastrowid."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(5)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO lattice_nodes
+            (symbol, node_id, node_type, label, data_json)
+            VALUES ({ph})
+            """,
+            (symbol, node_id, node_type, label, data_json),
+        )
+        return cursor.lastrowid
+
+
+def query_lattice_nodes(
+    *,
+    symbol: str,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query all lattice nodes for a symbol. Returns list of dicts."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        cursor = conn.execute(
+            f"SELECT * FROM lattice_nodes WHERE symbol = {ph} ORDER BY created_at ASC",
+            (symbol,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def insert_lattice_edge(
+    *,
+    symbol: str,
+    edge_id: str,
+    source_node_id: str,
+    target_node_id: str,
+    label: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Insert a lattice edge. Returns lastrowid."""
+    with get_connection(db_path) as conn:
+        ph = _make_placeholders(5)
+        cursor = conn.execute(
+            f"""
+            INSERT INTO lattice_edges
+            (symbol, edge_id, source_node_id, target_node_id, label)
+            VALUES ({ph})
+            """,
+            (symbol, edge_id, source_node_id, target_node_id, label),
+        )
+        return cursor.lastrowid
+
+
+def query_lattice_edges(
+    *,
+    symbol: str,
+    db_path: str = DEFAULT_DB_PATH,
+) -> List[Dict]:
+    """Query all lattice edges for a symbol. Returns list of dicts."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        cursor = conn.execute(
+            f"SELECT * FROM lattice_edges WHERE symbol = {ph} ORDER BY created_at ASC",
+            (symbol,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
 def count_stepps_training(
     *,
     db_path: str = DEFAULT_DB_PATH,

@@ -21,12 +21,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python deps
+# Copy source + pyproject.toml together (needed for pip install ".[cloud]")
 COPY pyproject.toml ./
+COPY social_arb/ ./social_arb/
+
+# Install Python deps + application
 RUN pip install --no-cache-dir ".[cloud]" gunicorn
 
-# Copy application code
-COPY social_arb/ ./social_arb/
+# Copy scripts and pre-trained models
 COPY scripts/ ./scripts/
 
 # Copy built frontend from stage 1

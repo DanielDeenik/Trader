@@ -47,7 +47,7 @@ const CONVICTION_COLORS = {
 /* ──────────────────────────────────────────────
    Section 1: Header + Quick Stats
    ────────────────────────────────────────────── */
-function Header({ symbol, data }) {
+function Header({ symbol, data, onRerun, rerunning, onCreatePosition, onAddWatchlist, actionMsg }) {
   const gold_rush = data?.engines?.gold_rush_scorer || {}
   const conviction = data?.engines?.conviction_scorer || {}
 
@@ -73,18 +73,25 @@ function Header({ symbol, data }) {
           <h1 className="text-3xl font-bold text-emerald-400 font-mono">{symbol}</h1>
           <p className="text-xs text-gray-400 mt-1">Mosaic Workbench • Investment Decision Interface</p>
         </div>
-        <div className="flex gap-3">
-          <Link
-            to={`/positions?symbol=${symbol}`}
-            className="text-xs px-3 py-2 rounded bg-emerald-900 hover:bg-emerald-800 text-emerald-400 no-underline transition-colors border border-emerald-700"
-          >
-            Create Position
-          </Link>
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => window.location.reload()}
-            className="text-xs px-3 py-2 rounded bg-orange-900 hover:bg-orange-800 text-orange-400 transition-colors border border-orange-700"
+            onClick={onCreatePosition}
+            className="text-xs px-3 py-2 rounded bg-emerald-900 hover:bg-emerald-800 text-emerald-400 transition-colors border border-emerald-700"
           >
-            Re-run Engines
+            + Create Position
+          </button>
+          <button
+            onClick={onRerun}
+            disabled={rerunning}
+            className="text-xs px-3 py-2 rounded bg-orange-900 hover:bg-orange-800 disabled:bg-gray-700 disabled:text-gray-500 text-orange-400 transition-colors border border-orange-700"
+          >
+            {rerunning ? 'Running…' : 'Re-run Engines'}
+          </button>
+          <button
+            onClick={onAddWatchlist}
+            className="text-xs px-3 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-400 transition-colors border border-yellow-700"
+          >
+            + Watchlist
           </button>
           <Link
             to={`/deepdive/${symbol}`}
@@ -593,7 +600,57 @@ function ConvictionScorecard({ data }) {
    ────────────────────────────────────────────── */
 export default function MosaicWorkbench() {
   const { symbol } = useParams()
-  const { data, loading, error } = useApi(() => api.getEngineOutput(symbol), [symbol])
+  const { data, loading, error, refetch } = useApi(() => api.getEngineOutput(symbol), [symbol])
+  const [rerunning, setRerunning] = useState(false)
+  const [actionMsg, setActionMsg] = useState(null)
+  const [showPositionForm, setShowPositionForm] = useState(false)
+  const [posForm, setPosForm] = useState({ direction: 'long', size: '', entry_price: '' })
+  const [posSubmitting, setPosSubmitting] = useState(false)
+
+  const handleRerun = async () => {
+    setRerunning(true)
+    setActionMsg(null)
+    try {
+      await api.runAnalysis({ symbol })
+      await refetch()
+      setActionMsg({ type: 'success', text: 'Engines re-run successfully' })
+    } catch (err) {
+      setActionMsg({ type: 'error', text: `Re-run failed: ${err.message}` })
+    }
+    setRerunning(false)
+    setTimeout(() => setActionMsg(null), 4000)
+  }
+
+  const handleCreatePosition = async (e) => {
+    e.preventDefault()
+    setPosSubmitting(true)
+    try {
+      await api.createPosition({
+        symbol,
+        direction: posForm.direction,
+        size: parseFloat(posForm.size),
+        entry_price: parseFloat(posForm.entry_price),
+        thesis_id: null,
+      })
+      setActionMsg({ type: 'success', text: 'Position created' })
+      setShowPositionForm(false)
+      setPosForm({ direction: 'long', size: '', entry_price: '' })
+    } catch (err) {
+      setActionMsg({ type: 'error', text: `Failed: ${err.message}` })
+    }
+    setPosSubmitting(false)
+    setTimeout(() => setActionMsg(null), 4000)
+  }
+
+  const handleAddWatchlist = async () => {
+    try {
+      await api.addToWatchlist(symbol)
+      setActionMsg({ type: 'success', text: `${symbol} added to watchlist` })
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message })
+    }
+    setTimeout(() => setActionMsg(null), 4000)
+  }
 
   if (loading)
     return (
@@ -611,7 +668,42 @@ export default function MosaicWorkbench() {
   return (
     <div className="space-y-6">
       {/* Section 1: Header */}
-      <Header symbol={symbol} data={data} />
+      <Header symbol={symbol} data={data} onRerun={handleRerun} rerunning={rerunning} onCreatePosition={() => setShowPositionForm(!showPositionForm)} onAddWatchlist={handleAddWatchlist} actionMsg={actionMsg} />
+
+      {/* Action feedback */}
+      {actionMsg && (
+        <div className={`text-xs px-3 py-2 rounded ${actionMsg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
+          {actionMsg.text}
+        </div>
+      )}
+
+      {/* Inline Position Form */}
+      {showPositionForm && (
+        <div className="bg-gray-800 border border-gray-700 rounded p-4">
+          <h3 className="text-sm font-bold text-gray-200 mb-3">Create Position for {symbol}</h3>
+          <form onSubmit={handleCreatePosition} className="flex gap-3 items-end flex-wrap">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Direction</label>
+              <select value={posForm.direction} onChange={e => setPosForm({...posForm, direction: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200">
+                <option value="long">Long</option>
+                <option value="short">Short</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Size ($)</label>
+              <input type="number" step="0.01" required value={posForm.size} onChange={e => setPosForm({...posForm, size: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="10000" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Entry Price</label>
+              <input type="number" step="0.01" required value={posForm.entry_price} onChange={e => setPosForm({...posForm, entry_price: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="150.00" />
+            </div>
+            <button type="submit" disabled={posSubmitting} className="bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 text-white text-xs px-4 py-1.5 rounded">
+              {posSubmitting ? 'Creating…' : 'Create'}
+            </button>
+            <button type="button" onClick={() => setShowPositionForm(false)} className="text-xs text-gray-500 hover:text-gray-300 px-2 py-1.5">Cancel</button>
+          </form>
+        </div>
+      )}
 
       {/* Sections 2 & 3: Asymmetry (60%) + Lifecycle (40%) */}
       <div className="grid grid-cols-3 gap-6">

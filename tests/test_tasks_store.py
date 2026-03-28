@@ -149,8 +149,10 @@ def test_fail_task_exhausted(temp_db):
 
 def test_query_source_health(temp_db):
     """Test querying per-source health based on recent task outcomes."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     store.insert_signal(
-        timestamp="2026-03-26T10:00:00Z",
+        timestamp=now,
         symbol="AAPL",
         source="yfinance",
         direction="bullish",
@@ -162,7 +164,7 @@ def test_query_source_health(temp_db):
         db_path=temp_db,
     )
     store.insert_signal(
-        timestamp="2026-03-26T10:01:00Z",
+        timestamp=now,
         symbol="AAPL",
         source="reddit",
         direction="neutral",

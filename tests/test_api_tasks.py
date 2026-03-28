@@ -130,16 +130,18 @@ def test_delete_running_task_fails(client):
 
 def test_get_source_health(client):
     """Test getting source health metrics."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     db_path = get_db_path()
     store.insert_signal(
-        timestamp="2026-03-26T10:00:00Z",
+        timestamp=now,
         symbol="AAPL", source="yfinance",
         direction="bullish", strength=0.8, confidence=0.9,
         signal_type="price", raw_json="{}", data_class="public",
         db_path=db_path,
     )
     store.insert_signal(
-        timestamp="2026-03-26T10:01:00Z",
+        timestamp=now,
         symbol="TSLA", source="reddit",
         direction="neutral", strength=0.5, confidence=0.7,
         signal_type="sentiment", raw_json="{}", data_class="public",

@@ -403,6 +403,45 @@ function KV({ label, value }) {
 export default function DeepDive() {
   const { symbol } = useParams()
   const [activeTab, setActiveTab] = useState('all')
+  const [actionMsg, setActionMsg] = useState(null)
+  const [showThesisForm, setShowThesisForm] = useState(false)
+  const [thesisForm, setThesisForm] = useState({ direction: 'bullish', timeframe: 'medium', expected_roi: '', rationale: '' })
+  const [thesisSubmitting, setThesisSubmitting] = useState(false)
+
+  const handleCreateThesis = async (e) => {
+    e.preventDefault()
+    setThesisSubmitting(true)
+    try {
+      await api.createThesis({
+        symbol,
+        domain: 'public',
+        thesis_type: 'directional',
+        direction: thesisForm.direction,
+        timeframe: thesisForm.timeframe,
+        expected_roi: parseFloat(thesisForm.expected_roi) / 100,
+        rationale: thesisForm.rationale,
+        lifecycle_stage: engines?.gold_rush_scorer?.stage || 'emerging',
+      })
+      setActionMsg({ type: 'success', text: 'Thesis created from deep dive insights' })
+      setShowThesisForm(false)
+      setThesisForm({ direction: 'bullish', timeframe: 'medium', expected_roi: '', rationale: '' })
+    } catch (err) {
+      setActionMsg({ type: 'error', text: `Failed: ${err.message}` })
+    }
+    setThesisSubmitting(false)
+    setTimeout(() => setActionMsg(null), 5000)
+  }
+
+  const handleRunAnalysis = async () => {
+    setActionMsg(null)
+    try {
+      await api.runAnalysis({ symbol })
+      setActionMsg({ type: 'success', text: 'Analysis triggered — refresh to see updated results' })
+    } catch (err) {
+      setActionMsg({ type: 'error', text: `Failed: ${err.message}` })
+    }
+    setTimeout(() => setActionMsg(null), 5000)
+  }
 
   // Fetch all data in parallel
   const { data: signals, loading: sigLoad } = useApi(() => api.getSignals({ symbol, limit: 500 }), [symbol])
@@ -425,7 +464,7 @@ export default function DeepDive() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Link to={`/tickers/${symbol}`} className="text-xs text-gray-500 hover:text-gray-300 no-underline">
             &larr; Engine View
@@ -433,7 +472,19 @@ export default function DeepDive() {
           <span className="text-lg font-bold text-emerald-400 font-mono">{symbol}</span>
           <span className="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-300">Deep Dive</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setShowThesisForm(!showThesisForm)}
+            className={`text-xs px-3 py-1 rounded transition-colors ${showThesisForm ? 'bg-yellow-800 text-yellow-300' : 'bg-yellow-600 hover:bg-yellow-500 text-white'}`}
+          >
+            {showThesisForm ? 'Cancel' : '+ Create Thesis'}
+          </button>
+          <button
+            onClick={handleRunAnalysis}
+            className="text-xs px-3 py-1 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors"
+          >
+            Re-run Engines
+          </button>
           <Link
             to={`/mosaic/${symbol}`}
             className="text-xs px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white no-underline transition-colors"
@@ -448,6 +499,49 @@ export default function DeepDive() {
           </Link>
         </div>
       </div>
+
+      {/* Action Feedback */}
+      {actionMsg && (
+        <div className={`text-xs px-3 py-2 rounded ${actionMsg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
+          {actionMsg.text}
+        </div>
+      )}
+
+      {/* Inline Thesis Form */}
+      {showThesisForm && (
+        <div className="bg-gray-800 border border-gray-700 rounded p-4">
+          <h3 className="text-sm font-bold text-gray-200 mb-3">Create Thesis from Deep Dive</h3>
+          <form onSubmit={handleCreateThesis} className="flex gap-3 items-end flex-wrap">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Direction</label>
+              <select value={thesisForm.direction} onChange={e => setThesisForm({...thesisForm, direction: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200">
+                <option value="bullish">Bullish</option>
+                <option value="bearish">Bearish</option>
+                <option value="neutral">Neutral</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Timeframe</label>
+              <select value={thesisForm.timeframe} onChange={e => setThesisForm({...thesisForm, timeframe: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200">
+                <option value="short">Short (days)</option>
+                <option value="medium">Medium (weeks)</option>
+                <option value="long">Long (months)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Expected ROI %</label>
+              <input type="number" step="0.1" required value={thesisForm.expected_roi} onChange={e => setThesisForm({...thesisForm, expected_roi: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-24" placeholder="15" />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs text-gray-400 block mb-1">Rationale</label>
+              <input type="text" required value={thesisForm.rationale} onChange={e => setThesisForm({...thesisForm, rationale: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-full" placeholder="Based on asymmetry in social signals..." />
+            </div>
+            <button type="submit" disabled={thesisSubmitting} className="bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 text-white text-xs px-4 py-1.5 rounded">
+              {thesisSubmitting ? 'Creating…' : 'Create Thesis'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-gray-700 pb-0.5">

@@ -490,13 +490,18 @@ def query_instruments(
     symbol: Optional[str] = None,
     type: Optional[str] = None,
     data_class: Optional[str] = None,
+    search: Optional[str] = None,
+    sector: Optional[str] = None,
+    exchange: Optional[str] = None,
+    limit: int = 0,
+    offset: int = 0,
     db_path: str = DEFAULT_DB_PATH,
 ) -> List[Dict]:
-    """Query instruments with optional filters."""
+    """Query instruments with optional filters, search, and pagination."""
     with get_connection(db_path) as conn:
         ph = get_placeholder()
         query = "SELECT * FROM instruments WHERE 1=1"
-        params = []
+        params: list = []
         if symbol:
             query += f" AND symbol = {ph}"
             params.append(symbol)
@@ -506,9 +511,76 @@ def query_instruments(
         if data_class:
             query += f" AND data_class = {ph}"
             params.append(data_class)
+        if sector:
+            query += f" AND sector = {ph}"
+            params.append(sector)
+        if exchange:
+            query += f" AND exchange = {ph}"
+            params.append(exchange)
+        if search:
+            query += f" AND (symbol LIKE {ph} OR name LIKE {ph})"
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
         query += " ORDER BY symbol ASC"
+        if limit > 0:
+            query += f" LIMIT {ph} OFFSET {ph}"
+            params.append(limit)
+            params.append(offset)
         cursor = conn.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
+
+
+def count_instruments(
+    *,
+    symbol: Optional[str] = None,
+    type: Optional[str] = None,
+    data_class: Optional[str] = None,
+    search: Optional[str] = None,
+    sector: Optional[str] = None,
+    exchange: Optional[str] = None,
+    db_path: str = DEFAULT_DB_PATH,
+) -> int:
+    """Count instruments matching filters."""
+    with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        query = "SELECT COUNT(*) FROM instruments WHERE 1=1"
+        params: list = []
+        if symbol:
+            query += f" AND symbol = {ph}"
+            params.append(symbol)
+        if type:
+            query += f" AND type = {ph}"
+            params.append(type)
+        if data_class:
+            query += f" AND data_class = {ph}"
+            params.append(data_class)
+        if sector:
+            query += f" AND sector = {ph}"
+            params.append(sector)
+        if exchange:
+            query += f" AND exchange = {ph}"
+            params.append(exchange)
+        if search:
+            query += f" AND (symbol LIKE {ph} OR name LIKE {ph})"
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
+        cursor = conn.execute(query, params)
+        return cursor.fetchone()[0]
+
+
+def get_instrument_facets(*, db_path: str = DEFAULT_DB_PATH) -> Dict:
+    """Get distinct values for filter dropdowns."""
+    with get_connection(db_path) as conn:
+        sectors = [r[0] for r in conn.execute(
+            "SELECT DISTINCT sector FROM instruments WHERE sector IS NOT NULL AND sector != '' ORDER BY sector"
+        ).fetchall()]
+        exchanges = [r[0] for r in conn.execute(
+            "SELECT DISTINCT exchange FROM instruments WHERE exchange IS NOT NULL AND exchange != '' ORDER BY exchange"
+        ).fetchall()]
+        types = [r[0] for r in conn.execute(
+            "SELECT DISTINCT type FROM instruments ORDER BY type"
+        ).fetchall()]
+        return {"sectors": sectors, "exchanges": exchanges, "types": types}
 
 
 def update_instrument(

@@ -5,22 +5,38 @@ from social_arb.api.deps import get_db_path
 from social_arb.api.schemas import InstrumentCreate, InstrumentUpdate, InstrumentResponse
 from social_arb.db.store import (
     insert_instrument, query_instruments, update_instrument, delete_instrument,
+    count_instruments, get_instrument_facets,
 )
 
 router = APIRouter()
 
 
-@router.get("/instruments", response_model=list[InstrumentResponse])
+@router.get("/instruments")
 def list_instruments(
     type: str | None = None,
     data_class: str | None = None,
     symbol: str | None = None,
+    search: str | None = None,
+    sector: str | None = None,
+    exchange: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ):
-    """List all instruments with optional filters."""
-    return query_instruments(
-        db_path=get_db_path(), type=type,
-        data_class=data_class, symbol=symbol,
+    """List instruments with search, filters, and pagination."""
+    db_path = get_db_path()
+    kwargs = dict(
+        db_path=db_path, type=type, data_class=data_class,
+        symbol=symbol, search=search, sector=sector, exchange=exchange,
     )
+    items = query_instruments(**kwargs, limit=limit, offset=offset)
+    total = count_instruments(**kwargs)
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+
+@router.get("/instruments/facets")
+def instrument_facets():
+    """Return distinct sectors, exchanges, types for filter dropdowns."""
+    return get_instrument_facets(db_path=get_db_path())
 
 
 @router.post("/instruments", response_model=InstrumentResponse, status_code=201)

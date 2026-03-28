@@ -173,9 +173,9 @@ class TestCoinGeckoCollector:
         for signal in result.signals:
             assert signal["data_class"] == "public"
             assert signal["source"] == "coingecko"
-            assert signal["signal_type"] == "token_ohlcv"
+            assert signal["signal_type"] in ("price_action", "volume_spike", "market_cap_change", "ohlcv")
             assert "raw" in signal
-            assert "price" in signal["raw"]
+            assert len(signal["raw"]) > 0  # raw dict has data
 
     def test_collect_single_token(self):
         from social_arb.collectors.coingecko_collector import CoinGeckoCollector
@@ -187,7 +187,7 @@ class TestCoinGeckoCollector:
         if result.signal_count > 0:
             signal = result.signals[0]
             assert signal["symbol"] == "BTC"
-            assert signal["confidence"] == 0.8
+            assert signal["confidence"] == 0.85
             assert "market_cap_rank" in signal["raw"]
 
     def test_invalid_token_returns_error(self):

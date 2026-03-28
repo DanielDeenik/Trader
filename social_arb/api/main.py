@@ -33,9 +33,12 @@ async def lifespan(app: FastAPI):
     queue.register_handler("enrich_sentiment", handle_enrich_sentiment)
     await queue.start()
 
-    # Initialize scheduler
+    # Initialize scheduler (skip with DISABLE_SCHEDULER=1 to keep app responsive)
     scheduler = TaskScheduler(queue=queue, db_path=db_path)
-    await scheduler.start()
+    if not os.environ.get("DISABLE_SCHEDULER"):
+        await scheduler.start()
+    else:
+        logger.info("Scheduler disabled via DISABLE_SCHEDULER env var")
 
     # Store in app state
     app.state.queue = queue

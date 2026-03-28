@@ -21,6 +21,8 @@ function formatDuration(ms) {
 
 export default function Overview() {
   const [triggeringSchedule, setTriggeringSchedule] = useState(null)
+  const [quickAction, setQuickAction] = useState(null)
+  const [quickActionMsg, setQuickActionMsg] = useState(null)
 
   // Fetch all data in parallel
   const { data: health } = useApi(() => api.getHealth())
@@ -293,16 +295,40 @@ export default function Overview() {
         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</div>
         <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => api.createTask({ task_type: 'collect' })}
-            className="text-sm bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded font-mono"
+            onClick={async () => {
+              setQuickAction('collect')
+              setQuickActionMsg(null)
+              try {
+                await api.createTask({ task_type: 'collect' })
+                setQuickActionMsg({ type: 'success', text: 'Collection started — check Task Queue for progress' })
+              } catch (err) {
+                setQuickActionMsg({ type: 'error', text: `Failed: ${err.message}` })
+              }
+              setQuickAction(null)
+              setTimeout(() => setQuickActionMsg(null), 5000)
+            }}
+            disabled={quickAction === 'collect'}
+            className="text-sm bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 disabled:text-gray-500 text-white px-4 py-2 rounded font-mono"
           >
-            → Run Collect
+            {quickAction === 'collect' ? 'Starting…' : '→ Run Collect'}
           </button>
           <button
-            onClick={() => api.createTask({ task_type: 'analyze' })}
-            className="text-sm bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded font-mono"
+            onClick={async () => {
+              setQuickAction('analyze')
+              setQuickActionMsg(null)
+              try {
+                await api.createTask({ task_type: 'analyze' })
+                setQuickActionMsg({ type: 'success', text: 'Analysis started — check Task Queue for progress' })
+              } catch (err) {
+                setQuickActionMsg({ type: 'error', text: `Failed: ${err.message}` })
+              }
+              setQuickAction(null)
+              setTimeout(() => setQuickActionMsg(null), 5000)
+            }}
+            disabled={quickAction === 'analyze'}
+            className="text-sm bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white px-4 py-2 rounded font-mono"
           >
-            ⚙ Run Analyze
+            {quickAction === 'analyze' ? 'Starting…' : '⚙ Run Analyze'}
           </button>
           <a
             href="/instruments"
@@ -311,6 +337,11 @@ export default function Overview() {
             + Add Instrument
           </a>
         </div>
+        {quickActionMsg && (
+          <div className={`mt-3 text-xs px-3 py-2 rounded ${quickActionMsg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
+            {quickActionMsg.text}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -89,6 +89,21 @@ class InstrumentResponse(BaseModel):
     metadata_json: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    # Danelfin AI scores
+    ai_score: Optional[int] = None
+    danelfin_sentiment: Optional[int] = None
+    danelfin_technical: Optional[int] = None
+    danelfin_fundamental: Optional[int] = None
+    danelfin_low_risk: Optional[int] = None
+    trade_idea: Optional[str] = None
+    isin: Optional[str] = None
+    industry: Optional[str] = None
+    danelfin_url: Optional[str] = None
+    beta: Optional[float] = None
+    pe_ratio: Optional[float] = None
+    short_float: Optional[str] = None
+    roe: Optional[str] = None
+    price: Optional[float] = None
 
     model_config = {"from_attributes": True}
 

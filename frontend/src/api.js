@@ -129,6 +129,11 @@ export const api = {
     return handleResponse(res)
   },
 
+  async getInstrumentFacets() {
+    const res = await fetch(`${API_BASE}/v1/instruments/facets`)
+    return handleResponse(res)
+  },
+
   async createInstrument(data) {
     const res = await fetch(`${API_BASE}/v1/instruments`, {
       method: 'POST',

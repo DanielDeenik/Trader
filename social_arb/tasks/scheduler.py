@@ -60,7 +60,11 @@ class TaskScheduler:
         """Stop the scheduler."""
         self.running = False
         if self.scheduler_task:
-            await self.scheduler_task
+            self.scheduler_task.cancel()
+            try:
+                await self.scheduler_task
+            except asyncio.CancelledError:
+                pass
         logger.info("TaskScheduler stopped")
 
     async def _scheduler_loop(self) -> None:
@@ -68,7 +72,6 @@ class TaskScheduler:
         logger.info("Scheduler loop starting")
         try:
             while self.running:
-                await asyncio.sleep(60)  # Check every minute
                 now = datetime.utcnow()
 
                 if self._should_collect(now):
@@ -90,6 +93,8 @@ class TaskScheduler:
                 if self._should_enrich_sentiment(now):
                     await self._create_enrich_sentiment_task()
                     self.last_enrich_sentiment_at = now
+
+                await asyncio.sleep(60)  # Check every minute
 
         except asyncio.CancelledError:
             logger.info("Scheduler loop cancelled")

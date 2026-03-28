@@ -1,12 +1,25 @@
 """Signal queries and collection triggers."""
 
 from fastapi import APIRouter
+from pydantic import BaseModel
+from datetime import datetime
 from social_arb.api.deps import get_db_path
 from social_arb.api.schemas import SignalResponse
-from social_arb.db.store import query_signals
+from social_arb.db.store import query_signals, insert_signal
 from social_arb.db.schema import get_connection
 
 router = APIRouter()
+
+
+class SignalCreate(BaseModel):
+    """Request to create a signal manually."""
+    symbol: str
+    source: str  # manual, research, news, or other
+    signal_type: str
+    direction: str  # bullish, bearish, neutral
+    strength: float  # 0-1
+    confidence: float  # 0-1
+    notes: str  # stored as raw_json
 
 
 @router.get("/signals", response_model=list[SignalResponse])
@@ -21,6 +34,24 @@ def list_signals(
         db_path=get_db_path(), symbol=symbol,
         source=source, data_class=data_class, limit=limit,
     )
+
+
+@router.post("/signals", response_model=dict, status_code=201)
+def create_signal(body: SignalCreate):
+    """Create a new signal manually."""
+    signal_id = insert_signal(
+        timestamp=datetime.utcnow().isoformat(),
+        symbol=body.symbol,
+        source=body.source,
+        signal_type=body.signal_type,
+        direction=body.direction,
+        strength=body.strength,
+        confidence=body.confidence,
+        raw_json=body.notes,
+        data_class="manual",
+        db_path=get_db_path(),
+    )
+    return {"id": signal_id, "symbol": body.symbol, "source": body.source}
 
 
 @router.get("/signals/grouped")

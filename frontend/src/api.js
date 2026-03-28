@@ -166,6 +166,15 @@ export const api = {
     return handleResponse(res)
   },
 
+  async createSignal(data) {
+    const res = await fetch(`${API_BASE}/v1/signals`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+
   async getSignalsGrouped(params = {}) {
     const query = new URLSearchParams(params).toString()
     const res = await fetch(`${API_BASE}/v1/signals/grouped?${query}`)
@@ -183,6 +192,15 @@ export const api = {
   async getTheses(params = {}) {
     const query = new URLSearchParams(params).toString()
     const res = await fetch(`${API_BASE}/v1/theses?${query}`)
+    return handleResponse(res)
+  },
+
+  async createThesis(data) {
+    const res = await fetch(`${API_BASE}/v1/theses`, {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    })
     return handleResponse(res)
   },
 
@@ -212,6 +230,15 @@ export const api = {
   async createPosition(data) {
     const res = await fetch(`${API_BASE}/v1/positions`, {
       method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+
+  async closePosition(positionId, data) {
+    const res = await fetch(`${API_BASE}/v1/positions/${positionId}`, {
+      method: 'PATCH',
       headers: getHeaders(true),
       body: JSON.stringify(data),
     })

@@ -425,6 +425,36 @@ def query_positions(
         return [dict(row) for row in cursor.fetchall()]
 
 
+def update_position(
+    *,
+    position_id: int,
+    exit_price: float,
+    exit_date: str,
+    db_path: str = DEFAULT_DB_PATH,
+) -> None:
+    """Close a position by updating exit_price, exit_date, pnl, pnl_pct, and status."""
+    with get_connection(db_path) as conn:
+        # Get current position to calculate entry_price
+        cursor = conn.execute(
+            "SELECT entry_price FROM positions WHERE id = ?",
+            (position_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ValueError(f"Position {position_id} not found")
+
+        entry_price = row["entry_price"]
+        pnl_pct = ((exit_price - entry_price) / entry_price * 100) if entry_price else 0
+        pnl = exit_price - entry_price
+
+        ph = get_placeholder()
+        conn.execute(
+            f"UPDATE positions SET exit_price = {ph}, exit_date = {ph}, pnl = {ph}, pnl_pct = {ph}, status = 'closed' WHERE id = {ph}",
+            (exit_price, exit_date, pnl, pnl_pct, position_id),
+        )
+        conn.commit()
+
+
 # TIER 1: INSTRUMENTS
 
 

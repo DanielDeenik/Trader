@@ -75,6 +75,18 @@ function Header({ symbol, data }) {
         </div>
         <div className="flex gap-3">
           <Link
+            to={`/positions?symbol=${symbol}`}
+            className="text-xs px-3 py-2 rounded bg-emerald-900 hover:bg-emerald-800 text-emerald-400 no-underline transition-colors border border-emerald-700"
+          >
+            Create Position
+          </Link>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-xs px-3 py-2 rounded bg-orange-900 hover:bg-orange-800 text-orange-400 transition-colors border border-orange-700"
+          >
+            Re-run Engines
+          </button>
+          <Link
             to={`/deepdive/${symbol}`}
             className="text-xs px-3 py-2 rounded bg-blue-900 hover:bg-blue-800 text-blue-400 no-underline transition-colors border border-blue-700"
           >

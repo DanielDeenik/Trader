@@ -11,6 +11,27 @@ const SOURCE_COLORS = {
 export default function SignalRadar() {
   const { data: signals, refetch } = useApi(() => api.getSignals())
   const [expanded, setExpanded] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ symbol: '', source: 'manual', signal_type: '', direction: 'bullish', strength: 0.5, confidence: 0.5, notes: '' })
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const handleCreate = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    try {
+      await api.createSignal({
+        ...form,
+        strength: parseFloat(form.strength),
+        confidence: parseFloat(form.confidence),
+      })
+      setForm({ symbol: '', source: 'manual', signal_type: '', direction: 'bullish', strength: 0.5, confidence: 0.5, notes: '' })
+      setShowForm(false)
+      refetch()
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
+  }
 
   // Group by symbol
   const grouped = {}
@@ -30,9 +51,33 @@ export default function SignalRadar() {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
+        {!showForm && (
+          <button onClick={() => setShowForm(true)} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">+ Add Signal</button>
+        )}
         <button onClick={refetch} className="px-3 py-1 bg-blue-900 text-blue-400 border border-blue-700 text-xs rounded">Refresh</button>
         <span className="text-xs text-gray-400 self-center">{(signals || []).length} signals across {Object.keys(grouped).length} symbols</span>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className="text-xs text-gray-400 block mb-1">Symbol</label><input value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Source</label><select value={form.source} onChange={e => setForm({...form, source: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs"><option value="manual">Manual</option><option value="research">Research</option><option value="news">News</option><option value="other">Other</option></select></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Signal Type</label><input value={form.signal_type} onChange={e => setForm({...form, signal_type: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Direction</label><select value={form.direction} onChange={e => setForm({...form, direction: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs"><option value="bullish">Bullish</option><option value="bearish">Bearish</option><option value="neutral">Neutral</option></select></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className="text-xs text-gray-400 block mb-1">Strength (0-1)</label><input type="number" step="0.1" min="0" max="1" value={form.strength} onChange={e => setForm({...form, strength: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
+            <div><label className="text-xs text-gray-400 block mb-1">Confidence (0-1)</label><input type="number" step="0.1" min="0" max="1" value={form.confidence} onChange={e => setForm({...form, confidence: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
+          </div>
+          <div><label className="text-xs text-gray-400 block mb-1">Notes</label><textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" rows="2" /></div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">{saving ? 'Adding...' : 'Add'}</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1 bg-gray-700 text-gray-300 border border-gray-600 text-xs rounded">Cancel</button>
+          </div>
+          {error && <div className="text-xs text-red-400">{error}</div>}
+        </form>
+      )}
 
       {Object.entries(grouped).sort((a, b) => b[1].length - a[1].length).map(([symbol, sigs]) => (
         <div key={symbol} className="bg-gray-800 border border-gray-700 rounded p-3">

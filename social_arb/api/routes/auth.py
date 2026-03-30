@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import List, Dict, Optional
 import json
+import secrets
 
 from social_arb.api.deps import get_db_path, get_current_user
 from social_arb.auth.jwt_handler import create_token, verify_token
@@ -29,6 +30,10 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     token: str
     user: Dict
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str  # Google ID token
 
 
 class UserResponse(BaseModel):
@@ -129,6 +134,61 @@ def login(req: LoginRequest):
     return LoginResponse(
         token=token,
         user={"id": user_id, "email": req.email, "display_name": display_name},
+    )
+
+
+@router.post("/auth/google", response_model=LoginResponse)
+def google_login(req: GoogleAuthRequest):
+    """Login with Google Sign-In credential."""
+    import httpx
+
+    # Verify the Google ID token
+    try:
+        resp = httpx.get(
+            f"https://oauth2.googleapis.com/tokeninfo?id_token={req.credential}",
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+
+        payload = resp.json()
+        email = payload.get("email")
+        name = payload.get("name", email.split("@")[0] if email else "User")
+
+        if not email:
+            raise HTTPException(status_code=401, detail="No email in Google token")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Failed to verify Google token")
+
+    db_path = get_db_path()
+
+    # Find or create user
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT id, display_name FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+    if row:
+        user_id = row["id"]
+        display_name = row["display_name"]
+    else:
+        # Auto-register Google users
+        password_hash = hash_password(secrets.token_hex(32))  # random password
+        with get_connection(db_path) as conn:
+            c = conn.cursor()
+            c.execute(
+                """INSERT INTO users (email, password_hash, display_name, settings_json)
+                   VALUES (?, ?, ?, ?)""",
+                (email, password_hash, name, "{}"),
+            )
+            conn.commit()
+            user_id = c.lastrowid
+        display_name = name
+
+    token = create_token(user_id, email)
+    return LoginResponse(
+        token=token,
+        user={"id": user_id, "email": email, "display_name": display_name},
     )
 
 

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Layout } from './components/Layout'
 import Overview from './pages/Overview'
 import Tickers from './pages/Tickers'
@@ -14,29 +15,45 @@ import DeepDive from './pages/DeepDive'
 import LatticeGraph from './pages/LatticeGraph'
 import MosaicWorkbench from './pages/MosaicWorkbench'
 import Settings from './pages/Settings'
+import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-400">Loading...</div>
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return children
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<ProtectedRoute><Layout title="Overview"><Overview /></Layout></ProtectedRoute>} />
+      <Route path="/tickers" element={<ProtectedRoute><Layout title="Tickers"><Tickers /></Layout></ProtectedRoute>} />
+      <Route path="/tickers/:symbol" element={<ProtectedRoute><Layout title="Ticker Detail"><TickerDetail /></Layout></ProtectedRoute>} />
+      <Route path="/deepdive/:symbol" element={<ProtectedRoute><Layout title="Deep Dive"><DeepDive /></Layout></ProtectedRoute>} />
+      <Route path="/lattice/:symbol" element={<ProtectedRoute><Layout title="Lattice Network"><LatticeGraph /></Layout></ProtectedRoute>} />
+      <Route path="/mosaic/:symbol" element={<ProtectedRoute><Layout title="Mosaic Workbench"><MosaicWorkbench /></Layout></ProtectedRoute>} />
+      <Route path="/signals" element={<ProtectedRoute><Layout title="L1: Signal Radar"><SignalRadar /></Layout></ProtectedRoute>} />
+      <Route path="/mosaics" element={<ProtectedRoute><Layout title="L2: Mosaic Cards"><MosaicCards /></Layout></ProtectedRoute>} />
+      <Route path="/theses" element={<ProtectedRoute><Layout title="L3: Thesis Forge"><ThesisForge /></Layout></ProtectedRoute>} />
+      <Route path="/gate/review" element={<ProtectedRoute><Layout title="HITL Gate Review"><GateReview /></Layout></ProtectedRoute>} />
+      <Route path="/decisions" element={<ProtectedRoute><Layout title="L4: Decisions"><Decisions /></Layout></ProtectedRoute>} />
+      <Route path="/positions" element={<ProtectedRoute><Layout title="L5: Portfolio"><Positions /></Layout></ProtectedRoute>} />
+      <Route path="/tasks" element={<ProtectedRoute><Layout title="Task Queue"><TaskQueue /></Layout></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Layout title="Settings"><Settings /></Layout></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  )
+}
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout title="Overview"><Overview /></Layout>} />
-        <Route path="/tickers" element={<Layout title="Tickers"><Tickers /></Layout>} />
-        <Route path="/tickers/:symbol" element={<Layout title="Ticker Detail"><TickerDetail /></Layout>} />
-        <Route path="/deepdive/:symbol" element={<Layout title="Deep Dive"><DeepDive /></Layout>} />
-        <Route path="/lattice/:symbol" element={<Layout title="Lattice Network"><LatticeGraph /></Layout>} />
-        <Route path="/mosaic/:symbol" element={<Layout title="Mosaic Workbench"><MosaicWorkbench /></Layout>} />
-        <Route path="/signals" element={<Layout title="L1: Signal Radar"><SignalRadar /></Layout>} />
-        <Route path="/mosaics" element={<Layout title="L2: Mosaic Cards"><MosaicCards /></Layout>} />
-        <Route path="/theses" element={<Layout title="L3: Thesis Forge"><ThesisForge /></Layout>} />
-        <Route path="/gate/review" element={<Layout title="HITL Gate Review"><GateReview /></Layout>} />
-        <Route path="/decisions" element={<Layout title="L4: Decisions"><Decisions /></Layout>} />
-        <Route path="/positions" element={<Layout title="L5: Portfolio"><Positions /></Layout>} />
-        <Route path="/tasks" element={<Layout title="Task Queue"><TaskQueue /></Layout>} />
-        <Route path="/settings" element={<Layout title="Settings"><Settings /></Layout>} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

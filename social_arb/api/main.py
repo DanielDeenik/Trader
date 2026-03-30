@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
-    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment, scheduler, lattice, alerts,
+    health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment, scheduler, lattice, alerts, auth,
 )
 from social_arb.tasks.queue import TaskQueue
 from social_arb.tasks.scheduler import TaskScheduler
@@ -85,6 +85,7 @@ def create_app() -> FastAPI:
 
     # Routes
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
+    app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
     app.include_router(instruments.router, prefix="/api/v1", tags=["instruments"])
     app.include_router(signals.router, prefix="/api/v1", tags=["signals"])
     app.include_router(mosaics.router, prefix="/api/v1", tags=["mosaics"])

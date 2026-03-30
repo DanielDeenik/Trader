@@ -20,7 +20,10 @@ def unique_symbol():
 def test_list_instruments_empty(client):
     resp = client.get("/api/v1/instruments")
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    data = resp.json()
+    assert "items" in data
+    assert isinstance(data["items"], list)
+    assert "total" in data
 
 
 def test_create_instrument(client, unique_symbol):
@@ -37,7 +40,7 @@ def test_create_and_list(client, unique_symbol):
     })
     resp = client.get("/api/v1/instruments?type=crypto")
     data = resp.json()
-    symbols = [i["symbol"] for i in data]
+    symbols = [i["symbol"] for i in data["items"]]
     assert unique_symbol in symbols
 
 

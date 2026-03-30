@@ -142,7 +142,14 @@ def create_app() -> FastAPI:
                     return FileResponse(file_path)
             # Fall back to index.html for SPA routing (including root /)
             index_path = os.path.join(static_dir, "index.html")
-            return FileResponse(index_path)
+            return FileResponse(
+                index_path,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                },
+            )
     else:
         logger.warning(f"No static frontend found in any of: {_candidates}")
 

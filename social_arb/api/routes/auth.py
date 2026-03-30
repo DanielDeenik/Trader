@@ -121,9 +121,9 @@ def login(req: LoginRequest):
     if not row:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    user_id = row.get("id")
-    password_hash = row.get("password_hash")
-    display_name = row.get("display_name")
+    user_id = dict(row).get("id")
+    password_hash = dict(row).get("password_hash")
+    display_name = dict(row).get("display_name")
 
     # Verify password
     if not verify_password(req.password, password_hash):
@@ -233,7 +233,7 @@ def update_settings(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Merge settings
-    current_settings = json.loads(row.get("settings_json") or "{}")
+    current_settings = json.loads(dict(row).get("settings_json") or "{}")
     if updates.settings_json:
         current_settings.update(updates.settings_json)
 
@@ -272,7 +272,7 @@ def get_watchlist(user: Dict = Depends(get_current_user)):
             (user["user_id"],),
         ).fetchall()
 
-    return [WatchlistResponse(symbol=row.get("symbol"), added_at=row.get("added_at")) for row in rows]
+    return [WatchlistResponse(symbol=dict(row).get("symbol"), added_at=dict(row).get("added_at")) for row in rows]
 
 
 @router.post("/auth/watchlist")

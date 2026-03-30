@@ -4,32 +4,10 @@ import { api } from '../api'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  // Initialize auth state from session (check if token is still valid)
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Try to get current user if we have a token
-      try {
-        const userData = await api.getMe()
-        setUser(userData)
-      } catch (err) {
-        // No valid auth
-        setUser(null)
-        setToken(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (token) {
-      checkAuth()
-    } else {
-      setLoading(false)
-    }
-  }, [token])
+  // Auth bypassed for solo/local use — all routes accessible without login
+  const [user, setUser] = useState({ email: 'dan@socialarb.local', displayName: 'Dan' })
+  const [token, setToken] = useState('local')
+  const [loading, setLoading] = useState(false)
 
   const login = useCallback(async (email, password) => {
     const response = await api.login(email, password)

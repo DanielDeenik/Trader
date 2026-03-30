@@ -100,14 +100,35 @@ def create_app() -> FastAPI:
     app.include_router(sentiment.router)
     app.include_router(scheduler.router)
 
-    @app.get("/")
-    def root():
-        return {"app": "Social Arb", "version": "2.0.0", "docs": "/docs"}
-
     # Serve static frontend (production mode)
-    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-    if os.path.isdir(static_dir):
-        app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="static-assets")
+    # Resolve static dir from multiple possible locations to handle
+    # different __file__ resolution across environments (pip -e, direct run, etc.)
+    _this_file = os.path.abspath(__file__)                         # .../social_arb/api/main.py
+    _api_dir = os.path.dirname(_this_file)                         # .../social_arb/api/
+    _pkg_dir = os.path.dirname(_api_dir)                           # .../social_arb/
+    _project_dir = os.path.dirname(_pkg_dir)                       # .../Trader/
+
+    # Try multiple candidate paths (including CWD-based for reliability)
+    _cwd = os.getcwd()
+    _candidates = [
+        os.path.join(_pkg_dir, "static"),                          # social_arb/static/  (vite default)
+        os.path.join(_api_dir, "static"),                          # social_arb/api/static/
+        os.path.join(_project_dir, "social_arb", "static"),        # from project root
+        os.path.join(_cwd, "social_arb", "static"),                # from CWD (most reliable)
+        os.path.join(_cwd, "static"),                              # if CWD is social_arb/
+    ]
+    static_dir = None
+    for _c in _candidates:
+        if os.path.isdir(_c) and os.path.isfile(os.path.join(_c, "index.html")):
+            static_dir = _c
+            break
+
+    logger.info(f"Static dir resolution: __file__={_this_file}, candidates={_candidates}, selected={static_dir}")
+
+    if static_dir:
+        assets_dir = os.path.join(static_dir, "assets")
+        if os.path.isdir(assets_dir):
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="static-assets")
 
         @app.get("/{full_path:path}")
         async def serve_spa(full_path: str):
@@ -115,14 +136,19 @@ def create_app() -> FastAPI:
             if full_path.startswith("api/") or full_path in ("docs", "openapi.json", "redoc"):
                 return {"error": "Not found"}
             # Try to serve static file first
-            file_path = os.path.join(static_dir, full_path)
-            if os.path.isfile(file_path):
-                return FileResponse(file_path)
-            # Fall back to index.html for SPA routing
+            if full_path:
+                file_path = os.path.join(static_dir, full_path)
+                if os.path.isfile(file_path):
+                    return FileResponse(file_path)
+            # Fall back to index.html for SPA routing (including root /)
             index_path = os.path.join(static_dir, "index.html")
-            if os.path.isfile(index_path):
-                return FileResponse(index_path)
-            return {"error": "Frontend not built. Run: ./build-frontend.sh"}
+            return FileResponse(index_path)
+    else:
+        logger.warning(f"No static frontend found in any of: {_candidates}")
+
+        @app.get("/")
+        def root():
+            return {"app": "Social Arb", "version": "2.0.0", "docs": "/docs"}
 
     return app
 

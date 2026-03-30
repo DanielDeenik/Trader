@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api'
 
 export default function Settings() {
-  const { user } = useAuth()
+  const user = { email: 'dan@socialarb.local', displayName: 'Dan' }
   const [displayName, setDisplayName] = useState('')
   const [defaultPortfolio, setDefaultPortfolio] = useState('100000')
   const [alertThreshold, setAlertThreshold] = useState('5')

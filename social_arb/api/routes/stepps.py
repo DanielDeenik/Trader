@@ -37,19 +37,20 @@ async def score_signal(
     try:
         # Fetch signal from DB
         signals = store.query_signals(db_path=classifier.db_path)
-        matching = [s for s in signals if s.get("id") == signal_id]
+        matching = [s for s in signals if dict(s).get("id") == signal_id]
 
         if not matching:
             raise HTTPException(status_code=404, detail=f"Signal {signal_id} not found")
 
         signal = matching[0]
+        signal_dict_obj = dict(signal)
         signal_dict = {
-            "id": signal.get("id"),
-            "strength": signal.get("strength", 0.5),
-            "confidence": signal.get("confidence", 0.5),
-            "direction": signal.get("direction", "neutral"),
-            "source": signal.get("source", "unknown"),
-            "signal_type": signal.get("signal_type", "general"),
+            "id": signal_dict_obj.get("id"),
+            "strength": signal_dict_obj.get("strength", 0.5),
+            "confidence": signal_dict_obj.get("confidence", 0.5),
+            "direction": signal_dict_obj.get("direction", "neutral"),
+            "source": signal_dict_obj.get("source", "unknown"),
+            "signal_type": signal_dict_obj.get("signal_type", "general"),
         }
 
         # Score
@@ -58,7 +59,7 @@ async def score_signal(
         # Fetch from DB to return full row
         scores = store.query_stepps_scores(signal_id=signal_id, db_path=classifier.db_path)
         if scores:
-            row = scores[0]
+            row = dict(scores[0])
             return SteppsScoreResponse(
                 id=row.get("id", 0),
                 signal_id=signal_id,
@@ -107,18 +108,18 @@ async def get_scores(
 
         return [
             SteppsScoreResponse(
-                id=row.get("id", 0),
-                signal_id=row.get("signal_id", 0),
-                social_currency=row.get("social_currency", 0),
-                triggers=row.get("triggers", 0),
-                emotion=row.get("emotion", 0),
-                public_visibility=row.get("public_visibility", 0),
-                practical_value=row.get("practical_value", 0),
-                stories=row.get("stories", 0),
-                composite=row.get("composite", 0),
-                scored_by=row.get("scored_by", "classifier"),
-                model_version=row.get("model_version"),
-                created_at=row.get("created_at", ""),
+                id=dict(row).get("id", 0),
+                signal_id=dict(row).get("signal_id", 0),
+                social_currency=dict(row).get("social_currency", 0),
+                triggers=dict(row).get("triggers", 0),
+                emotion=dict(row).get("emotion", 0),
+                public_visibility=dict(row).get("public_visibility", 0),
+                practical_value=dict(row).get("practical_value", 0),
+                stories=dict(row).get("stories", 0),
+                composite=dict(row).get("composite", 0),
+                scored_by=dict(row).get("scored_by", "classifier"),
+                model_version=dict(row).get("model_version"),
+                created_at=dict(row).get("created_at", ""),
             )
             for row in rows
         ]

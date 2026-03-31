@@ -169,8 +169,8 @@ def google_login(req: GoogleAuthRequest):
         ).fetchone()
 
     if row:
-        user_id = row["id"]
-        display_name = row["display_name"]
+        user_id = dict(row)["id"]
+        display_name = dict(row)["display_name"]
     else:
         # Auto-register Google users
         password_hash = hash_password(secrets.token_hex(32))  # random password

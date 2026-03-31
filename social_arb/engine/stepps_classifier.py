@@ -372,22 +372,23 @@ Return ONLY valid JSON, no extra text.
             y_list = []
 
             for row in training_data:
-                signal_id = row["signal_id"]
+                row_dict = dict(row)
+                signal_id = row_dict["signal_id"]
                 signal = store.query_signals(db_path=db_path)
                 # Find matching signal
-                matching = [s for s in signal if s["id"] == signal_id]
+                matching = [s for s in signal if dict(s)["id"] == signal_id]
                 if not matching:
                     continue
 
-                signal_dict = matching[0]
+                signal_dict = dict(matching[0])
                 features = self._engineer_features(signal_dict)
                 targets = [
-                    row.get("social_currency", 0.5),
-                    row.get("triggers", 0.5),
-                    row.get("emotion", 0.5),
-                    row.get("public_visibility", 0.5),
-                    row.get("practical_value", 0.5),
-                    row.get("stories", 0.5),
+                    row_dict.get("social_currency", 0.5),
+                    row_dict.get("triggers", 0.5),
+                    row_dict.get("emotion", 0.5),
+                    row_dict.get("public_visibility", 0.5),
+                    row_dict.get("practical_value", 0.5),
+                    row_dict.get("stories", 0.5),
                 ]
                 X_list.append(features)
                 y_list.append(targets)
@@ -453,13 +454,15 @@ Return ONLY valid JSON, no extra text.
         signal_types = set()
 
         for row in training_data:
-            signal_id = row["signal_id"]
+            row_dict = dict(row)
+            signal_id = row_dict["signal_id"]
             signals = store.query_signals(db_path=db_path)
-            matching = [s for s in signals if s["id"] == signal_id]
+            matching = [s for s in signals if dict(s)["id"] == signal_id]
             if matching:
-                directions.add(matching[0].get("direction", "neutral"))
-                sources.add(matching[0].get("source", "unknown"))
-                signal_types.add(matching[0].get("signal_type", "general"))
+                matching_dict = dict(matching[0])
+                directions.add(matching_dict.get("direction", "neutral"))
+                sources.add(matching_dict.get("source", "unknown"))
+                signal_types.add(matching_dict.get("signal_type", "general"))
 
         # Create and fit encoders
         for feature_name, values in [
@@ -503,15 +506,16 @@ Return ONLY valid JSON, no extra text.
 
     def _result_from_row(self, row: Dict[str, Any], signal_id: int) -> SteppsResult:
         """Convert DB row to SteppsResult."""
+        row_dict = dict(row)
         return SteppsResult(
             signal_id=signal_id,
-            social_currency=row.get("social_currency", 0.5),
-            triggers=row.get("triggers", 0.5),
-            emotion=row.get("emotion", 0.5),
-            public_visibility=row.get("public_visibility", 0.5),
-            practical_value=row.get("practical_value", 0.5),
-            stories=row.get("stories", 0.5),
-            composite=row.get("composite", 0.5),
-            scored_by=row.get("scored_by", "classifier"),
-            model_version=row.get("model_version"),
+            social_currency=row_dict.get("social_currency", 0.5),
+            triggers=row_dict.get("triggers", 0.5),
+            emotion=row_dict.get("emotion", 0.5),
+            public_visibility=row_dict.get("public_visibility", 0.5),
+            practical_value=row_dict.get("practical_value", 0.5),
+            stories=row_dict.get("stories", 0.5),
+            composite=row_dict.get("composite", 0.5),
+            scored_by=row_dict.get("scored_by", "classifier"),
+            model_version=row_dict.get("model_version"),
         )

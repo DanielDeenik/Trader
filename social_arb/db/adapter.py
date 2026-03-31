@@ -53,7 +53,8 @@ class PostgreSQLCursor:
         """Get last inserted row ID. Requires INSERT ... RETURNING id."""
         row = self._cursor.fetchone()
         if row:
-            return row.get("id") or row.get(list(row.keys())[0])
+            row_dict = dict(row)
+            return row_dict.get("id") or row_dict.get(list(row_dict.keys())[0])
         return None
 
     def execute(self, sql, params=None):

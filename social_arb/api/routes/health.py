@@ -40,7 +40,8 @@ def health_check():
     now = datetime.utcnow()
     source_health = []
     for row in freshness:
-        last = row.get("last_signal", "")
+        row_dict = dict(row)
+        last = row_dict.get("last_signal", "")
         try:
             last_dt = datetime.fromisoformat(last.replace("Z", ""))
             age = now - last_dt
@@ -48,10 +49,10 @@ def health_check():
         except (ValueError, AttributeError):
             status = "stale"
         source_health.append(SourceHealth(
-            source=row["source"],
+            source=row_dict["source"],
             status=status,
             last_signal=last,
-            signal_count=row.get("signal_count", 0),
+            signal_count=row_dict.get("signal_count", 0),
         ))
 
     # Overall status

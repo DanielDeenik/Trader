@@ -32,7 +32,7 @@ def _seed_default_user(db_path: str):
 
     with get_connection(db_path) as conn:
         row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
-        if row and row["cnt"] == 0:
+        if row and dict(row)["cnt"] == 0:
             pw_hash = hash_password("socialarb")
             conn.execute(
                 "INSERT INTO users (email, password_hash, display_name) VALUES (?, ?, ?)",

@@ -80,13 +80,14 @@ class User:
     @staticmethod
     def from_row(row: Dict) -> "User":
         """Create User from database row."""
+        row_dict = dict(row)
         return User(
-            id=row.get("id"),
-            email=row.get("email"),
-            display_name=row.get("display_name"),
-            password_hash=row.get("password_hash"),
-            settings_json=row.get("settings_json"),
-            created_at=row.get("created_at"),
+            id=row_dict.get("id"),
+            email=row_dict.get("email"),
+            display_name=row_dict.get("display_name"),
+            password_hash=row_dict.get("password_hash"),
+            settings_json=row_dict.get("settings_json"),
+            created_at=row_dict.get("created_at"),
         )
 
 
@@ -110,9 +111,10 @@ class Watchlist:
     @staticmethod
     def from_row(row: Dict) -> "Watchlist":
         """Create Watchlist from database row."""
+        row_dict = dict(row)
         return Watchlist(
-            id=row.get("id"),
-            user_id=row.get("user_id"),
-            symbol=row.get("symbol"),
-            added_at=row.get("added_at"),
+            id=row_dict.get("id"),
+            user_id=row_dict.get("user_id"),
+            symbol=row_dict.get("symbol"),
+            added_at=row_dict.get("added_at"),
         )

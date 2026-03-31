@@ -851,7 +851,7 @@ def claim_task(
         if not row:
             return None
 
-        task_id = row[0]
+        task_id = dict(row)["id"]
         cursor.execute(
             """
             UPDATE tasks
@@ -924,8 +924,9 @@ def fail_task(
         if not row:
             return
 
-        current_attempts = (row[0] or 0) + 1
-        max_attempts = row[1] or 3
+        row_dict = dict(row)
+        current_attempts = (row_dict["attempts"] or 0) + 1
+        max_attempts = row_dict["max_attempts"] or 3
 
         # If exhausted, mark as failed; otherwise keep as 'pending' for retry
         new_status = "failed" if current_attempts >= max_attempts else "pending"

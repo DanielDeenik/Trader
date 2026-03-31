@@ -37,13 +37,12 @@ async def score_signal(
     try:
         # Fetch signal from DB
         signals = store.query_signals(db_path=classifier.db_path)
-        matching = [s for s in signals if dict(s).get("id") == signal_id]
+        matching = [s_dict for s in signals if (s_dict := dict(s)).get("id") == signal_id]
 
         if not matching:
             raise HTTPException(status_code=404, detail=f"Signal {signal_id} not found")
 
-        signal = matching[0]
-        signal_dict_obj = dict(signal)
+        signal_dict_obj = matching[0]
         signal_dict = {
             "id": signal_dict_obj.get("id"),
             "strength": signal_dict_obj.get("strength", 0.5),
@@ -108,20 +107,21 @@ async def get_scores(
 
         return [
             SteppsScoreResponse(
-                id=dict(row).get("id", 0),
-                signal_id=dict(row).get("signal_id", 0),
-                social_currency=dict(row).get("social_currency", 0),
-                triggers=dict(row).get("triggers", 0),
-                emotion=dict(row).get("emotion", 0),
-                public_visibility=dict(row).get("public_visibility", 0),
-                practical_value=dict(row).get("practical_value", 0),
-                stories=dict(row).get("stories", 0),
-                composite=dict(row).get("composite", 0),
-                scored_by=dict(row).get("scored_by", "classifier"),
-                model_version=dict(row).get("model_version"),
-                created_at=dict(row).get("created_at", ""),
+                id=row_dict.get("id", 0),
+                signal_id=row_dict.get("signal_id", 0),
+                social_currency=row_dict.get("social_currency", 0),
+                triggers=row_dict.get("triggers", 0),
+                emotion=row_dict.get("emotion", 0),
+                public_visibility=row_dict.get("public_visibility", 0),
+                practical_value=row_dict.get("practical_value", 0),
+                stories=row_dict.get("stories", 0),
+                composite=row_dict.get("composite", 0),
+                scored_by=row_dict.get("scored_by", "classifier"),
+                model_version=row_dict.get("model_version"),
+                created_at=row_dict.get("created_at", ""),
             )
             for row in rows
+            for row_dict in [dict(row)]
         ]
     except Exception as e:
         logger.error(f"Get scores error: {e}", exc_info=True)

@@ -95,3 +95,17 @@ teardown: ## Delete service + registry (destructive!)
 clean: ## Remove local Docker images
 	-docker rmi $(SERVICE) 2>/dev/null
 	@echo "Local images cleaned."
+
+# -- IAM (added by deployment fix) --
+PROJECT_NUM  := 358461657718
+CB_SA        := $(PROJECT_NUM)@cloudbuild.gserviceaccount.com
+COMPUTE_SA   := $(PROJECT_NUM)-compute@developer.gserviceaccount.com
+
+iam: ## Grant Cloud Build IAM roles for deployment
+	@echo "Granting IAM roles to Cloud Build SA..."
+	gcloud projects add-iam-policy-binding $(PROJECT) --member="serviceAccount:$(CB_SA)" --role="roles/run.admin" --quiet
+	gcloud projects add-iam-policy-binding $(PROJECT) --member="serviceAccount:$(CB_SA)" --role="roles/iam.serviceAccountUser" --quiet
+	gcloud projects add-iam-policy-binding $(PROJECT) --member="serviceAccount:$(CB_SA)" --role="roles/artifactregistry.writer" --quiet
+	gcloud projects add-iam-policy-binding $(PROJECT) --member="serviceAccount:$(CB_SA)" --role="roles/storage.admin" --quiet
+	gcloud run services add-iam-policy-binding $(SERVICE) --region=$(REGION) --member="allUsers" --role="roles/run.invoker" --project=$(PROJECT) --quiet 2>/dev/null || true
+	@echo "IAM roles granted."

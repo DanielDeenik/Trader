@@ -1,0 +1,50 @@
+# Keep the image small and free of host artefacts.
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Python build artefacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Secrets — never bake into the image.
+config/config.yaml
+
+# Docs — not needed at runtime.
+docs/
+*.md
+!README.md
+
+# Compose / local-only
+docker-compose.yml
+
+# Logs
+*.log

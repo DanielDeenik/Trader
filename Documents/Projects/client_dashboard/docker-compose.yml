@@ -1,9 +1,16 @@
-version: '3.8'\nservices:\n  client_dashboard:\n    build: .\n    ports:\n      - \"8050:8050\"\n    environment:\n      - OPENAI_API_KEY=\${OPENAI_API_KEY}\n      - AIRTABLE_API_KEY=\${AIRTABLE_API_KEY}\n            version: '3.8'
+# Local-development convenience only. Cloud Run does not use this.
+# Run locally: `docker compose up --build`
+# Open: http://localhost:8080
+
+version: "3.8"
+
 services:
   client_dashboard:
     build: .
     ports:
-      - "8050:8050"
+      - "8080:8080"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - PORT=8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY:-}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID:-}

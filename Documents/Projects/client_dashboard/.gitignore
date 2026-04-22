@@ -1,4 +1,11 @@
 .venv/
 *.log
 __pycache__/
+*.pyc
 .DS_Store
+
+# Secrets — never commit. Use env vars on Cloud Run.
+config/config.yaml
+.env
+.env.*
+!.env.example

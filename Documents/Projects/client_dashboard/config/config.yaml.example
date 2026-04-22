@@ -1,0 +1,12 @@
+# Schema only — do NOT commit real values.
+#
+# In production (Cloud Run), set these as service environment variables
+# via `gcloud run deploy --set-env-vars` or in the console. The app
+# reads them from os.environ directly; this file is documentation only.
+#
+# For local development, copy to `config.yaml` (gitignored) or export
+# them as shell env vars before running.
+
+OPENAI_API_KEY: "sk-..."
+AIRTABLE_API_KEY: "pat..."
+AIRTABLE_BASE_ID: "app..."

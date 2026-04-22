@@ -1,0 +1,40 @@
+# Google Cloud Build configuration for Social Arb
+# Usage: gcloud builds submit --config deploy/cloudbuild.yaml .
+steps:
+  # Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api:$SHORT_SHA'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api:latest'
+      - '.'
+
+  # Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '--all-tags', 'europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'social-arb'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api:$SHORT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      - '--port=8000'
+      - '--set-env-vars=LOG_LEVEL=info,LOG_FORMAT=json'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api:$SHORT_SHA'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/social-arb/api:latest'
+
+timeout: '900s'

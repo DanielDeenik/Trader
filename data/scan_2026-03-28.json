@@ -1,0 +1,1553 @@
+{
+  "scan_date": "2026-03-28",
+  "scan_time_utc": "2026-03-28T00:13:43.744613+00:00",
+  "total_symbols_scanned": 35,
+  "total_stocks_scanned": 29,
+  "total_crypto_scanned": 3,
+  "total_private_scanned": 3,
+  "collection_sources": [
+    "yfinance",
+    "google_trends",
+    "sec_edgar",
+    "reddit",
+    "coingecko",
+    "github"
+  ],
+  "errors": [
+    "SQ: possibly delisted, no yfinance data",
+    "CoinGecko: 8 crypto assets rate-limited (429)",
+    "DeFiLlama: import error",
+    "GitHub: rate-limited on most private companies"
+  ],
+  "results": [
+    {
+      "ticker": "PLTR",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 12.8,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "PLTR: 18 signals from 4 sources. Direction: bearish (1B/6S/11N). Coherence: 100/100. Divergence: 12.8 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "google_trends",
+      "top_signal_value": 0.341
+    },
+    {
+      "ticker": "SHOP",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 4.5,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "SHOP: 18 signals from 4 sources. Direction: bearish (1B/5S/12N). Coherence: 100/100. Divergence: 4.5 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "sec_edgar",
+      "top_signal_value": 0.3
+    },
+    {
+      "ticker": "GOOGL",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 6.3,
+      "n_divergences": 6,
+      "n_data_points": 23,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "GOOGL: 23 signals from 4 sources. Direction: bearish (1B/7S/15N). Coherence: 100/100. Divergence: 6.3 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.703
+    },
+    {
+      "ticker": "DATABRICKS",
+      "asset_class": "private",
+      "domain": "private_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 7.1,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 2,
+      "sources": [
+        "reddit",
+        "github"
+      ],
+      "action": "build_thesis",
+      "narrative": "DATABRICKS: 2 signals from 2 sources. Direction: bullish (1B/0S/1N). Coherence: 100/100. Divergence: 7.1 (pass). Sources: github, reddit.",
+      "top_signal_source": "github",
+      "top_signal_value": 1.0
+    },
+    {
+      "ticker": "MSFT",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.82,
+      "coherence_score": 88.2,
+      "divergence_strength": 4.2,
+      "n_divergences": 2,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "MSFT: 19 signals from 4 sources. Direction: bullish (8B/6S/5N). Coherence: 88/100. Divergence: 4.2 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 1.0
+    },
+    {
+      "ticker": "ETH",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.5,
+      "coherence_score": 85.0,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 500,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "ETH: 724 signals from 1 sources. Direction: bearish (0B/2S/722N). Coherence: 85/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.499
+    },
+    {
+      "ticker": "BTC",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.5,
+      "coherence_score": 85.0,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 500,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "BTC: 724 signals from 1 sources. Direction: bearish (0B/2S/722N). Coherence: 85/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.499
+    },
+    {
+      "ticker": "NVDA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.38,
+      "coherence_score": 83.8,
+      "divergence_strength": 2.8,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "NVDA: 19 signals from 5 sources. Direction: bearish (3B/4S/12N). Coherence: 84/100. Divergence: 2.8 (pass). Sources: twitter, yfinance, google_trends, sec_edgar, reddit.",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85
+    },
+    {
+      "ticker": "AAPL",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.36,
+      "coherence_score": 83.6,
+      "divergence_strength": 3.6,
+      "n_divergences": 4,
+      "n_data_points": 20,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "AAPL: 20 signals from 5 sources. Direction: bearish (3B/4S/13N). Coherence: 84/100. Divergence: 3.6 (pass). Sources: twitter, yfinance, google_trends, sec_edgar, reddit.",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85
+    },
+    {
+      "ticker": "SOL",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.22,
+      "coherence_score": 82.2,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "SOL: 2 signals from 1 sources. Direction: bearish (0B/2S/0N). Coherence: 82/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.405
+    },
+    {
+      "ticker": "ANTHROPIC",
+      "asset_class": "private",
+      "domain": "private_markets",
+      "aggregate_signal": 8.17,
+      "coherence_score": 81.7,
+      "divergence_strength": 27.6,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 1,
+      "sources": [
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "ANTHROPIC: 2 signals from 1 sources. Direction: bearish (0B/1S/1N). Coherence: 82/100. Divergence: 27.6 (monitor). Sources: reddit.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.175
+    },
+    {
+      "ticker": "AMD",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.46,
+      "coherence_score": 74.6,
+      "divergence_strength": 5.4,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "AMD: 18 signals from 4 sources. Direction: bullish (3B/2S/13N). Coherence: 75/100. Divergence: 5.4 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.691
+    },
+    {
+      "ticker": "TSLA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.26,
+      "coherence_score": 72.6,
+      "divergence_strength": 14.3,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "TSLA: 19 signals from 4 sources. Direction: bearish (3B/4S/12N). Coherence: 73/100. Divergence: 14.3 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.483
+    },
+    {
+      "ticker": "META",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.25,
+      "coherence_score": 72.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "META: 6 signals from 1 sources. Direction: bearish (0B/6S/0N). Coherence: 73/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.084
+    },
+    {
+      "ticker": "DDOG",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.25,
+      "coherence_score": 72.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 17,
+      "n_sources_responded": 3,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar"
+      ],
+      "action": "build_thesis",
+      "narrative": "DDOG: 17 signals from 3 sources. Direction: bearish (2B/4S/11N). Coherence: 72/100. Divergence: 0.0 (pass). Sources: google_trends, yfinance, sec_edgar.",
+      "top_signal_source": "sec_edgar",
+      "top_signal_value": 0.3
+    },
+    {
+      "ticker": "CRM",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 6.07,
+      "coherence_score": 60.7,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "CRM: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 61/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.078
+    },
+    {
+      "ticker": "APP",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 6.04,
+      "coherence_score": 60.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "APP: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 60/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.07
+    },
+    {
+      "ticker": "ROKU",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 6.0,
+      "coherence_score": 60.0,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "ROKU: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 60/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.055
+    },
+    {
+      "ticker": "FDX",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 5.96,
+      "coherence_score": 59.6,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "FDX: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 60/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.041
+    },
+    {
+      "ticker": "SQ",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 5.36,
+      "coherence_score": 53.6,
+      "divergence_strength": 5.6,
+      "n_divergences": 1,
+      "n_data_points": 15,
+      "n_sources_responded": 3,
+      "sources": [
+        "google_trends",
+        "reddit",
+        "sec_edgar"
+      ],
+      "action": "investigate",
+      "narrative": "SQ: 15 signals from 3 sources. Direction: bullish (1B/1S/13N). Coherence: 54/100. Divergence: 5.6 (pass). Sources: google_trends, reddit, sec_edgar.",
+      "top_signal_source": "sec_edgar",
+      "top_signal_value": 0.36
+    },
+    {
+      "ticker": "ARM",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 5.09,
+      "coherence_score": 50.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "ARM: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 51/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.141
+    },
+    {
+      "ticker": "AMZN",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.89,
+      "coherence_score": 48.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "AMZN: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 49/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.075
+    },
+    {
+      "ticker": "V",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.85,
+      "coherence_score": 48.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "V: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 49/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.062
+    },
+    {
+      "ticker": "INTC",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.83,
+      "coherence_score": 48.3,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "INTC: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 48/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.055
+    },
+    {
+      "ticker": "UPS",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.83,
+      "coherence_score": 48.3,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "UPS: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 48/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.054
+    },
+    {
+      "ticker": "COST",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.24,
+      "coherence_score": 42.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "COST: 6 signals from 1 sources. Direction: bearish (2B/3S/1N). Coherence: 42/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.014
+    },
+    {
+      "ticker": "NFLX",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.24,
+      "coherence_score": 42.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "NFLX: 6 signals from 1 sources. Direction: bullish (3B/2S/1N). Coherence: 42/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.014
+    },
+    {
+      "ticker": "OKTA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.95,
+      "coherence_score": 39.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "OKTA: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 40/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.151
+    },
+    {
+      "ticker": "ANDURIL",
+      "asset_class": "private",
+      "domain": "private_markets",
+      "aggregate_signal": 3.8,
+      "coherence_score": 38.0,
+      "divergence_strength": 7.1,
+      "n_divergences": 0,
+      "n_data_points": 1,
+      "n_sources_responded": 1,
+      "sources": [
+        "reddit"
+      ],
+      "action": "investigate",
+      "narrative": "ANDURIL: 1 signals from 1 sources. Direction: bullish (0B/0S/1N). Coherence: 38/100. Divergence: 7.1 (pass). Sources: reddit.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.018
+    },
+    {
+      "ticker": "MA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.69,
+      "coherence_score": 36.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "MA: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 37/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.064
+    },
+    {
+      "ticker": "PAY",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.66,
+      "coherence_score": 36.6,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "PAY: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 37/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.054
+    },
+    {
+      "ticker": "MELI",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.62,
+      "coherence_score": 36.2,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "MELI: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 36/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.039
+    },
+    {
+      "ticker": "AAPL",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.09,
+      "coherence_score": 0.9,
+      "divergence_strength": 0.2,
+      "n_divergences": 4,
+      "n_data_points": 20,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "Apple services momentum",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85
+    },
+    {
+      "ticker": "NVDA",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.08,
+      "coherence_score": 0.8,
+      "divergence_strength": 0.2,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "AI demand accelerating",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85
+    },
+    {
+      "ticker": "TSLA",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.08,
+      "coherence_score": 0.8,
+      "divergence_strength": 0.3,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "Tesla momentum building",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.483
+    }
+  ],
+  "theses": [
+    {
+      "symbol": "ANTHROPIC",
+      "domain": "private_markets",
+      "status": "pending_review",
+      "roi_bear": -0.3436,
+      "roi_base": -0.0218,
+      "roi_bull": 0.4131,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "validating"
+    },
+    {
+      "symbol": "PLTR",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2658,
+      "roi_base": -0.0772,
+      "roi_bull": 0.1846,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "NVDA",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2549,
+      "roi_base": -0.0699,
+      "roi_bull": 0.186,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "AAPL",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2551,
+      "roi_base": -0.0701,
+      "roi_bull": 0.186,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "MSFT",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.1682,
+      "roi_base": -0.0122,
+      "roi_bull": 0.1976,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "SHOP",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2784,
+      "roi_base": -0.0856,
+      "roi_bull": 0.1829,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "TSLA",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2648,
+      "roi_base": -0.0765,
+      "roi_bull": 0.1847,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "AMD",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2839,
+      "roi_base": -0.0892,
+      "roi_bull": 0.1822,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "DDOG",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2532,
+      "roi_base": -0.0688,
+      "roi_bull": 0.1862,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "GOOGL",
+      "domain": "public_markets",
+      "status": "pending_review",
+      "roi_bear": -0.2668,
+      "roi_base": -0.0779,
+      "roi_bull": 0.1844,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "DATABRICKS",
+      "domain": "private_markets",
+      "status": "pending_review",
+      "roi_bear": -0.3,
+      "roi_base": 0.0101,
+      "roi_bull": 0.4263,
+      "kelly_fraction": 0.25,
+      "lifecycle_stage": "confirmed"
+    },
+    {
+      "symbol": "AAPL",
+      "domain": "public",
+      "status": "approved",
+      "roi_bear": 0.08,
+      "roi_base": 0.15,
+      "roi_bull": 0.25,
+      "kelly_fraction": 0.18,
+      "lifecycle_stage": "validating"
+    },
+    {
+      "symbol": "TSLA",
+      "domain": "public",
+      "status": "approved",
+      "roi_bear": 0.05,
+      "roi_base": 0.15,
+      "roi_bull": 0.3,
+      "kelly_fraction": 0.2,
+      "lifecycle_stage": "validating"
+    }
+  ],
+  "notable_movers": [
+    {
+      "ticker": "PLTR",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 12.8,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "PLTR: 18 signals from 4 sources. Direction: bearish (1B/6S/11N). Coherence: 100/100. Divergence: 12.8 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "google_trends",
+      "top_signal_value": 0.341,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "SHOP",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 4.5,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "SHOP: 18 signals from 4 sources. Direction: bearish (1B/5S/12N). Coherence: 100/100. Divergence: 4.5 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "sec_edgar",
+      "top_signal_value": 0.3,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "GOOGL",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 6.3,
+      "n_divergences": 6,
+      "n_data_points": 23,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "GOOGL: 23 signals from 4 sources. Direction: bearish (1B/7S/15N). Coherence: 100/100. Divergence: 6.3 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.703,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "DATABRICKS",
+      "asset_class": "private",
+      "domain": "private_markets",
+      "aggregate_signal": 10.0,
+      "coherence_score": 100.0,
+      "divergence_strength": 7.1,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 2,
+      "sources": [
+        "reddit",
+        "github"
+      ],
+      "action": "build_thesis",
+      "narrative": "DATABRICKS: 2 signals from 2 sources. Direction: bullish (1B/0S/1N). Coherence: 100/100. Divergence: 7.1 (pass). Sources: github, reddit.",
+      "top_signal_source": "github",
+      "top_signal_value": 1.0,
+      "reasons": [
+        "strong_signal",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "MSFT",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.82,
+      "coherence_score": 88.2,
+      "divergence_strength": 4.2,
+      "n_divergences": 2,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "MSFT: 19 signals from 4 sources. Direction: bullish (8B/6S/5N). Coherence: 88/100. Divergence: 4.2 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 1.0,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "ETH",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.5,
+      "coherence_score": 85.0,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 500,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "ETH: 724 signals from 1 sources. Direction: bearish (0B/2S/722N). Coherence: 85/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.499,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "BTC",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.5,
+      "coherence_score": 85.0,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 500,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "BTC: 724 signals from 1 sources. Direction: bearish (0B/2S/722N). Coherence: 85/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.499,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.38,
+      "coherence_score": 83.8,
+      "divergence_strength": 2.8,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "NVDA: 19 signals from 5 sources. Direction: bearish (3B/4S/12N). Coherence: 84/100. Divergence: 2.8 (pass). Sources: twitter, yfinance, google_trends, sec_edgar, reddit.",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "AAPL",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 8.36,
+      "coherence_score": 83.6,
+      "divergence_strength": 3.6,
+      "n_divergences": 4,
+      "n_data_points": 20,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "AAPL: 20 signals from 5 sources. Direction: bearish (3B/4S/13N). Coherence: 84/100. Divergence: 3.6 (pass). Sources: twitter, yfinance, google_trends, sec_edgar, reddit.",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "SOL",
+      "asset_class": "crypto",
+      "domain": "crypto",
+      "aggregate_signal": 8.22,
+      "coherence_score": 82.2,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 1,
+      "sources": [
+        "coingecko"
+      ],
+      "action": "investigate",
+      "narrative": "SOL: 2 signals from 1 sources. Direction: bearish (0B/2S/0N). Coherence: 82/100. Divergence: 0.0 (pass). Sources: coingecko.",
+      "top_signal_source": "coingecko",
+      "top_signal_value": 0.405,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "ANTHROPIC",
+      "asset_class": "private",
+      "domain": "private_markets",
+      "aggregate_signal": 8.17,
+      "coherence_score": 81.7,
+      "divergence_strength": 27.6,
+      "n_divergences": 0,
+      "n_data_points": 2,
+      "n_sources_responded": 1,
+      "sources": [
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "ANTHROPIC: 2 signals from 1 sources. Direction: bearish (0B/1S/1N). Coherence: 82/100. Divergence: 27.6 (monitor). Sources: reddit.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.175,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "AMD",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.46,
+      "coherence_score": 74.6,
+      "divergence_strength": 5.4,
+      "n_divergences": 2,
+      "n_data_points": 18,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "AMD: 18 signals from 4 sources. Direction: bullish (3B/2S/13N). Coherence: 75/100. Divergence: 5.4 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.691,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "TSLA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.26,
+      "coherence_score": 72.6,
+      "divergence_strength": 14.3,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "TSLA: 19 signals from 4 sources. Direction: bearish (3B/4S/12N). Coherence: 73/100. Divergence: 14.3 (pass). Sources: google_trends, reddit, yfinance, sec_edgar.",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.483,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "META",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.25,
+      "coherence_score": 72.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 0,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "META: 6 signals from 1 sources. Direction: bearish (0B/6S/0N). Coherence: 73/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.084,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "DDOG",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 7.25,
+      "coherence_score": 72.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 17,
+      "n_sources_responded": 3,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar"
+      ],
+      "action": "build_thesis",
+      "narrative": "DDOG: 17 signals from 3 sources. Direction: bearish (2B/4S/11N). Coherence: 72/100. Divergence: 0.0 (pass). Sources: google_trends, yfinance, sec_edgar.",
+      "top_signal_source": "sec_edgar",
+      "top_signal_value": 0.3,
+      "reasons": [
+        "strong_signal",
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "CRM",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 6.07,
+      "coherence_score": 60.7,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "CRM: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 61/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.078,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "APP",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 6.04,
+      "coherence_score": 60.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 1,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "APP: 6 signals from 1 sources. Direction: bearish (1B/5S/0N). Coherence: 60/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.07,
+      "reasons": [
+        "strong_signal"
+      ]
+    },
+    {
+      "ticker": "ARM",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 5.09,
+      "coherence_score": 50.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "ARM: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 51/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.141,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "AMZN",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.89,
+      "coherence_score": 48.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "AMZN: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 49/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.075,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "V",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.85,
+      "coherence_score": 48.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "V: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 49/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.062,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "INTC",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.83,
+      "coherence_score": 48.3,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "INTC: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 48/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.055,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "UPS",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.83,
+      "coherence_score": 48.3,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "UPS: 6 signals from 1 sources. Direction: bearish (2B/4S/0N). Coherence: 48/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.054,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "COST",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.24,
+      "coherence_score": 42.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "COST: 6 signals from 1 sources. Direction: bearish (2B/3S/1N). Coherence: 42/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.014,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "NFLX",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 4.24,
+      "coherence_score": 42.4,
+      "divergence_strength": 0.0,
+      "n_divergences": 2,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "NFLX: 6 signals from 1 sources. Direction: bullish (3B/2S/1N). Coherence: 42/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.014,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "OKTA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.95,
+      "coherence_score": 39.5,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "OKTA: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 40/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.151,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "MA",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.69,
+      "coherence_score": 36.9,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "MA: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 37/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.064,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "PAY",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.66,
+      "coherence_score": 36.6,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "PAY: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 37/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.054,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "MELI",
+      "asset_class": "stock",
+      "domain": "public_markets",
+      "aggregate_signal": 3.62,
+      "coherence_score": 36.2,
+      "divergence_strength": 0.0,
+      "n_divergences": 3,
+      "n_data_points": 6,
+      "n_sources_responded": 1,
+      "sources": [
+        "yfinance"
+      ],
+      "action": "investigate",
+      "narrative": "MELI: 6 signals from 1 sources. Direction: bullish (3B/3S/0N). Coherence: 36/100. Divergence: 0.0 (pass). Sources: yfinance.",
+      "top_signal_source": "yfinance",
+      "top_signal_value": 0.039,
+      "reasons": [
+        "multiple_divergences"
+      ]
+    },
+    {
+      "ticker": "AAPL",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.09,
+      "coherence_score": 0.9,
+      "divergence_strength": 0.2,
+      "n_divergences": 4,
+      "n_data_points": 20,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "Apple services momentum",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85,
+      "reasons": [
+        "weak_signal",
+        "multiple_divergences",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.08,
+      "coherence_score": 0.8,
+      "divergence_strength": 0.2,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 5,
+      "sources": [
+        "sec_edgar",
+        "google_trends",
+        "yfinance",
+        "reddit",
+        "twitter"
+      ],
+      "action": "build_thesis",
+      "narrative": "AI demand accelerating",
+      "top_signal_source": "twitter",
+      "top_signal_value": 0.85,
+      "reasons": [
+        "weak_signal",
+        "multiple_divergences",
+        "high_source_signal"
+      ]
+    },
+    {
+      "ticker": "TSLA",
+      "asset_class": "stock",
+      "domain": "public",
+      "aggregate_signal": 0.08,
+      "coherence_score": 0.8,
+      "divergence_strength": 0.3,
+      "n_divergences": 4,
+      "n_data_points": 19,
+      "n_sources_responded": 4,
+      "sources": [
+        "google_trends",
+        "yfinance",
+        "sec_edgar",
+        "reddit"
+      ],
+      "action": "build_thesis",
+      "narrative": "Tesla momentum building",
+      "top_signal_source": "reddit",
+      "top_signal_value": 0.483,
+      "reasons": [
+        "weak_signal",
+        "multiple_divergences"
+      ]
+    }
+  ],
+  "summary": {
+    "avg_signal": 5.99,
+    "max_signal_ticker": "PLTR",
+    "max_signal_value": 10.0,
+    "min_signal_ticker": "TSLA",
+    "min_signal_value": 0.08,
+    "total_divergences": 71,
+    "bullish_divergences": 1,
+    "bearish_divergences": 0,
+    "theses_created": 13,
+    "symbols_with_build_thesis": 14,
+    "symbols_investigate": 21,
+    "symbols_pass": 0
+  }
+}

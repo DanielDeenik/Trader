@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Arb — Information Arbitrage Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --gold: #d4a017;
+    --gold-dim: #9a7510;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --text: #e5e5e5;
+    --text-dim: #888;
+    --border: #2a2a3a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; }
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .app { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .header h1 { color: var(--gold); font-size: 20px; letter-spacing: 2px; }
+  .header .meta { color: var(--text-dim); font-size: 11px; }
+
+  .nav { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .nav button { background: var(--bg2); border: 1px solid var(--border); color: var(--text-dim); padding: 8px 16px; cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.2s; }
+  .nav button:hover { border-color: var(--gold-dim); color: var(--text); }
+  .nav button.active { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: bold; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); padding: 16px; }
+  .stat-card .label { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-card .value { font-size: 28px; font-weight: bold; color: var(--gold); }
+  .stat-card .sub { color: var(--text-dim); font-size: 11px; margin-top: 4px; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+  .card:hover { border-color: var(--gold-dim); }
+  .card h3 { color: var(--gold); font-size: 14px; margin-bottom: 8px; }
+  .card .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .card .row .item { display: flex; flex-direction: column; }
+  .card .row .item .lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+  .card .row .item .val { font-size: 14px; font-weight: bold; }
+
+  .badge { display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+  .badge.bullish { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge.bearish { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.neutral { background: rgba(136,136,136,0.15); color: var(--text-dim); }
+  .badge.build_thesis { background: rgba(212,160,23,0.2); color: var(--gold); }
+  .badge.investigate { background: rgba(59,130,246,0.2); color: var(--blue); }
+  .badge.pass { background: rgba(136,136,136,0.15); color: var(--text-dim); }
+  .badge.pending_review { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge.approved { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge.rejected { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge.public { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge.private { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .badge.crypto { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge.emerging { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge.validating { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge.confirmed { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge.saturated { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  td { padding: 8px; border-bottom: 1px solid rgba(42,42,58,0.5); font-size: 12px; }
+  tr:hover { background: rgba(212,160,23,0.05); }
+  tr.clickable { cursor: pointer; }
+
+  .pct-pos { color: var(--green); }
+  .pct-neg { color: var(--red); }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 100px; margin: 12px 0; }
+  .bar { background: var(--gold); min-width: 20px; transition: height 0.3s; position: relative; }
+  .bar .bar-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--text-dim); white-space: nowrap; }
+  .bar .bar-value { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text); }
+
+  .detail-panel { background: var(--bg3); border: 1px solid var(--gold-dim); padding: 20px; margin-bottom: 16px; }
+  .detail-panel h2 { color: var(--gold); font-size: 18px; margin-bottom: 16px; }
+  .detail-section { margin-bottom: 16px; }
+  .detail-section h4 { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .back-btn { background: var(--bg2); border: 1px solid var(--gold-dim); color: var(--gold); padding: 6px 16px; cursor: pointer; font-family: inherit; font-size: 12px; margin-bottom: 12px; }
+  .back-btn:hover { background: var(--gold); color: var(--bg); }
+
+  .narrative { background: var(--bg); border-left: 3px solid var(--gold); padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--text); margin: 8px 0; }
+
+  .roi-bar { display: flex; align-items: center; gap: 4px; margin: 4px 0; }
+  .roi-bar .roi-label { width: 50px; font-size: 11px; color: var(--text-dim); }
+  .roi-bar .roi-track { flex: 1; height: 20px; background: var(--bg); position: relative; overflow: hidden; }
+  .roi-bar .roi-fill { height: 100%; position: absolute; top: 0; }
+  .roi-bar .roi-val { width: 60px; text-align: right; font-size: 12px; font-weight: bold; }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+  .error { text-align: center; padding: 40px; color: var(--red); }
+
+  .source-tag { display: inline-block; padding: 1px 6px; margin: 1px; font-size: 10px; background: var(--bg3); border: 1px solid var(--border); color: var(--text-dim); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .topology-flow { display: flex; align-items: center; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  .topology-step { background: var(--bg2); border: 1px solid var(--border); padding: 8px 14px; font-size: 11px; }
+  .topology-step.active { border-color: var(--gold); color: var(--gold); }
+  .topology-arrow { color: var(--text-dim); font-size: 16px; }
+
+  .fragment-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fragment { background: var(--bg); border: 1px solid var(--border); padding: 4px 8px; font-size: 11px; display: flex; gap: 6px; align-items: center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+const API = "http://localhost:8787/api";
+
+function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    setLoading(true);
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, [url]);
+  return { data, loading, error };
+}
+
+function Badge({ value, className }) {
+  if (!value) return null;
+  return <span className={`badge ${className || value}`}>{value}</span>;
+}
+
+function PctVal({ value }) {
+  if (value == null) return <span>—</span>;
+  const cls = value > 0 ? "pct-pos" : value < 0 ? "pct-neg" : "";
+  return <span className={cls}>{value > 0 ? "+" : ""}{(value * 100).toFixed(1)}%</span>;
+}
+
+function TopologyFlow({ stage }) {
+  const steps = [
+    { id: "L1", label: "Signal Radar" },
+    { id: "L2", label: "Mosaic Assembly" },
+    { id: "L3", label: "Thesis Forge" },
+    { id: "L4", label: "Lifecycle Monitor" },
+    { id: "L5", label: "Portfolio" },
+  ];
+  const stageToLevel = { "emerging": 1, "validating": 2, "confirmed": 3, "saturated": 4 };
+  const activeLevel = stageToLevel[stage] || 0;
+  return (
+    <div className="topology-flow">
+      {steps.map((s, i) => (
+        <React.Fragment key={s.id}>
+          {i > 0 && <span className="topology-arrow">→</span>}
+          <div className={`topology-step ${i <= activeLevel ? "active" : ""}`}>
+            {s.id}: {s.label}
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function ROIBar({ bear, base, bull }) {
+  const maxAbs = Math.max(Math.abs(bear || 0), Math.abs(bull || 0), 0.01);
+  const scale = (v) => Math.abs(v || 0) / maxAbs * 100;
+  return (
+    <div>
+      <div className="roi-bar">
+        <span className="roi-label">Bear</span>
+        <div className="roi-track">
+          <div className="roi-fill" style={{ width: `${scale(bear)}%`, background: "var(--red)", right: 0, left: "auto" }} />
+        </div>
+        <span className="roi-val pct-neg"><PctVal value={bear} /></span>
+      </div>
+      <div className="roi-bar">
+        <span className="roi-label">Base</span>
+        <div className="roi-track">
+          <div className="roi-fill" style={{ width: `${scale(base)}%`, background: base >= 0 ? "var(--gold)" : "var(--red)" }} />
+        </div>
+        <span className="roi-val"><PctVal value={base} /></span>
+      </div>
+      <div className="roi-bar">
+        <span className="roi-label">Bull</span>
+        <div className="roi-track">
+          <div className="roi-fill" style={{ width: `${scale(bull)}%`, background: "var(--green)" }} />
+        </div>
+        <span className="roi-val pct-pos"><PctVal value={bull} /></span>
+      </div>
+    </div>
+  );
+}
+
+// ========== PAGES ==========
+
+function OverviewPage({ onNavigate }) {
+  const { data: summary, loading, error } = useFetch(`${API}/summary`);
+  const { data: mosaics } = useFetch(`${API}/mosaics`);
+  const { data: theses } = useFetch(`${API}/theses`);
+
+  if (loading) return <div className="loading">Loading dashboard data...</div>;
+  if (error) return <div className="error">Error: {error}. Is the API server running? (python -m social_arb.api_server)</div>;
+
+  const sourceCounts = summary.source_counts || {};
+  const maxSourceCount = Math.max(...Object.values(sourceCounts), 1);
+
+  return (
+    <div>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="label">Total Signals</div>
+          <div className="value">{summary.total_signals}</div>
+          <div className="sub">{Object.keys(sourceCounts).length} sources</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Mosaic Cards</div>
+          <div className="value">{summary.total_mosaics}</div>
+          <div className="sub">{Object.keys(summary.domain_counts || {}).length} domains</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Active Theses</div>
+          <div className="value">{summary.total_theses}</div>
+          <div className="sub">{(summary.thesis_statuses || {}).pending_review || 0} pending review</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">HITL Decisions</div>
+          <div className="value">{summary.total_decisions}</div>
+          <div className="sub">{summary.total_positions} positions</div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <h3>Signals by Source</h3>
+          <div className="bar-chart">
+            {Object.entries(sourceCounts).sort((a,b) => b[1]-a[1]).map(([src, cnt]) => (
+              <div key={src} className="bar" style={{ height: `${(cnt / maxSourceCount) * 90}px`, flex: 1 }}>
+                <span className="bar-value">{cnt}</span>
+                <span className="bar-label">{src}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h3>Domain Breakdown</h3>
+          <table>
+            <thead><tr><th>Domain</th><th>Mosaics</th><th>Data Class</th></tr></thead>
+            <tbody>
+              {Object.entries(summary.domain_counts || {}).map(([domain, cnt]) => (
+                <tr key={domain}>
+                  <td><Badge value={domain} /></td>
+                  <td>{cnt}</td>
+                  <td><Badge value={domain.includes("private") ? "private" : domain === "crypto" ? "crypto" : "public"} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Top Mosaic Cards — Ranked by Coherence</h3>
+        <table>
+          <thead>
+            <tr><th>Symbol</th><th>Domain</th><th>Coherence</th><th>Divergence</th><th>Action</th><th>Class</th><th>Sources</th></tr>
+          </thead>
+          <tbody>
+            {(mosaics || []).slice(0, 15).map(m => (
+              <tr key={m.id} className="clickable" onClick={() => onNavigate("symbol", m.symbol)}>
+                <td style={{ fontWeight: "bold", color: "var(--gold)" }}>{m.symbol}</td>
+                <td><Badge value={m.domain} /></td>
+                <td style={{ fontWeight: "bold" }}>{Math.round(m.coherence_score)}</td>
+                <td>{(m.divergence_strength || 0).toFixed(1)}</td>
+                <td><Badge value={m.action} /></td>
+                <td><Badge value={m.data_class || "public"} /></td>
+                <td>
+                  {(m.fragments_json ? (typeof m.fragments_json === "string" ? JSON.parse(m.fragments_json) : m.fragments_json) : [])
+                    .reduce((acc, f) => { if (!acc.includes(f.source)) acc.push(f.source); return acc; }, [])
+                    .map(s => <span key={s} className="source-tag">{s}</span>)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {theses && theses.length > 0 && (
+        <div className="card">
+          <h3>Investment Theses — Pending HITL Review</h3>
+          <table>
+            <thead>
+              <tr><th>Symbol</th><th>Domain</th><th>Bear</th><th>Base</th><th>Bull</th><th>Kelly</th><th>Lifecycle</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {theses.map(t => (
+                <tr key={t.id} className="clickable" onClick={() => onNavigate("symbol", t.symbol)}>
+                  <td style={{ fontWeight: "bold", color: "var(--gold)" }}>{t.symbol}</td>
+                  <td><Badge value={t.domain} /></td>
+                  <td><PctVal value={t.roi_bear} /></td>
+                  <td><PctVal value={t.roi_base} /></td>
+                  <td><PctVal value={t.roi_bull} /></td>
+                  <td>{(t.kelly_fraction || 0).toFixed(2)}</td>
+                  <td><Badge value={t.lifecycle_stage} /></td>
+                  <td><Badge value={t.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MosaicsPage({ onNavigate }) {
+  const { data: mosaics, loading } = useFetch(`${API}/mosaics`);
+  if (loading) return <div className="loading">Loading mosaics...</div>;
+
+  return (
+    <div>
+      <h2 style={{ color: "var(--gold)", marginBottom: 16 }}>Mosaic Cards — L2 Assembly</h2>
+      {(mosaics || []).map(m => {
+        const fragments = m.fragments_json ? (typeof m.fragments_json === "string" ? JSON.parse(m.fragments_json) : m.fragments_json) : [];
+        return (
+          <div key={m.id} className="card" onClick={() => onNavigate("symbol", m.symbol)} style={{ cursor: "pointer" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <h3>{m.symbol}</h3>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Badge value={m.domain} />
+                <Badge value={m.action} />
+                <Badge value={m.data_class || "public"} />
+              </div>
+            </div>
+            <div className="row" style={{ marginBottom: 8 }}>
+              <div className="item"><span className="lbl">Coherence</span><span className="val">{Math.round(m.coherence_score)}/100</span></div>
+              <div className="item"><span className="lbl">Divergence</span><span className="val">{(m.divergence_strength || 0).toFixed(1)}</span></div>
+              <div className="item"><span className="lbl">Signals</span><span className="val">{fragments.length}</span></div>
+            </div>
+            {m.narrative && <div className="narrative">{m.narrative}</div>}
+            <div className="fragment-list" style={{ marginTop: 8 }}>
+              {fragments.slice(0, 10).map((f, i) => (
+                <div key={i} className="fragment">
+                  <span className="source-tag">{f.source}</span>
+                  <Badge value={f.direction || "neutral"} />
+                  <span style={{ fontSize: 11 }}>{(f.strength || 0).toFixed(2)}</span>
+                </div>
+              ))}
+              {fragments.length > 10 && <span style={{ color: "var(--text-dim)", fontSize: 11 }}>+{fragments.length - 10} more</span>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ThesesPage({ onNavigate }) {
+  const { data: theses, loading } = useFetch(`${API}/theses`);
+  if (loading) return <div className="loading">Loading theses...</div>;
+
+  if (!theses || theses.length === 0) {
+    return <div className="card"><p style={{ color: "var(--text-dim)" }}>No theses generated yet. Run analysis first.</p></div>;
+  }
+
+  return (
+    <div>
+      <h2 style={{ color: "var(--gold)", marginBottom: 16 }}>Investment Theses — L3 Forge</h2>
+      {theses.map(t => (
+        <div key={t.id} className="card" onClick={() => onNavigate("symbol", t.symbol)} style={{ cursor: "pointer" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3>{t.symbol}</h3>
+            <div style={{ display: "flex", gap: 6 }}>
+              <Badge value={t.domain} />
+              <Badge value={t.lifecycle_stage} />
+              <Badge value={t.status} />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div>
+              <ROIBar bear={t.roi_bear} base={t.roi_base} bull={t.roi_bull} />
+            </div>
+            <div>
+              <TopologyFlow stage={t.lifecycle_stage} />
+              <div style={{ marginTop: 8 }}>
+                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>Kelly Fraction: </span>
+                <span style={{ fontWeight: "bold", color: "var(--gold)" }}>{(t.kelly_fraction || 0).toFixed(2)}</span>
+                <span style={{ color: "var(--text-dim)", fontSize: 11, marginLeft: 12 }}>
+                  Suggested allocation: {((t.kelly_fraction || 0) * 100).toFixed(0)}% of portfolio
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SignalsPage({ onNavigate }) {
+  const [source, setSource] = useState("");
+  const [symbol, setSymbol] = useState("");
+  const url = `${API}/signals?limit=200${source ? "&source=" + source : ""}${symbol ? "&symbol=" + symbol : ""}`;
+  const { data: signals, loading } = useFetch(url);
+  const { data: summary } = useFetch(`${API}/summary`);
+
+  const sources = summary ? Object.keys(summary.source_counts || {}) : [];
+  const symbols = summary ? Object.keys(summary.symbol_counts || {}).sort() : [];
+
+  if (loading) return <div className="loading">Loading signals...</div>;
+
+  return (
+    <div>
+      <h2 style={{ color: "var(--gold)", marginBottom: 16 }}>Raw Signals — L1 Radar</h2>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <select value={source} onChange={e => setSource(e.target.value)}
+          style={{ background: "var(--bg2)", border: "1px solid var(--border)", color: "var(--text)", padding: "6px 12px", fontFamily: "inherit" }}>
+          <option value="">All Sources</option>
+          {sources.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={symbol} onChange={e => setSymbol(e.target.value)}
+          style={{ background: "var(--bg2)", border: "1px solid var(--border)", color: "var(--text)", padding: "6px 12px", fontFamily: "inherit" }}>
+          <option value="">All Symbols</option>
+          {symbols.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <span style={{ color: "var(--text-dim)", fontSize: 11, alignSelf: "center" }}>
+          Showing {(signals || []).length} signals
+        </span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Symbol</th><th>Source</th><th>Type</th><th>Direction</th><th>Strength</th><th>Confidence</th><th>Class</th></tr>
+        </thead>
+        <tbody>
+          {(signals || []).map(s => (
+            <tr key={s.id} className="clickable" onClick={() => onNavigate("symbol", s.symbol)}>
+              <td style={{ color: "var(--text-dim)" }}>{(s.timestamp || "").slice(0, 16)}</td>
+              <td style={{ fontWeight: "bold" }}>{s.symbol}</td>
+              <td><span className="source-tag">{s.source}</span></td>
+              <td>{s.signal_type}</td>
+              <td><Badge value={s.direction || "neutral"} /></td>
+              <td>{(s.strength || 0).toFixed(3)}</td>
+              <td>{(s.confidence || 0).toFixed(2)}</td>
+              <td><Badge value={s.data_class || "public"} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SymbolDetailPage({ symbol, onBack }) {
+  const { data, loading, error } = useFetch(`${API}/symbol?s=${symbol}`);
+
+  if (loading) return <div className="loading">Loading {symbol}...</div>;
+  if (error) return <div className="error">Error loading {symbol}: {error}</div>;
+  if (!data) return null;
+
+  const mosaic = data.mosaics && data.mosaics.length > 0 ? data.mosaics[0] : null;
+  const thesis = data.theses && data.theses.length > 0 ? data.theses[0] : null;
+  const signals = data.signals || [];
+  const decisions = data.decisions || [];
+
+  // Compute signal breakdown
+  const sourceBreakdown = {};
+  const dirBreakdown = { bullish: 0, bearish: 0, neutral: 0 };
+  signals.forEach(s => {
+    sourceBreakdown[s.source] = (sourceBreakdown[s.source] || 0) + 1;
+    dirBreakdown[s.direction || "neutral"] = (dirBreakdown[s.direction || "neutral"] || 0) + 1;
+  });
+
+  // Extract key data points from raw_json
+  const keyMetrics = [];
+  signals.forEach(s => {
+    let raw = s.raw_json;
+    if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch(e) { raw = {}; } }
+    if (!raw) return;
+    if (raw.price) keyMetrics.push({ label: "Price", value: `$${Number(raw.price).toLocaleString()}`, source: s.source });
+    if (raw.market_cap) keyMetrics.push({ label: "Market Cap", value: `$${(raw.market_cap / 1e9).toFixed(1)}B`, source: s.source });
+    if (raw.tvl) keyMetrics.push({ label: "TVL", value: `$${(raw.tvl / 1e9).toFixed(1)}B`, source: s.source });
+    if (raw.pe_ratio) keyMetrics.push({ label: "P/E Ratio", value: raw.pe_ratio.toFixed(1), source: s.source });
+    if (raw.change_5d_pct != null) keyMetrics.push({ label: "5d Change", value: `${raw.change_5d_pct > 0 ? "+" : ""}${raw.change_5d_pct.toFixed(1)}%`, source: s.source });
+    if (raw.tvl_change_7d != null) keyMetrics.push({ label: "TVL 7d Change", value: `${raw.tvl_change_7d > 0 ? "+" : ""}${raw.tvl_change_7d.toFixed(1)}%`, source: s.source });
+    if (raw.filing_type) keyMetrics.push({ label: "Filing", value: raw.filing_type, source: s.source });
+    if (raw.subreddit) keyMetrics.push({ label: "Subreddit", value: `r/${raw.subreddit}`, source: s.source });
+  });
+
+  // Deduplicate metrics by label
+  const seenLabels = new Set();
+  const uniqueMetrics = keyMetrics.filter(m => {
+    if (seenLabels.has(m.label)) return false;
+    seenLabels.add(m.label);
+    return true;
+  });
+
+  const fragments = mosaic && mosaic.fragments_json
+    ? (typeof mosaic.fragments_json === "string" ? JSON.parse(mosaic.fragments_json) : mosaic.fragments_json)
+    : [];
+
+  return (
+    <div>
+      <button className="back-btn" onClick={onBack}>← Back</button>
+
+      <div className="detail-panel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2>{symbol}</h2>
+          <div style={{ display: "flex", gap: 6 }}>
+            {mosaic && <Badge value={mosaic.domain} />}
+            {mosaic && <Badge value={mosaic.data_class || "public"} />}
+            {mosaic && <Badge value={mosaic.action} />}
+          </div>
+        </div>
+
+        {thesis && <TopologyFlow stage={thesis.lifecycle_stage} />}
+
+        {/* Key Metrics */}
+        {uniqueMetrics.length > 0 && (
+          <div className="detail-section">
+            <h4>Key Metrics (from collected data)</h4>
+            <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
+              {uniqueMetrics.slice(0, 8).map((m, i) => (
+                <div key={i} className="stat-card" style={{ padding: 10 }}>
+                  <div className="label">{m.label}</div>
+                  <div className="value" style={{ fontSize: 18 }}>{m.value}</div>
+                  <div className="sub">{m.source}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mosaic Detail */}
+        {mosaic && (
+          <div className="detail-section">
+            <h4>Mosaic Card — L2</h4>
+            <div className="row" style={{ marginBottom: 8 }}>
+              <div className="item"><span className="lbl">Coherence</span><span className="val" style={{ color: "var(--gold)" }}>{Math.round(mosaic.coherence_score)}/100</span></div>
+              <div className="item"><span className="lbl">Divergence</span><span className="val">{(mosaic.divergence_strength || 0).toFixed(1)}</span></div>
+              <div className="item"><span className="lbl">Sources</span><span className="val">{Object.keys(sourceBreakdown).length}</span></div>
+              <div className="item"><span className="lbl">Signals</span><span className="val">{signals.length}</span></div>
+            </div>
+            {mosaic.narrative && <div className="narrative">{mosaic.narrative}</div>}
+            <div className="fragment-list" style={{ marginTop: 8 }}>
+              {fragments.map((f, i) => (
+                <div key={i} className="fragment">
+                  <span className="source-tag">{f.source}</span>
+                  <Badge value={f.direction || "neutral"} />
+                  <span style={{ fontSize: 11 }}>{(f.strength || 0).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Thesis Detail */}
+        {thesis && (
+          <div className="detail-section">
+            <h4>Investment Thesis — L3</h4>
+            <div className="grid-2">
+              <div>
+                <ROIBar bear={thesis.roi_bear} base={thesis.roi_base} bull={thesis.roi_bull} />
+              </div>
+              <div>
+                <div className="row">
+                  <div className="item"><span className="lbl">Kelly Fraction</span><span className="val" style={{ color: "var(--gold)" }}>{(thesis.kelly_fraction || 0).toFixed(2)}</span></div>
+                  <div className="item"><span className="lbl">Lifecycle</span><Badge value={thesis.lifecycle_stage} /></div>
+                  <div className="item"><span className="lbl">Status</span><Badge value={thesis.status} /></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Signal Direction Breakdown */}
+        <div className="detail-section">
+          <h4>Signal Direction Breakdown</h4>
+          <div style={{ display: "flex", gap: 20 }}>
+            <div><span style={{ color: "var(--green)" }}>Bullish: {dirBreakdown.bullish}</span></div>
+            <div><span style={{ color: "var(--red)" }}>Bearish: {dirBreakdown.bearish}</span></div>
+            <div><span style={{ color: "var(--text-dim)" }}>Neutral: {dirBreakdown.neutral}</span></div>
+          </div>
+          <div style={{ display: "flex", gap: 4, marginTop: 8, height: 20 }}>
+            {dirBreakdown.bullish > 0 && <div style={{ flex: dirBreakdown.bullish, background: "var(--green)", height: "100%" }} />}
+            {dirBreakdown.neutral > 0 && <div style={{ flex: dirBreakdown.neutral, background: "var(--text-dim)", height: "100%" }} />}
+            {dirBreakdown.bearish > 0 && <div style={{ flex: dirBreakdown.bearish, background: "var(--red)", height: "100%" }} />}
+          </div>
+        </div>
+
+        {/* Source Breakdown */}
+        <div className="detail-section">
+          <h4>Signals by Source</h4>
+          <table>
+            <thead><tr><th>Source</th><th>Count</th></tr></thead>
+            <tbody>
+              {Object.entries(sourceBreakdown).sort((a,b) => b[1]-a[1]).map(([src, cnt]) => (
+                <tr key={src}><td><span className="source-tag">{src}</span></td><td>{cnt}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* HITL Decisions */}
+        {decisions.length > 0 && (
+          <div className="detail-section">
+            <h4>HITL Decision Audit Trail</h4>
+            <table>
+              <thead><tr><th>Time</th><th>Gate</th><th>Decision</th><th>Confidence</th><th>Rationale</th></tr></thead>
+              <tbody>
+                {decisions.map(d => (
+                  <tr key={d.id}>
+                    <td>{(d.created_at || "").slice(0, 16)}</td>
+                    <td>{d.gate}</td>
+                    <td><Badge value={d.decision} /></td>
+                    <td>{(d.confidence || 0).toFixed(2)}</td>
+                    <td>{d.rationale || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Raw Signals Table */}
+        <div className="detail-section">
+          <h4>All Signals ({signals.length})</h4>
+          <table>
+            <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Direction</th><th>Strength</th><th>Confidence</th></tr></thead>
+            <tbody>
+              {signals.slice(0, 30).map(s => (
+                <tr key={s.id}>
+                  <td style={{ color: "var(--text-dim)" }}>{(s.timestamp || "").slice(0, 16)}</td>
+                  <td><span className="source-tag">{s.source}</span></td>
+                  <td>{s.signal_type}</td>
+                  <td><Badge value={s.direction || "neutral"} /></td>
+                  <td>{(s.strength || 0).toFixed(3)}</td>
+                  <td>{(s.confidence || 0).toFixed(2)}</td>
+                </tr>
+              ))}
+              {signals.length > 30 && <tr><td colSpan={6} style={{ color: "var(--text-dim)" }}>+{signals.length - 30} more signals</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScansPage() {
+  const { data: scans, loading } = useFetch(`${API}/scans`);
+  if (loading) return <div className="loading">Loading scan history...</div>;
+
+  return (
+    <div>
+      <h2 style={{ color: "var(--gold)", marginBottom: 16 }}>Scan History</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Started</th><th>Completed</th><th>Signals</th></tr></thead>
+        <tbody>
+          {(scans || []).map(s => (
+            <tr key={s.id}>
+              <td>{s.id}</td>
+              <td>{s.scan_type}</td>
+              <td><Badge value={s.status} className={s.status === "completed" ? "bullish" : s.status === "running" ? "investigate" : "neutral"} /></td>
+              <td style={{ color: "var(--text-dim)" }}>{(s.started_at || "").slice(0, 16)}</td>
+              <td style={{ color: "var(--text-dim)" }}>{(s.completed_at || "").slice(0, 16) || "—"}</td>
+              <td>{s.signal_count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ========== APP ==========
+
+function App() {
+  const [page, setPage] = useState("overview");
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
+
+  const navigate = useCallback((target, param) => {
+    if (target === "symbol") {
+      setSelectedSymbol(param);
+      setPage("symbol_detail");
+    } else {
+      setPage(target);
+      setSelectedSymbol(null);
+    }
+  }, []);
+
+  const pages = [
+    { id: "overview", label: "Overview" },
+    { id: "mosaics", label: "Mosaics (L2)" },
+    { id: "theses", label: "Theses (L3)" },
+    { id: "signals", label: "Signals (L1)" },
+    { id: "scans", label: "Scan History" },
+  ];
+
+  let content;
+  switch (page) {
+    case "overview": content = <OverviewPage onNavigate={navigate} />; break;
+    case "mosaics": content = <MosaicsPage onNavigate={navigate} />; break;
+    case "theses": content = <ThesesPage onNavigate={navigate} />; break;
+    case "signals": content = <SignalsPage onNavigate={navigate} />; break;
+    case "scans": content = <ScansPage />; break;
+    case "symbol_detail": content = <SymbolDetailPage symbol={selectedSymbol} onBack={() => setPage("overview")} />; break;
+    default: content = <OverviewPage onNavigate={navigate} />;
+  }
+
+  return (
+    <div className="app">
+      <div className="header">
+        <h1>SOCIAL ARB</h1>
+        <div className="meta">
+          Information Arbitrage Engine — Camillo Cognitive Architecture
+        </div>
+      </div>
+      <div className="nav">
+        {pages.map(p => (
+          <button key={p.id} className={page === p.id ? "active" : ""} onClick={() => navigate(p.id)}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {content}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

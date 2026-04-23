@@ -1,0 +1,13 @@
+# Local-development convenience only. Cloud Run does not use this.
+# Run locally: `docker compose up --build`
+# Open: http://localhost:8080
+
+version: "3.8"
+
+services:
+  client_dashboard:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080

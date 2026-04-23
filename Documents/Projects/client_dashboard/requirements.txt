@@ -1,0 +1,22 @@
+# Runtime dependencies for client_dashboard on Cloud Run.
+#
+# The app is a pure Dash layout with placeholder content. It does not
+# call OpenAI or Airtable at runtime — those integrations were removed
+# 2026-04-23. Keep this file minimal.
+
+# --- Server -----------------------------------------------------------
+gunicorn>=21.2.0
+
+# --- Dash / Flask stack ----------------------------------------------
+dash>=2.17.0,<3.0.0
+dash-bootstrap-components>=1.5.0
+plotly>=5.17.0
+werkzeug>=3.0.0  # CVE-2023-25577 fix
+
+# --- Data -------------------------------------------------------------
+pandas>=2.0.0
+numpy>=1.24.0
+
+# --- Scraping (used by app/services/web_scraper.py) -------------------
+beautifulsoup4>=4.12.0
+requests>=2.31.0

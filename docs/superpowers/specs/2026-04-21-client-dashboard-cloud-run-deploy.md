@@ -42,7 +42,7 @@ Dan has several in-flight projects. Two are relevant here:
 - `config/config.yaml` (currently contains live OpenAI + Airtable keys) is **deleted from the working tree and added to `.gitignore`**.
 - A committed `config/config.yaml.example` shows the schema.
 - Services read from `os.environ[...]` directly. No YAML loading in production.
-- **Dan must rotate both keys manually** — they are already in git history (commit `d6a90d7b` and earlier). This spec cannot un-leak them; it prevents further leakage.
+- **Dan must rotate both keys manually** — they are already in git history (commit `d6a90d7b` and earlier). This spec cannot un-leak them; it prevents further leakage. **✅ Rotated 2026-04-23** — both keys invalidated at source.
 
 ### D4. Production server = gunicorn, binding `0.0.0.0:$PORT`
 Cloud Run sends traffic to whatever the container listens on via the `$PORT` env var (default 8080). The existing `CMD ["python", "app/app.py"]` runs Dash's dev server on `localhost:8050` — Cloud Run health checks will fail. New CMD:
@@ -95,7 +95,7 @@ Commits, in order:
 
 ## Open items / risks
 
-- **Keys in git history:** rotation is on Dan. This PR cannot remove history without a rewrite, which is out of scope and risky on `main`.
+- **Keys in git history:** rotation is on Dan. This PR cannot remove history without a rewrite, which is out of scope and risky on `main`. **✅ Rotated 2026-04-23.**
 - **OpenAI Completion API removed:** user-triggered callbacks that hit OpenAI will 404 at runtime. Dashboard still boots. SDK migration tracked as a follow-up.
 - **Airtable wrapper archived:** same — works today, migrate later.
 - **No tests:** the repo has no test suite. Post-deploy smoke test = load the Cloud Run URL and confirm the Dash layout renders.

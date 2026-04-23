@@ -7,11 +7,12 @@ The app is a pure layout with placeholder tab content. It has **no
 external API integrations** — no OpenAI, no Airtable, no secrets. The
 container needs only the `PORT` variable (Cloud Run provides it).
 
-> **⚠ Rotation still required.** Earlier commits in this branch's
-> history contained live OpenAI and Airtable keys in `config/config.yaml`.
-> Those have been removed from the working tree, but they remain in
-> git history and must be treated as compromised. Rotate them in the
-> OpenAI + Airtable dashboards regardless of whether this code uses them.
+> **🔒 Rotated 2026-04-23.** Earlier commits in this branch's history
+> contained live OpenAI and Airtable keys in `config/config.yaml`. Dan
+> rotated both in the OpenAI + Airtable dashboards on 2026-04-23, so
+> the values still visible in git history are now invalid and cannot
+> be used. This note is kept for the next person who greps the history
+> and wonders.
 
 ---
 

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FE-001 · v2 Workflow Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { app:'#FAFBFC', surface:'#FFFFFF', rail:'#F4F6F8', borderc:'#E5E8EB', primary:'#1A2233', muted:'#5C6B82', faint:'#9AA5B6', positive:'#0E9F6E', negative:'#D03F3F', warning:'#D97706', info:'#2D63E0', violet:'#7C3AED' },
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] },
+  fontSize: { xxs:'11px', xs:'12px', sm:'13px', base:'14px', md:'16px', lg:'20px', xl:'28px' },
+} } }
+</script>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .stage-card { background:#fff; border:1px solid #E5E8EB; border-radius:8px; box-shadow: 0 1px 2px rgba(16,24,40,.06); padding: 20px; min-width: 0; }
+  .stage-arrow { color: #9AA5B6; }
+</style>
+</head>
+<body class="bg-app text-primary min-h-screen">
+
+<!-- Mini top bar (links back to shell) -->
+<header class="h-12 bg-surface border-b border-borderc flex items-center px-4 gap-4">
+  <a href="v1-shell.html" class="flex items-center gap-2 hover:opacity-80">
+    <div class="w-7 h-7 rounded-md bg-violet flex items-center justify-center text-white font-bold text-xs">SA</div>
+    <div class="font-semibold text-sm">Social Arb</div>
+  </a>
+  <span class="text-xs text-faint">/</span>
+  <span class="text-sm">Pipeline</span>
+  <div class="ml-auto flex items-center gap-3 text-xs text-muted">
+    <a href="v0-tokens.html" class="hover:text-info">v0 tokens</a> ·
+    <a href="v1-shell.html" class="hover:text-info">v1 shell</a> ·
+    <a href="v3-ticker-grid.html" class="hover:text-info">v3 grid</a> ·
+    <a href="v4-hitl-queue.html" class="hover:text-info">v4 hitl</a> ·
+    <a href="v5-knowledge-graph.html" class="hover:text-info">v5 kg</a>
+  </div>
+</header>
+
+<main class="px-6 py-6 max-w-7xl mx-auto">
+
+  <div class="flex items-baseline justify-between mb-1">
+    <h1 class="text-xl font-bold">Workflow Pipeline</h1>
+    <div class="text-xs text-muted">Today · Apr 26, 2026 · cycle started 06:00 UTC</div>
+  </div>
+  <p class="text-sm text-muted mb-6">Live view of the 5-layer cognitive topology. Each stage shows current activity, throughput, and any blockers.</p>
+
+  <!-- 5-stage pipeline -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch">
+
+    <!-- L1 -->
+    <div class="stage-card flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-xs mono text-violet font-semibold">L1</div>
+        <div class="text-sm font-semibold">Signal Radar</div>
+      </div>
+      <div class="mono text-xl font-bold">480</div>
+      <div class="text-xxs text-muted mb-3">signals collected · 5 sources</div>
+      <svg width="100%" height="32" viewBox="0 0 200 32" class="text-info mb-2"><polyline points="0,28 25,22 50,18 75,24 100,14 125,20 150,12 175,16 200,10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div class="mt-auto pt-2 border-t border-borderc flex items-center justify-between text-xxs">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-positive animate-pulse"></span><span class="text-muted">active</span></span>
+        <span class="text-faint mono">14m ago</span>
+      </div>
+    </div>
+
+    <!-- L2 -->
+    <div class="stage-card flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-xs mono text-violet font-semibold">L2</div>
+        <div class="text-sm font-semibold">Mosaic Assembly</div>
+      </div>
+      <div class="mono text-xl font-bold">26</div>
+      <div class="text-xxs text-muted mb-3">mosaics built · STEPPS scored</div>
+      <svg width="100%" height="32" viewBox="0 0 200 32" class="text-violet mb-2"><polyline points="0,26 25,24 50,20 75,18 100,16 125,12 150,14 175,10 200,8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div class="mt-auto pt-2 border-t border-borderc flex items-center justify-between text-xxs">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-positive animate-pulse"></span><span class="text-muted">active</span></span>
+        <span class="text-faint mono">8m ago</span>
+      </div>
+    </div>
+
+    <!-- L3 -->
+    <div class="stage-card flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-xs mono text-violet font-semibold">L3</div>
+        <div class="text-sm font-semibold">Thesis Forge</div>
+      </div>
+      <div class="mono text-xl font-bold">18</div>
+      <div class="text-xxs text-muted mb-3">theses · all pending HITL</div>
+      <svg width="100%" height="32" viewBox="0 0 200 32" class="text-warning mb-2"><polyline points="0,30 25,28 50,24 75,22 100,18 125,16 150,14 175,12 200,8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div class="mt-auto pt-2 border-t border-borderc flex items-center justify-between text-xxs">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-warning"></span><span class="text-muted">awaiting HITL</span></span>
+        <span class="text-faint mono">5m ago</span>
+      </div>
+    </div>
+
+    <!-- L4 -->
+    <div class="stage-card flex flex-col border-warning/40">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-xs mono text-violet font-semibold">L4</div>
+        <div class="text-sm font-semibold">Decisions</div>
+      </div>
+      <div class="mono text-xl font-bold">3 <span class="text-sm text-warning">/ 18</span></div>
+      <div class="text-xxs text-muted mb-3">HITL gate · 3 escalated</div>
+      <svg width="100%" height="32" viewBox="0 0 200 32" class="text-warning mb-2"><polyline points="0,30 50,28 100,28 150,30 200,28" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div class="mt-auto pt-2 border-t border-borderc flex items-center justify-between text-xxs">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-warning"></span><span class="text-warning font-medium">user input needed</span></span>
+        <span class="text-faint mono">now</span>
+      </div>
+    </div>
+
+    <!-- L5 -->
+    <div class="stage-card flex flex-col">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="text-xs mono text-violet font-semibold">L5</div>
+        <div class="text-sm font-semibold">Portfolio</div>
+      </div>
+      <div class="mono text-xl font-bold">0</div>
+      <div class="text-xxs text-muted mb-3">open positions · waiting on L4</div>
+      <svg width="100%" height="32" viewBox="0 0 200 32" class="text-faint mb-2"><polyline points="0,28 200,28" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <div class="mt-auto pt-2 border-t border-borderc flex items-center justify-between text-xxs">
+        <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span><span class="text-muted">idle</span></span>
+        <span class="text-faint mono">—</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Source breakdown -->
+  <h2 class="text-md font-semibold mt-10 mb-3">L1 source health · last cycle</h2>
+  <div class="bg-surface border border-borderc rounded-lg overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-rail text-xxs uppercase tracking-wider text-muted">
+        <tr>
+          <th class="text-left py-2 px-4 font-medium">Source</th>
+          <th class="text-right py-2 px-4 font-medium">Signals</th>
+          <th class="text-left py-2 px-4 font-medium">Status</th>
+          <th class="text-right py-2 px-4 font-medium">Last run</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-borderc">
+        <tr><td class="py-2 px-4">yfinance</td><td class="py-2 px-4 text-right mono">273</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-positive text-xs">✓ healthy</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+        <tr><td class="py-2 px-4">reddit</td><td class="py-2 px-4 text-right mono">103</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-positive text-xs">✓ healthy</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+        <tr><td class="py-2 px-4">sec_edgar</td><td class="py-2 px-4 text-right mono">100</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-positive text-xs">✓ healthy</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+        <tr><td class="py-2 px-4">coingecko</td><td class="py-2 px-4 text-right mono">2</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-warning text-xs">⚠ rate-limited 10+</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+        <tr><td class="py-2 px-4">defillama</td><td class="py-2 px-4 text-right mono">2</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-warning text-xs">⚠ map gap 21/26</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+        <tr><td class="py-2 px-4">google_trends</td><td class="py-2 px-4 text-right mono">0</td><td class="py-2 px-4"><span class="inline-flex items-center gap-1 text-negative text-xs">✗ no signals</span></td><td class="py-2 px-4 text-right text-xs text-muted mono">14m ago</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Activity feed -->
+  <h2 class="text-md font-semibold mt-10 mb-3">Today's activity</h2>
+  <div class="bg-surface border border-borderc rounded-lg p-4 space-y-2 text-sm">
+    <div class="flex items-start gap-3"><span class="text-xxs text-faint mono w-12 shrink-0 pt-0.5">06:36</span><span class="text-xs mono text-violet w-8 shrink-0 pt-0.5">L4</span><span>BLOCKED · git lockfiles persist · 11th consecutive cycle</span></div>
+    <div class="flex items-start gap-3"><span class="text-xxs text-faint mono w-12 shrink-0 pt-0.5">06:30</span><span class="text-xs mono text-violet w-8 shrink-0 pt-0.5">L3</span><span>Forged 18 theses · all pending_review</span></div>
+    <div class="flex items-start gap-3"><span class="text-xxs text-faint mono w-12 shrink-0 pt-0.5">06:18</span><span class="text-xs mono text-violet w-8 shrink-0 pt-0.5">L2</span><span>Built 26 mosaics · top: AMD div 70.4 (#1)</span></div>
+    <div class="flex items-start gap-3"><span class="text-xxs text-faint mono w-12 shrink-0 pt-0.5">06:00</span><span class="text-xs mono text-violet w-8 shrink-0 pt-0.5">L1</span><span>Cycle started · 5 sources · 480 signals collected</span></div>
+  </div>
+
+</main>
+
+</body>
+</html>

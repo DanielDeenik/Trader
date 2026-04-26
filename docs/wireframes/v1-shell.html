@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FE-001 · v1 Shell</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { app:'#FAFBFC', surface:'#FFFFFF', rail:'#F4F6F8', borderc:'#E5E8EB', primary:'#1A2233', muted:'#5C6B82', faint:'#9AA5B6', positive:'#0E9F6E', negative:'#D03F3F', warning:'#D97706', info:'#2D63E0', violet:'#7C3AED' },
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] },
+  fontSize: { xxs:'11px', xs:'12px', sm:'13px', base:'14px', md:'16px', lg:'20px', xl:'28px' },
+} } }
+</script>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .nav-item { @apply flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted hover:bg-surface hover:text-primary cursor-pointer; }
+  .nav-item.active { @apply bg-surface text-primary font-medium; box-shadow: inset 2px 0 0 #7C3AED; }
+</style>
+</head>
+<body class="bg-app text-primary h-screen overflow-hidden">
+
+<!-- Top bar -->
+<header class="h-12 bg-surface border-b border-borderc flex items-center px-4 gap-4">
+  <div class="flex items-center gap-2 w-52 shrink-0">
+    <div class="w-7 h-7 rounded-md bg-violet flex items-center justify-center text-white font-bold text-xs">SA</div>
+    <div class="font-semibold text-sm">Social Arb</div>
+    <span class="text-xxs text-faint mono">v1.0.0</span>
+  </div>
+  <div class="flex-1 max-w-md">
+    <input type="text" placeholder="Search ticker, person, sector, mosaic… (⌘K)" class="w-full px-3 py-1.5 text-sm border border-borderc rounded-md bg-app placeholder-faint">
+  </div>
+  <div class="flex-1"></div>
+  <div class="flex items-center gap-4 text-sm">
+    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-positive animate-pulse"></span> <span class="text-xs text-muted">480 signals · today</span></div>
+    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-warning"></span> <span class="text-xs text-muted">3 HITL pending</span></div>
+    <div class="w-7 h-7 rounded-full bg-rail border border-borderc flex items-center justify-center text-xs mono">DD</div>
+  </div>
+</header>
+
+<div class="flex h-[calc(100vh-3rem)]">
+
+  <!-- Left rail: 5-layer nav -->
+  <aside class="w-52 shrink-0 bg-rail border-r border-borderc overflow-y-auto py-3">
+    <div class="px-4 mb-4">
+      <div class="text-xxs uppercase tracking-wider text-faint font-semibold">Layers</div>
+    </div>
+
+    <nav class="px-2 space-y-0.5">
+      <div class="nav-item"><span class="text-xs text-faint mono w-5">L0</span><span>Infrastructure</span></div>
+      <div class="nav-item"><span class="text-xs text-faint mono w-5">L1</span><span>Signal Radar</span><span class="ml-auto text-xxs text-muted mono">480</span></div>
+      <div class="nav-item active"><span class="text-xs text-faint mono w-5">L2</span><span>Mosaic Assembly</span><span class="ml-auto text-xxs text-muted mono">26</span></div>
+      <div class="nav-item"><span class="text-xs text-faint mono w-5">L3</span><span>Thesis Forge</span><span class="ml-auto text-xxs text-muted mono">18</span></div>
+      <div class="nav-item"><span class="text-xs text-faint mono w-5">L4</span><span>Decisions</span><span class="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-xxs bg-warning/15 text-warning">3</span></div>
+      <div class="nav-item"><span class="text-xs text-faint mono w-5">L5</span><span>Portfolio</span><span class="ml-auto text-xxs text-muted mono">0</span></div>
+    </nav>
+
+    <div class="px-4 mt-6 mb-2">
+      <div class="text-xxs uppercase tracking-wider text-faint font-semibold">Workflow</div>
+    </div>
+    <nav class="px-2 space-y-0.5">
+      <div class="nav-item"><span>📈 Pipeline</span></div>
+      <div class="nav-item"><span>🎯 Tickers</span></div>
+      <div class="nav-item"><span>❓ HITL Queue</span></div>
+      <div class="nav-item"><span>🕸️ Knowledge Graph</span></div>
+    </nav>
+
+    <div class="px-4 mt-6 mb-2">
+      <div class="text-xxs uppercase tracking-wider text-faint font-semibold">Watchlist</div>
+    </div>
+    <nav class="px-2 space-y-0.5 text-sm mono">
+      <div class="px-3 py-1 text-muted hover:text-primary cursor-pointer">AMD <span class="text-positive ml-1">+5.5</span></div>
+      <div class="px-3 py-1 text-muted hover:text-primary cursor-pointer">SQ <span class="text-faint ml-1">stable</span></div>
+      <div class="px-3 py-1 text-muted hover:text-primary cursor-pointer">PLTR <span class="text-warning ml-1">±0</span></div>
+      <div class="px-3 py-1 text-muted hover:text-primary cursor-pointer">TSLA <span class="text-negative ml-1">−2.1</span></div>
+      <div class="px-3 py-1 text-muted hover:text-primary cursor-pointer">MSFT <span class="text-positive ml-1">+0.8</span></div>
+    </nav>
+
+    <div class="px-4 mt-6 pt-4 border-t border-borderc">
+      <div class="text-xxs text-muted">Settings · Help</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 overflow-y-auto bg-app">
+    <div class="px-6 py-5 border-b border-borderc bg-surface">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-xxs text-faint uppercase tracking-wider">L2 · Mosaic Assembly</div>
+          <h1 class="text-lg font-semibold mt-0.5">Mosaic Workbench</h1>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-muted">
+          <span class="mono">26 active mosaics</span>
+          <span>·</span>
+          <span class="mono">last build 14m ago</span>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 py-8">
+      <div class="border-2 border-dashed border-borderc rounded-lg p-12 text-center">
+        <div class="text-xs text-faint uppercase tracking-wider mb-2">Wireframe placeholder</div>
+        <div class="text-sm text-muted">Main content area swaps based on left-rail selection.<br>Real views: <a class="text-info hover:underline" href="v2-workflow-pipeline.html">V2 Pipeline</a> · <a class="text-info hover:underline" href="v3-ticker-grid.html">V3 Ticker Grid</a> · <a class="text-info hover:underline" href="v4-hitl-queue.html">V4 HITL Queue</a> · <a class="text-info hover:underline" href="v5-knowledge-graph.html">V5 Knowledge Graph</a></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Right rail: HITL queue. Collapsed on first load per DLOG-11. Click rail to expand. -->
+  <aside id="rightRail" class="w-12 shrink-0 bg-rail border-l border-borderc transition-all duration-200 overflow-hidden">
+
+    <!-- Collapsed view -->
+    <div id="collapsedView" class="h-full flex flex-col items-center pt-3 cursor-pointer hover:bg-surface" onclick="document.getElementById('rightRail').classList.remove('w-12');document.getElementById('rightRail').classList.add('w-[360px]');document.getElementById('collapsedView').classList.add('hidden');document.getElementById('expandedView').classList.remove('hidden');">
+      <div class="w-7 h-7 rounded-md bg-warning/15 flex items-center justify-center relative">
+        <span class="text-warning text-sm">❓</span>
+        <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning text-white text-xxs flex items-center justify-center font-bold">3</span>
+      </div>
+      <div class="text-xxs text-muted mt-2 transform rotate-90 origin-center mt-12 whitespace-nowrap">HITL · 3</div>
+    </div>
+
+    <!-- Expanded view -->
+    <div id="expandedView" class="hidden">
+      <div class="h-12 px-4 flex items-center justify-between border-b border-borderc bg-surface">
+        <div class="flex items-center gap-2">
+          <div class="text-sm font-semibold">HITL Queue</div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xxs font-medium bg-warning/15 text-warning">3 pending</span>
+        </div>
+        <button class="text-faint hover:text-primary text-lg leading-none" onclick="document.getElementById('rightRail').classList.add('w-12');document.getElementById('rightRail').classList.remove('w-[360px]');document.getElementById('collapsedView').classList.remove('hidden');document.getElementById('expandedView').classList.add('hidden');">→</button>
+      </div>
+      <div class="p-4 space-y-3 overflow-y-auto" style="max-height:calc(100vh - 6rem);">
+
+        <div class="bg-surface border border-borderc rounded-md p-3">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="mono text-sm font-semibold">AMD</span>
+            <span class="inline-flex px-1.5 py-0.5 rounded-full text-xxs bg-warning/10 text-warning">Validating</span>
+            <span class="text-xxs text-faint ml-auto">16h</span>
+          </div>
+          <div class="text-sm font-medium mb-1.5">Approve build_thesis · Kelly 0.25?</div>
+          <div class="text-xs text-muted mb-3 mono">div 70.4 · coh 100 · Q1 May 5 T-14</div>
+          <div class="flex items-center gap-1.5">
+            <button class="flex-1 px-2 py-1 rounded bg-positive text-white text-xs font-medium">Approve</button>
+            <button class="px-2 py-1 rounded bg-warning/10 text-warning text-xs">Defer</button>
+            <button class="px-2 py-1 rounded bg-negative/10 text-negative text-xs">Reject</button>
+          </div>
+        </div>
+
+        <div class="bg-surface border border-borderc rounded-md p-3">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="mono text-sm font-semibold">SQ</span>
+            <span class="inline-flex px-1.5 py-0.5 rounded-full text-xxs bg-warning/10 text-warning">Validating</span>
+            <span class="text-xxs text-faint ml-auto">12h</span>
+          </div>
+          <div class="text-sm font-medium mb-1.5">Confirm Kelly sizing 0.25?</div>
+          <div class="text-xs text-muted mb-3 mono">div 49.1 · coh 100 · Q1 May 7 T-16</div>
+          <div class="flex items-center gap-1.5">
+            <button class="flex-1 px-2 py-1 rounded bg-positive text-white text-xs font-medium">Approve</button>
+            <button class="px-2 py-1 rounded bg-warning/10 text-warning text-xs">Defer</button>
+            <button class="px-2 py-1 rounded bg-negative/10 text-negative text-xs">Reject</button>
+          </div>
+        </div>
+
+        <div class="bg-surface border border-borderc rounded-md p-3">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="mono text-sm font-semibold">PLTR</span>
+            <span class="inline-flex px-1.5 py-0.5 rounded-full text-xxs bg-warning/10 text-warning">Validating</span>
+            <span class="text-xxs text-faint ml-auto">5h</span>
+          </div>
+          <div class="text-sm font-medium mb-1.5">Defer until post-earnings?</div>
+          <div class="text-xs text-muted mb-3 mono">div 48.7 · coh 85 (binary) · Burry vs Trump</div>
+          <div class="flex items-center gap-1.5">
+            <button class="flex-1 px-2 py-1 rounded bg-warning text-white text-xs font-medium">Defer</button>
+            <button class="px-2 py-1 rounded bg-positive/10 text-positive text-xs">Approve</button>
+            <button class="px-2 py-1 rounded bg-negative/10 text-negative text-xs">Reject</button>
+          </div>
+        </div>
+
+        <div class="text-xxs text-faint text-center pt-2">3 of 3 · L4 Decisions queue</div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

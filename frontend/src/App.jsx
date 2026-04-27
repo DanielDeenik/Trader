@@ -18,6 +18,10 @@ import Settings from './pages/Settings'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 
+// Fiscal.ai-style workflow UI (FE-002). Public routes for demo.
+import { FiscalIndex } from './views/fiscal/FiscalIndex'
+import { FiscalWorkflow } from './views/fiscal/FiscalWorkflow'
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen text-gray-400">Loading...</div>
@@ -29,6 +33,11 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* Fiscal.ai-style workflow UI — FE-002. Unauthenticated for demo. */}
+      <Route path="/fiscal" element={<FiscalIndex />} />
+      <Route path="/fiscal/pipeline" element={<FiscalWorkflow />} />
+
       <Route path="/" element={<ProtectedRoute><Layout title="Overview"><Overview /></Layout></ProtectedRoute>} />
       <Route path="/tickers" element={<ProtectedRoute><Layout title="Tickers"><Tickers /></Layout></ProtectedRoute>} />
       <Route path="/tickers/:symbol" element={<ProtectedRoute><Layout title="Ticker Detail"><TickerDetail /></Layout></ProtectedRoute>} />

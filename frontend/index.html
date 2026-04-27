@@ -4,6 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Arb — Information Arbitrage</title>
+
+    <!-- Inter + JetBrains Mono for fiscal.ai aesthetic (DLOG-6) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind via Play CDN — added 2026-04-26 (FE-002).
+         The codebase ships Tailwind utility classes throughout but had no Tailwind
+         installed. CDN is the zero-config path that makes existing classes work
+         AND supports the new fiscal-style components. Migrate to a proper PostCSS
+         install in a follow-up ticket if bundle size / CSP becomes a concern. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              app:'#FAFBFC', surface:'#FFFFFF', rail:'#F4F6F8', borderc:'#E5E8EB',
+              primary:'#1A2233', muted:'#5C6B82', faint:'#9AA5B6',
+              positive:'#0E9F6E', negative:'#D03F3F', warning:'#D97706',
+              info:'#2D63E0', violet:'#7C3AED'
+            },
+            fontFamily: {
+              sans: ['Inter','system-ui','sans-serif'],
+              mono: ['JetBrains Mono','ui-monospace','monospace'],
+            },
+            fontSize: {
+              xxs:'11px', xs:'12px', sm:'13px', base:'14px',
+              md:'16px', lg:'20px', xl:'28px',
+            },
+          },
+        },
+      }
+    </script>
+
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         // Set your Google OAuth Client ID here or via environment
@@ -11,7 +46,12 @@
         window.__GOOGLE_CLIENT_ID__ = '358461657718-REPLACE_WITH_YOUR_CLIENT_ID.apps.googleusercontent.com';
     </script>
 </head>
-<body class="dark bg-gray-900 text-gray-50">
+<!-- Body intentionally unstyled — each route's Layout sets its own theme.
+     Was: class="dark bg-gray-900 text-gray-50" — forced dark on all routes,
+     incompatible with the fiscal.ai light theme (DLOG-6). Each Layout now
+     opts in: existing pages can wrap in their own dark container; fiscal
+     routes use the light FiscalLayout. -->
+<body class="font-sans">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 </body>

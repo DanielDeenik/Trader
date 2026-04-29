@@ -172,13 +172,35 @@ const cy = cytoscape({
 });
 
 cy.on('tap', 'node', evt => {
-  const n = evt.target.data();
+  const node = evt.target;
+  const n = node.data();
   const kindColor = ({ ticker:'#2D63E0', person:'#5C6B82', sector:'#7C3AED', topic:'#D97706' })[n.kind] || '#9AA5B6';
+
+  // Outbound relationships from the V5 spec — show edge label + target node label.
+  const outbound = node.outgoers('edge').map(e => ({
+    label: e.data('label') || e.data('etype') || 'related',
+    target: e.target().data('label'),
+    etype: e.data('etype'),
+  }));
+
+  const outboundHtml = outbound.length
+    ? `<ul class="space-y-1">${outbound.map(o => `
+        <li class="flex items-center gap-2">
+          <span class="text-faint">${o.label}</span>
+          <span class="text-faint">→</span>
+          <span class="font-medium">${o.target}</span>
+        </li>`).join('')}</ul>`
+    : '<div class="text-faint italic">No outbound relationships</div>';
+
   document.getElementById('detail').innerHTML = `
     <div class="text-xs font-semibold mb-3 text-muted">Selected entity</div>
     <div class="flex items-center gap-2 mb-2"><span class="inline-block w-3 h-3 rounded-full" style="background:${kindColor}"></span><span class="font-semibold">${n.label}</span></div>
     <div class="text-xs text-muted mb-3 capitalize">${n.kind}</div>
     ${n.meta ? `<div class="text-xs text-muted border-t border-borderc pt-3">${n.meta}</div>` : ''}
+    <div class="text-xs mt-3 border-t border-borderc pt-3">
+      <div class="font-semibold mb-1.5">Outbound relationships</div>
+      ${outboundHtml}
+    </div>
     <div class="text-xs mt-3"><a class="text-info hover:underline" href="#">Open ticker page →</a></div>
   `;
 });

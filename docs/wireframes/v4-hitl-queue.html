@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FE-001 · v4 HITL Queue</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { app:'#FAFBFC', surface:'#FFFFFF', rail:'#F4F6F8', borderc:'#E5E8EB', primary:'#1A2233', muted:'#5C6B82', faint:'#9AA5B6', positive:'#0E9F6E', negative:'#D03F3F', warning:'#D97706', info:'#2D63E0', violet:'#7C3AED' },
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','ui-monospace','monospace'] },
+  fontSize: { xxs:'11px', xs:'12px', sm:'13px', base:'14px', md:'16px', lg:'20px', xl:'28px' },
+} } }
+</script>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="bg-app text-primary min-h-screen">
+
+<header class="h-12 bg-surface border-b border-borderc flex items-center px-4 gap-4">
+  <a href="v1-shell.html" class="flex items-center gap-2 hover:opacity-80">
+    <div class="w-7 h-7 rounded-md bg-violet flex items-center justify-center text-white font-bold text-xs">SA</div>
+    <div class="font-semibold text-sm">Social Arb</div>
+  </a>
+  <span class="text-xs text-faint">/</span>
+  <span class="text-sm">HITL Queue</span>
+  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xxs font-medium bg-warning/15 text-warning">3 pending</span>
+  <div class="ml-auto flex items-center gap-3 text-xs text-muted">
+    <a href="v0-tokens.html" class="hover:text-info">v0</a> ·
+    <a href="v1-shell.html" class="hover:text-info">v1</a> ·
+    <a href="v2-workflow-pipeline.html" class="hover:text-info">v2</a> ·
+    <a href="v3-ticker-grid.html" class="hover:text-info">v3</a> ·
+    <a href="v5-knowledge-graph.html" class="hover:text-info">v5</a>
+  </div>
+</header>
+
+<main class="px-6 py-6 max-w-5xl mx-auto">
+
+  <div class="flex items-end justify-between mb-1">
+    <div>
+      <h1 class="text-xl font-bold">Decisions awaiting your input</h1>
+      <p class="text-sm text-muted mt-1">Agents have escalated 3 decisions to the L4 HITL gate. Approve, defer (with reason), or reject (with reason). The agent waits.</p>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <select class="px-3 py-1.5 border border-borderc rounded-md bg-surface">
+        <option>All layers</option><option>L3 Thesis Forge</option><option>L4 Decisions</option>
+      </select>
+      <select class="px-3 py-1.5 border border-borderc rounded-md bg-surface">
+        <option>Most recent first</option><option>Oldest first</option><option>Highest divergence</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="space-y-4 mt-6">
+
+    <!-- AMD card -->
+    <article class="bg-surface border border-borderc rounded-lg overflow-hidden">
+      <header class="flex items-center justify-between px-5 py-3 bg-positive/5 border-b border-borderc">
+        <div class="flex items-center gap-3">
+          <span class="mono text-md font-bold">AMD</span>
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xxs font-medium bg-warning/10 text-warning">Validating</span>
+          <span class="text-xs text-muted">· asked by <span class="font-medium text-primary">L3 Thesis Forge</span> · 16h ago</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs"><span class="w-1.5 h-1.5 rounded-full bg-positive animate-pulse"></span> <span class="text-positive font-medium mono">DIV 70.4 · #1 today</span></div>
+      </header>
+      <div class="px-5 py-4">
+        <h3 class="text-md font-semibold">Approve build_thesis with Kelly = 0.25?</h3>
+        <p class="text-sm text-muted mt-1">Q1 FY26 earnings May 5 (T-14). Guide $9.8B / +32% YoY / 55% GM. MI400/Helios inflection H2 2026. Oracle 50K-GPU + OpenAI 6GW commitment. Structural divergence (3 cycles ≥60). Coherence 100 = all 5 layers concur.</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div class="bg-app border border-borderc rounded p-3">
+            <div class="text-xxs text-muted">Divergence</div>
+            <div class="mono text-md font-semibold mt-0.5">70.4 <span class="text-xxs text-positive ml-1">+5.5</span></div>
+          </div>
+          <div class="bg-app border border-borderc rounded p-3">
+            <div class="text-xxs text-muted">Coherence</div>
+            <div class="mono text-md font-semibold mt-0.5">100 <span class="text-xxs text-positive ml-1">5/5</span></div>
+          </div>
+          <div class="bg-app border border-borderc rounded p-3">
+            <div class="text-xxs text-muted">Lifecycle</div>
+            <div class="text-sm font-medium mt-0.5">Validating</div>
+          </div>
+          <div class="bg-app border border-borderc rounded p-3">
+            <div class="text-xxs text-muted">Kelly proposed</div>
+            <div class="mono text-md font-semibold mt-0.5">0.25</div>
+          </div>
+        </div>
+
+        <details class="mt-4">
+          <summary class="text-xs text-muted cursor-pointer select-none hover:text-info">Provenance · 5 signals · 3 sources</summary>
+          <div class="mt-2 text-xs text-muted space-y-1">
+            <div>• <span class="mono">reddit/r/AMD_Stock</span> · sentiment +0.78 · 124 mentions</div>
+            <div>• <span class="mono">yfinance · AMD</span> · price +3.2% · vol +180%</div>
+            <div>• <span class="mono">sec_edgar · AMD 8-K</span> · Oracle commit filing</div>
+          </div>
+        </details>
+
+        <div class="mt-5 flex items-center gap-2 pt-4 border-t border-borderc">
+          <button class="px-4 py-2 rounded-md bg-positive text-white text-sm font-medium hover:bg-positive/90">Approve</button>
+          <button class="px-4 py-2 rounded-md bg-warning/10 text-warning text-sm font-medium hover:bg-warning/20">Defer</button>
+          <button class="px-4 py-2 rounded-md bg-negative/10 text-negative text-sm font-medium hover:bg-negative/20">Reject</button>
+          <input type="text" placeholder="Reason (required for Defer/Reject)…" class="flex-1 px-3 py-2 text-sm border border-borderc rounded-md bg-surface placeholder-faint">
+        </div>
+      </div>
+    </article>
+
+    <!-- SQ card -->
+    <article class="bg-surface border border-borderc rounded-lg overflow-hidden">
+      <header class="flex items-center justify-between px-5 py-3 bg-rail border-b border-borderc">
+        <div class="flex items-center gap-3">
+          <span class="mono text-md font-bold">SQ</span>
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xxs font-medium bg-warning/10 text-warning">Validating</span>
+          <span class="text-xs text-muted">· asked by <span class="font-medium text-primary">L3 Thesis Forge</span> · 12h ago</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs mono text-muted">DIV 49.1 · COH 100</div>
+      </header>
+      <div class="px-5 py-4">
+        <h3 class="text-md font-semibold">Confirm Kelly 0.25 sizing for SQ thesis?</h3>
+        <p class="text-sm text-muted mt-1">Q1 FY26 May 7 (T-16). GOLFTEC 200-loc live. Cash App BTC ecosystem revenue $1.7B Q1. Stock $66.15 (XYZ). 7d TSR +10.3%. Day 4+ of div ~50 + coh 100 — perfect coherence cluster, most actionable in portfolio.</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Divergence</div><div class="mono text-md font-semibold mt-0.5">49.1 <span class="text-xxs text-faint ml-1">±0</span></div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Coherence</div><div class="mono text-md font-semibold mt-0.5">100 <span class="text-xxs text-positive ml-1">5/5</span></div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Lifecycle</div><div class="text-sm font-medium mt-0.5">Validating</div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Kelly proposed</div><div class="mono text-md font-semibold mt-0.5">0.25</div></div>
+        </div>
+
+        <div class="mt-5 flex items-center gap-2 pt-4 border-t border-borderc">
+          <button class="px-4 py-2 rounded-md bg-positive text-white text-sm font-medium hover:bg-positive/90">Approve</button>
+          <button class="px-4 py-2 rounded-md bg-warning/10 text-warning text-sm font-medium hover:bg-warning/20">Defer</button>
+          <button class="px-4 py-2 rounded-md bg-negative/10 text-negative text-sm font-medium hover:bg-negative/20">Reject</button>
+          <input type="text" placeholder="Reason…" class="flex-1 px-3 py-2 text-sm border border-borderc rounded-md bg-surface placeholder-faint">
+        </div>
+      </div>
+    </article>
+
+    <!-- PLTR card -->
+    <article class="bg-surface border border-borderc rounded-lg overflow-hidden">
+      <header class="flex items-center justify-between px-5 py-3 bg-warning/5 border-b border-borderc">
+        <div class="flex items-center gap-3">
+          <span class="mono text-md font-bold">PLTR</span>
+          <span class="inline-flex px-2 py-0.5 rounded-full text-xxs font-medium bg-warning/10 text-warning">Validating</span>
+          <span class="text-xs text-muted">· asked by <span class="font-medium text-primary">L3 Thesis Forge</span> · 5h ago</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs mono text-warning">DIV 48.7 · COH 85 binary</div>
+      </header>
+      <div class="px-5 py-4">
+        <h3 class="text-md font-semibold">Defer until post-earnings (May 4)?</h3>
+        <p class="text-sm text-muted mt-1">Burry confirmed: 2027 $50P + 2026-12-19 $100P (base case &lt;$50, −65%). Trump Truth Social endorsement Apr 10. MS flags "strong setup." Stock $146 post-bounce from $127 low. Weekly −13.7%. Valuation 99x 2026 EPS. <strong>Coh 85 — layers disagree</strong>; narrative war Burry vs Trump.</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Divergence</div><div class="mono text-md font-semibold mt-0.5">48.7</div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Coherence</div><div class="mono text-md font-semibold mt-0.5 text-warning">85 <span class="text-xxs text-warning ml-1">binary</span></div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Earnings</div><div class="text-sm font-medium mt-0.5">May 4 · T-13</div></div>
+          <div class="bg-app border border-borderc rounded p-3"><div class="text-xxs text-muted">Recommendation</div><div class="text-sm font-medium mt-0.5 text-warning">DEFER</div></div>
+        </div>
+
+        <div class="mt-5 flex items-center gap-2 pt-4 border-t border-borderc">
+          <button class="px-4 py-2 rounded-md bg-warning text-white text-sm font-medium hover:bg-warning/90">Defer (recommended)</button>
+          <button class="px-4 py-2 rounded-md bg-positive/10 text-positive text-sm font-medium hover:bg-positive/20">Approve</button>
+          <button class="px-4 py-2 rounded-md bg-negative/10 text-negative text-sm font-medium hover:bg-negative/20">Reject</button>
+          <input type="text" placeholder="Reason…" value="Wait for div ≥60 OR coh ≥95" class="flex-1 px-3 py-2 text-sm border border-borderc rounded-md bg-surface placeholder-faint">
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- Triage history -->
+  <h2 class="text-md font-semibold mt-10 mb-3">Recent decisions <span class="text-xs text-muted font-normal">· last 7 days</span></h2>
+  <div class="bg-surface border border-borderc rounded-lg divide-y divide-borderc">
+    <div class="px-5 py-3 flex items-center gap-3 text-sm"><span class="mono w-16 font-semibold">NVDA</span><span class="inline-flex px-2 py-0.5 rounded-full text-xxs bg-positive/10 text-positive">Approved</span><span class="text-muted flex-1">build_thesis · Kelly 0.25</span><span class="text-xxs text-faint mono">Apr 24 · 14:22</span></div>
+    <div class="px-5 py-3 flex items-center gap-3 text-sm"><span class="mono w-16 font-semibold">META</span><span class="inline-flex px-2 py-0.5 rounded-full text-xxs bg-warning/10 text-warning">Deferred</span><span class="text-muted flex-1">"Wait for earnings · May 1"</span><span class="text-xxs text-faint mono">Apr 23 · 11:08</span></div>
+    <div class="px-5 py-3 flex items-center gap-3 text-sm"><span class="mono w-16 font-semibold">DOGE</span><span class="inline-flex px-2 py-0.5 rounded-full text-xxs bg-negative/10 text-negative">Rejected</span><span class="text-muted flex-1">"Coherence noise; not actionable"</span><span class="text-xxs text-faint mono">Apr 22 · 09:45</span></div>
+  </div>
+
+</main>
+
+</body>
+</html>

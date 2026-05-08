@@ -20,6 +20,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from pydantic import BaseModel, Field
+
 from social_arb.notebooks.chunker import Chunker
 from social_arb.notebooks.embedder import EmbedderProtocol, create_embedder
 from social_arb.notebooks.notebook_models import (
@@ -33,6 +35,13 @@ from social_arb.notebooks.notebook_models import (
 )
 from social_arb.notebooks.notebook_store import NotebookStore
 from social_arb.notebooks.parsers import ContentHint, parse_blob
+from social_arb.rag import (
+    CitedAnswer,
+    CitedGenerator,
+    LLMProtocol,
+    Retriever,
+    create_llm,
+)
 from social_arb.sources import ChunkWithVector, SourceStore, create_store
 from social_arb.sources.models import Source
 
@@ -58,6 +67,18 @@ def get_embedder() -> EmbedderProtocol:
     if not hasattr(get_embedder, "_singleton"):
         get_embedder._singleton = create_embedder()
     return get_embedder._singleton
+
+
+def get_llm() -> LLMProtocol:
+    if not hasattr(get_llm, "_singleton"):
+        get_llm._singleton = create_llm()
+    return get_llm._singleton
+
+
+class QueryRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    max_chunks: int = Field(default=8, ge=1, le=50)
+    max_tokens: int = Field(default=1024, ge=64, le=4096)
 
 
 # --- endpoints ------------------------------------------------------------ #
@@ -200,6 +221,33 @@ def detach_source(
 ) -> None:
     if not store.detach_source(notebook_id, source_id):
         raise HTTPException(404, f"attachment ({notebook_id}, {source_id}) not found")
+
+
+@router.post("/{notebook_id}/query", response_model=CitedAnswer)
+def query_notebook(
+    notebook_id: str,
+    body: QueryRequest,
+    notebook_store: Annotated[NotebookStore, Depends(get_notebook_store)],
+    source_store: Annotated[SourceStore, Depends(get_source_store)],
+    embedder: Annotated[EmbedderProtocol, Depends(get_embedder)],
+    llm: Annotated[LLMProtocol, Depends(get_llm)],
+) -> CitedAnswer:
+    """Cited RAG endpoint (NB-003).
+
+    Retrieves top-k chunks scoped to this notebook, runs the LLM with
+    a prompt that enforces citation tokens, validates the citations,
+    and returns the answer + valid + hallucinated lists.
+    """
+    if notebook_store.get(notebook_id, include_attached=False) is None:
+        raise HTTPException(404, f"notebook {notebook_id} not found")
+    retriever = Retriever(source_store, notebook_store, embedder)
+    generator = CitedGenerator(llm, retriever)
+    return generator.generate(
+        notebook_id,
+        body.prompt,
+        k=body.max_chunks,
+        max_tokens=body.max_tokens,
+    )
 
 
 @router.get("/{notebook_id}/artifacts", response_model=list[Artifact])

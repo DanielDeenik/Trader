@@ -294,6 +294,21 @@ class NotebookStore:
             ).fetchone()
             return self._row_to_artifact(row)
 
+    def find_artifact_by_hash(
+        self,
+        notebook_id: str,
+        kind: ArtifactKind | str,
+        content_hash: str,
+    ) -> Artifact | None:
+        """Cache lookup for Studio.generate (DLOG-19). Returns the existing
+        artifact if (notebook_id, kind, content_hash) already exists."""
+        kind_val = kind if isinstance(kind, str) else kind.value
+        row = self._conn.cursor().execute(
+            "SELECT * FROM artifacts WHERE notebook_id = ? AND kind = ? AND content_hash = ?",
+            (notebook_id, kind_val, content_hash),
+        ).fetchone()
+        return self._row_to_artifact(row) if row else None
+
     def list_artifacts(self, notebook_id: str) -> list[Artifact]:
         rows = self._conn.cursor().execute(
             "SELECT * FROM artifacts WHERE notebook_id = ? ORDER BY created_at DESC",

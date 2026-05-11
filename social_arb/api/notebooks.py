@@ -26,6 +26,7 @@ from social_arb.notebooks.chunker import Chunker
 from social_arb.notebooks.embedder import EmbedderProtocol, create_embedder
 from social_arb.notebooks.notebook_models import (
     Artifact,
+    ArtifactKind,
     AttachSourceRequest,
     CreateNotebookRequest,
     Notebook,
@@ -44,6 +45,7 @@ from social_arb.rag import (
 )
 from social_arb.sources import ChunkWithVector, SourceStore, create_store
 from social_arb.sources.models import Source
+from social_arb.studio import Studio, default_studio
 
 router = APIRouter(prefix="/notebooks", tags=["notebooks"])
 
@@ -75,10 +77,22 @@ def get_llm() -> LLMProtocol:
     return get_llm._singleton
 
 
+def get_studio(
+    notebook_store: NotebookStore = Depends(get_notebook_store),
+) -> Studio:
+    return default_studio(notebook_store)
+
+
 class QueryRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
     max_chunks: int = Field(default=8, ge=1, le=50)
     max_tokens: int = Field(default=1024, ge=64, le=4096)
+
+
+class GenerateArtifactRequest(BaseModel):
+    kind: ArtifactKind
+    params: dict = Field(default_factory=dict)
+    regenerate: bool = False
 
 
 # --- endpoints ------------------------------------------------------------ #
@@ -258,3 +272,39 @@ def list_artifacts(
     if store.get(notebook_id, include_attached=False) is None:
         raise HTTPException(404, f"notebook {notebook_id} not found")
     return store.list_artifacts(notebook_id)
+
+
+@router.post(
+    "/{notebook_id}/artifacts",
+    response_model=Artifact,
+    status_code=status.HTTP_201_CREATED,
+)
+def generate_artifact(
+    notebook_id: str,
+    body: GenerateArtifactRequest,
+    notebook_store: Annotated[NotebookStore, Depends(get_notebook_store)],
+    source_store: Annotated[SourceStore, Depends(get_source_store)],
+    embedder: Annotated[EmbedderProtocol, Depends(get_embedder)],
+    llm: Annotated[LLMProtocol, Depends(get_llm)],
+    studio: Annotated[Studio, Depends(get_studio)],
+) -> Artifact:
+    """Studio endpoint (NB-004).
+
+    Generates an artifact of `body.kind` using the notebook's sources.
+    Cache-by-content-hash: if (notebook_id, kind, params) was generated
+    before, returns the existing artifact unless `regenerate=true`.
+    """
+    if notebook_store.get(notebook_id, include_attached=False) is None:
+        raise HTTPException(404, f"notebook {notebook_id} not found")
+    retriever = Retriever(source_store, notebook_store, embedder)
+    try:
+        return studio.generate(
+            notebook_id,
+            body.kind,
+            body.params,
+            retriever=retriever,
+            llm=llm,
+            regenerate=body.regenerate,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e

@@ -129,7 +129,13 @@ class EchoLLM:
             "",
         )
         chunk_count = len(re.findall(r"<source[^>]+chunk_id=", user_prompt))
-        body = self.answer_template.format(chunk_count=chunk_count)
+        # Only apply str.format if the template explicitly opts in via the
+        # `{chunk_count}` placeholder. Avoids KeyError on templates that
+        # contain unrelated braces (e.g. JSON for Mind Map output).
+        if "{chunk_count}" in self.answer_template:
+            body = self.answer_template.format(chunk_count=chunk_count)
+        else:
+            body = self.answer_template
         citations = " ".join(f"[s:{sid}:{cid}]" for sid, cid in self.cite_chunks)
         text = f"{body} {citations}".strip()
         return LLMResponse(

@@ -25,7 +25,6 @@ Feedback loop:
     → Allows strategist to refine theses based on human feedback
 """
 
-import json
 import logging
 import sqlite3
 from typing import Any, Dict, List, Optional
@@ -204,7 +203,7 @@ class StrategistAgent(BaseAgent):
                 status = "approved"
             elif decision_text == "reject":
                 status = "rejected"
-            elif decision_text in ("defer", "defer"):
+            elif decision_text == "defer":
                 status = "deferred"
             else:
                 status = "pending_review"

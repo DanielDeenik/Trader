@@ -5,7 +5,7 @@ All data comes from real DB queries via trend_scorer engine.
 """
 
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from ...api.deps import get_db_path
 from ...engine.trend_scorer import (
@@ -21,8 +21,8 @@ router = APIRouter(prefix="/trends", tags=["trends"])
 
 @router.get("/tickers")
 async def trending_tickers(
-    hours: int = 168,
-    limit: int = 50,
+    hours: int = Query(168, gt=0),
+    limit: int = Query(50, ge=1, le=500),
     domain: Optional[str] = None,
 ):
     """Trending tickers ranked by trend score."""
@@ -32,8 +32,8 @@ async def trending_tickers(
 
 @router.get("/alerts")
 async def divergence_alerts(
-    min_divergence: float = 0.15,
-    limit: int = 10,
+    min_divergence: float = Query(0.15, ge=0.0, le=1.0),
+    limit: int = Query(10, ge=1, le=500),
 ):
     """Tickers with highest social-vs-market divergence."""
     db_path = get_db_path()
@@ -41,7 +41,7 @@ async def divergence_alerts(
 
 
 @router.get("/themes")
-async def theme_clusters(limit: int = 20):
+async def theme_clusters(limit: int = Query(20, ge=1, le=500)):
     """Similar trend clusters — tickers grouped by shared narrative/sector."""
     db_path = get_db_path()
     return get_similar_trends(db_path, limit=limit)

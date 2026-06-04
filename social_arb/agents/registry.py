@@ -5,11 +5,10 @@ The registry owns the event bus and manages agent start/stop ordering.
 Agents are started in pipeline order (L0→L5) and stopped in reverse.
 """
 
-import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
-from .base import BaseAgent, AgentState
+from .base import BaseAgent
 from .events import EventBus
 
 logger = logging.getLogger(__name__)
@@ -82,7 +81,7 @@ class AgentRegistry:
             "event_bus": self.event_bus.get_stats(),
         }
 
-    def get_pipeline_flow(self) -> List[Dict[str, Any]]:
+    def get_pipeline_flow(self) -> Dict[str, Any]:
         """
         Get the pipeline as a directed graph for visualization.
         Returns nodes (agents) and edges (event subscriptions).

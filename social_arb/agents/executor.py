@@ -285,7 +285,7 @@ class ExecutorAgent(BaseAgent):
             )
             logger.info(
                 f"Closed position {position_id} ({symbol}): {exit_reason}, "
-                f"PnL={pnl_pct:.2f}%" if pnl_pct else ""
+                f"PnL={pnl_pct:.2f}%"
             )
 
             return {
@@ -310,7 +310,6 @@ class ExecutorAgent(BaseAgent):
         Returns exit reason if conditions met, else None.
         """
         thesis_id = position.get("thesis_id")
-        symbol = position.get("symbol")
 
         # Condition 1: Thesis invalidated
         thesis = self._query_thesis(thesis_id)

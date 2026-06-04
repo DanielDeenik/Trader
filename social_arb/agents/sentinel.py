@@ -10,9 +10,7 @@ Role: Ensures raw signals stay fresh across all configured sources.
 The Sentinel is the entry point to the pipeline — without fresh data, nothing moves.
 """
 
-import json
 import logging
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 

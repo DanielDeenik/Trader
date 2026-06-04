@@ -1,8 +1,11 @@
 #!/bin/bash
-# Social Arb — Local Development Server
-# Usage: ./run.sh
+# Social Arb — Local Development Server (hot-reload, scheduler off)
+# Usage: ./dev.sh
 # Then open http://localhost:8000 in your browser
 # Login: deenikdaniel@gmail.com / socialarb
+#
+# NOTE: This is the LOCAL dev entrypoint. The PRODUCTION entrypoint
+# (gunicorn, used by the Dockerfile / Cloud Run) is scripts/run.sh.
 
 set -e
 

@@ -86,6 +86,7 @@ def get_trending_tickers(
     Pulls from: signals, mosaics, theses, instruments, ohlcv.
     Returns list of ticker dicts with trend_score, signals, divergence, etc.
     """
+    hours = max(int(hours), 1)  # guard against div-by-zero in recency calc
     conn = _get_conn(db_path)
     ph = get_placeholder()
     cutoff = (datetime.utcnow() - timedelta(hours=hours)).isoformat()

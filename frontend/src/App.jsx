@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Layout } from './components/Layout'
 import Overview from './pages/Overview'
+import TrendRadar from './pages/TrendRadar'
+import SimilarTrends from './pages/SimilarTrends'
+import TickerTrend from './pages/TickerTrend'
 import Tickers from './pages/Tickers'
 import TickerDetail from './pages/TickerDetail'
 import SignalRadar from './pages/SignalRadar'
@@ -14,6 +17,7 @@ import TaskQueue from './pages/TaskQueue'
 import DeepDive from './pages/DeepDive'
 import LatticeGraph from './pages/LatticeGraph'
 import MosaicWorkbench from './pages/MosaicWorkbench'
+import Pipeline from './pages/Pipeline'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
@@ -29,7 +33,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<ProtectedRoute><Layout title="Overview"><Overview /></Layout></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><Layout title="Trend Radar"><TrendRadar /></Layout></ProtectedRoute>} />
+      <Route path="/trends" element={<ProtectedRoute><Layout title="Similar Trends"><SimilarTrends /></Layout></ProtectedRoute>} />
+      <Route path="/trend/:symbol" element={<ProtectedRoute><Layout title="Ticker Trend"><TickerTrend /></Layout></ProtectedRoute>} />
+      <Route path="/overview" element={<ProtectedRoute><Layout title="Overview"><Overview /></Layout></ProtectedRoute>} />
       <Route path="/tickers" element={<ProtectedRoute><Layout title="Tickers"><Tickers /></Layout></ProtectedRoute>} />
       <Route path="/tickers/:symbol" element={<ProtectedRoute><Layout title="Ticker Detail"><TickerDetail /></Layout></ProtectedRoute>} />
       <Route path="/deepdive/:symbol" element={<ProtectedRoute><Layout title="Deep Dive"><DeepDive /></Layout></ProtectedRoute>} />
@@ -42,6 +49,7 @@ function AppRoutes() {
       <Route path="/decisions" element={<ProtectedRoute><Layout title="L4: Decisions"><Decisions /></Layout></ProtectedRoute>} />
       <Route path="/positions" element={<ProtectedRoute><Layout title="L5: Portfolio"><Positions /></Layout></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Layout title="Task Queue"><TaskQueue /></Layout></ProtectedRoute>} />
+      <Route path="/pipeline" element={<ProtectedRoute><Layout title="Agent Pipeline"><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Layout title="Settings"><Settings /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

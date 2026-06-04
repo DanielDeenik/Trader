@@ -9,17 +9,8 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   CartesianGrid,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  BarChart,
-  Bar,
-  Cell,
-  ComposedChart,
+  Legend,
 } from 'recharts'
 
 const LIFECYCLE_STAGES = {
@@ -29,697 +20,342 @@ const LIFECYCLE_STAGES = {
   saturated: { label: 'Saturated', color: '#ef4444', bgColor: '#7f1d1d' },
 }
 
-const CATALYST_COLORS = {
-  earnings: '#3b82f6',
-  product: '#10b981',
-  regulatory: '#f97316',
-  partnership: '#a855f7',
-  social: '#ec4899',
-  macro: '#6b7280',
-}
+export default function MosaicWorkbench() {
+  const { symbol } = useParams()
+  const { data: result, loading, error, refetch } = useApi(() => api.getEngineOutput(symbol), [symbol])
+  const [rerunning, setRerunning] = useState(false)
+  const [msg, setMsg] = useState(null)
 
-const CONVICTION_COLORS = {
-  positive: '#10b981',
-  negative: '#ef4444',
-  neutral: '#9ca3af',
-}
-
-/* ──────────────────────────────────────────────
-   Section 1: Header + Quick Stats
-   ────────────────────────────────────────────── */
-function Header({ symbol, data, onRerun, rerunning, onCreatePosition, onAddWatchlist, actionMsg }) {
-  const gold_rush = data?.engines?.gold_rush_scorer || {}
-  const conviction = data?.engines?.conviction_scorer || {}
-
-  const stage = gold_rush.stage || 'unknown'
-  const stageConfig = LIFECYCLE_STAGES[stage] || { label: stage, color: '#9ca3af', bgColor: '#374151' }
-
-  const convictionScore = conviction.conviction_score || 0
-  const gradeLetters = ['F', 'D', 'C', 'B', 'A']
-  const gradeIndex = Math.min(Math.floor(convictionScore / 20), 4)
-  const grade = gradeLetters[gradeIndex]
-
-  const decision = conviction.decision || 'WAIT'
-  const decisionColors = {
-    GO: '#10b981',
-    'NO-GO': '#ef4444',
-    WAIT: '#f59e0b',
+  const handleRerun = async () => {
+    setRerunning(true)
+    setMsg(null)
+    try {
+      await api.runAnalysis({ symbol })
+      await refetch()
+      setMsg({ type: 'success', text: 'Engines re-run — workbench updated' })
+    } catch (err) {
+      setMsg({ type: 'error', text: `Failed: ${err.message}` })
+    }
+    setRerunning(false)
+    setTimeout(() => setMsg(null), 5000)
   }
 
+  const handleCreatePosition = async () => {
+    try {
+      await api.createPosition({ symbol, size: 0.02 })
+      setMsg({ type: 'success', text: 'Position created — proceed to portfolio' })
+    } catch (err) {
+      setMsg({ type: 'error', text: `Failed: ${err.message}` })
+    }
+    setTimeout(() => setMsg(null), 5000)
+  }
+
+  if (loading) return <div className="text-gray-400 text-sm">Loading workbench for {symbol}...</div>
+  if (error) return <div className="text-red-400 text-sm">Error: {error.message}</div>
+
+  const engines = result?.engines || result || {}
+
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-emerald-400 font-mono">{symbol}</h1>
-          <p className="text-xs text-gray-400 mt-1">Mosaic Workbench • Investment Decision Interface</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Link to={`/tickers/${symbol}`} className="text-xs text-gray-500 hover:text-gray-300 no-underline">
+          &larr; Engine View
+        </Link>
+        <span className="text-2xl font-bold text-emerald-400 font-mono">{symbol}</span>
+        <span className="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-300">Mosaic Workbench</span>
+        <div className="ml-auto flex gap-2 flex-wrap">
           <button
-            onClick={onCreatePosition}
-            className="text-xs px-3 py-2 rounded bg-emerald-900 hover:bg-emerald-800 text-emerald-400 transition-colors border border-emerald-700"
+            onClick={handleCreatePosition}
+            className="text-xs px-3 py-1.5 rounded bg-emerald-900 hover:bg-emerald-800 text-emerald-400 transition-colors border border-emerald-700"
           >
             + Create Position
           </button>
           <button
-            onClick={onRerun}
+            onClick={handleRerun}
             disabled={rerunning}
-            className="text-xs px-3 py-2 rounded bg-orange-900 hover:bg-orange-800 disabled:bg-gray-700 disabled:text-gray-500 text-orange-400 transition-colors border border-orange-700"
+            className="text-xs px-3 py-1.5 rounded bg-orange-900 hover:bg-orange-800 disabled:bg-gray-700 disabled:text-gray-500 text-orange-400 transition-colors border border-orange-700"
           >
             {rerunning ? 'Running…' : 'Re-run Engines'}
           </button>
-          <button
-            onClick={onAddWatchlist}
-            className="text-xs px-3 py-2 rounded bg-yellow-900 hover:bg-yellow-800 text-yellow-400 transition-colors border border-yellow-700"
-          >
-            + Watchlist
-          </button>
           <Link
             to={`/deepdive/${symbol}`}
-            className="text-xs px-3 py-2 rounded bg-blue-900 hover:bg-blue-800 text-blue-400 no-underline transition-colors border border-blue-700"
+            className="text-xs px-3 py-1.5 rounded bg-blue-900 hover:bg-blue-800 text-blue-400 no-underline transition-colors border border-blue-700"
           >
             Deep Dive
           </Link>
           <Link
             to={`/lattice/${symbol}`}
-            className="text-xs px-3 py-2 rounded bg-purple-900 hover:bg-purple-800 text-purple-400 no-underline transition-colors border border-purple-700"
+            className="text-xs px-3 py-1.5 rounded bg-purple-900 hover:bg-purple-800 text-purple-400 no-underline transition-colors border border-purple-700"
           >
             Lattice
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Stage Badge */}
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Lifecycle Stage</div>
-          <div
-            className="text-lg font-bold rounded px-2 py-1 inline-block"
-            style={{ color: stageConfig.color, backgroundColor: stageConfig.bgColor }}
-          >
-            {stageConfig.label}
-          </div>
+      {msg && (
+        <div className={`text-xs px-3 py-2 rounded ${msg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
+          {msg.text}
         </div>
+      )}
 
-        {/* Conviction Grade */}
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Conviction Grade</div>
-          <div className="text-3xl font-bold" style={{ color: stageConfig.color }}>
-            {grade}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">{convictionScore.toFixed(0)} / 100</div>
-        </div>
+      {/* Gold Rush Stage */}
+      {engines.gold_rush_scorer && (
+        <GoldRushPanel data={engines.gold_rush_scorer} />
+      )}
 
-        {/* Decision */}
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Decision</div>
-          <div
-            className="text-lg font-bold rounded px-2 py-1 inline-block"
-            style={{ color: decisionColors[decision] || '#9ca3af' }}
-          >
-            {decision}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+      {/* Asymmetry Scanner */}
+      {engines.asymmetry_scanner && (
+        <AsymmetryPanel data={engines.asymmetry_scanner} />
+      )}
 
-/* ──────────────────────────────────────────────
-   Section 2: Information Asymmetry Panel
-   ────────────────────────────────────────────── */
-function AsymmetryPanel({ data }) {
-  const asymmetry = data?.engines?.asymmetry_scanner || {}
-  const signals = data?.signals || []
+      {/* Conviction Scorecard */}
+      {engines.conviction_scorer && (
+        <ConvictionPanel data={engines.conviction_scorer} />
+      )}
 
-  const asymScore = asymmetry.asymmetry_score || 0
-  const socialSignals = signals.filter((s) => s.source === 'reddit').length
-  const institutionalSignals = signals.filter((s) => s.source === 'sec_edgar').length
+      {/* Catalyst Timeline */}
+      {engines.catalyst_engine?.catalysts?.length > 0 && (
+        <CatalystPanel data={engines.catalyst_engine} />
+      )}
 
-  // Velocity comparison
-  const velocityData = useMemo(() => {
-    if (!signals.length) return []
-    const byDay = {}
-    for (const s of signals) {
-      const day = (s.collected_at || s.created_at || '').slice(0, 10)
-      if (!day) continue
-      if (!byDay[day]) byDay[day] = { date: day, social: 0, institutional: 0 }
-      if (s.source === 'reddit') byDay[day].social++
-      if (s.source === 'sec_edgar') byDay[day].institutional++
-    }
-    return Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)).slice(-14)
-  }, [signals])
-
-  const percentAhead = ((socialSignals / (socialSignals + institutionalSignals)) * 100).toFixed(0)
-
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded p-6 space-y-4">
-      <h2 className="text-lg font-bold text-gray-200">Information Asymmetry</h2>
-
-      <div className="grid grid-cols-2 gap-4">
-        {/* Asymmetry Score Gauge */}
-        <div className="bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-3">Asymmetry Score</div>
-          <div className="relative">
-            <div className="text-4xl font-bold text-emerald-400">{asymScore.toFixed(0)}</div>
-            <div className="w-full bg-gray-700 rounded-full h-2 mt-3 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-full transition-all"
-                style={{ width: `${Math.min(asymScore, 100)}%` }}
-              ></div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Low</span>
-              <span>High</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Gap Indicator */}
-        <div className="bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-3">Signal Gap</div>
-          <div className="text-2xl font-bold text-emerald-400 mb-2">{percentAhead}%</div>
-          <p className="text-xs text-gray-400">
-            Retail knows <span className="text-emerald-400 font-bold">{percentAhead}%</span> more than market priced
-          </p>
-        </div>
-      </div>
-
-      {/* Signal Comparison */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-2">Social Signals</div>
-          <div className="text-3xl font-bold text-orange-400">{socialSignals}</div>
-          <p className="text-xs text-gray-500 mt-1">Reddit, Twitter, etc.</p>
-        </div>
-
-        <div className="bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-2">Institutional Signals</div>
-          <div className="text-3xl font-bold text-blue-400">{institutionalSignals}</div>
-          <p className="text-xs text-gray-500 mt-1">SEC EDGAR, regulatory</p>
-        </div>
-      </div>
-
-      {/* Velocity Comparison Chart */}
-      {velocityData.length > 0 && (
-        <div className="bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-3">Velocity Comparison (14d)</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <ComposedChart data={velocityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 4 }}
-                labelStyle={{ color: '#d1d5db', fontSize: 11 }}
-                itemStyle={{ fontSize: 11 }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line
-                type="monotone"
-                dataKey="social"
-                stroke="#ff6b35"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                connectNulls
-                name="Social Velocity"
-              />
-              <Line
-                type="monotone"
-                dataKey="institutional"
-                stroke="#4da6ff"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                connectNulls
-                name="Institutional Velocity"
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+      {/* Kelly Sizing */}
+      {engines.kelly_sizer && (
+        <KellySizerPanel data={engines.kelly_sizer} />
       )}
     </div>
   )
 }
 
-/* ──────────────────────────────────────────────
-   Section 3: Gold Rush Lifecycle
-   ────────────────────────────────────────────── */
-function LifecyclePanel({ data }) {
-  const gold_rush = data?.engines?.gold_rush_scorer || {}
-
-  const stage = gold_rush.stage || 'emerging'
-  const stageConfig = LIFECYCLE_STAGES[stage] || { label: stage, color: '#9ca3af', bgColor: '#374151' }
-
+/* Gold Rush Lifecycle Panel */
+function GoldRushPanel({ data }) {
+  const stage = data.stage || 'emerging'
+  const config = LIFECYCLE_STAGES[stage] || { label: stage, color: '#9ca3af', bgColor: '#374151' }
   const stages = ['emerging', 'validating', 'confirmed', 'saturated']
-  const currentStageIndex = stages.indexOf(stage)
+  const currentIdx = stages.indexOf(stage)
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded p-6 space-y-4">
-      <h2 className="text-lg font-bold text-gray-200">Gold Rush Lifecycle</h2>
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Gold Rush Lifecycle</h3>
 
       {/* Stage Progression */}
-      <div className="flex items-center gap-2 justify-between">
+      <div className="flex items-center gap-2 mb-4">
         {stages.map((s, idx) => {
-          const config = LIFECYCLE_STAGES[s]
-          const isActive = idx === currentStageIndex
-          const isPast = idx < currentStageIndex
-
+          const c = LIFECYCLE_STAGES[s]
+          const isActive = idx === currentIdx
           return (
             <div key={s} className="flex-1">
               <div
-                className={`rounded-full w-full py-2 text-center text-xs font-bold transition-all ${
-                  isActive ? 'ring-2 ring-offset-2 ring-offset-gray-800' : ''
-                }`}
+                className="rounded py-2 px-1 text-center text-xs font-bold transition-all"
                 style={{
-                  backgroundColor: isActive ? config.bgColor : isPast ? '#1f2937' : '#111827',
-                  color: isActive ? config.color : '#6b7280',
-                  borderColor: isActive ? config.color : '#374151',
-                  border: '1px solid',
-                  boxShadow: isActive ? `0 0 10px ${config.color}80` : 'none',
+                  backgroundColor: isActive ? c.bgColor : idx < currentIdx ? '#1f2937' : '#111827',
+                  color: isActive ? c.color : '#6b7280',
+                  border: `1px solid ${isActive ? c.color : '#374151'}`,
                 }}
               >
-                {config.label}
+                {c.label}
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Stage Metrics */}
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {data.confidence != null && (
+          <StatBox label="Confidence" value={`${(data.confidence * 100).toFixed(0)}%`} />
+        )}
+        {data.velocity != null && (
+          <StatBox label="Velocity" value={data.velocity.toFixed(2)} />
+        )}
+        {data.breadth != null && (
+          <StatBox label="Breadth" value={data.breadth.toFixed(2)} />
+        )}
+        {data.acceleration != null && (
+          <StatBox label="Accel" value={data.acceleration.toFixed(2)} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* Asymmetry Scanner Panel */
+function AsymmetryPanel({ data }) {
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Information Asymmetry</h3>
+
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400">Stage Score</div>
-          <div className="text-2xl font-bold text-emerald-400">{(gold_rush.stage_score || 0).toFixed(1)}</div>
-        </div>
+        {data.asymmetry_score != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-2">Asymmetry Score</div>
+            <div className="text-2xl font-bold text-emerald-400 mb-2">{data.asymmetry_score.toFixed(2)}</div>
+            <div className="w-full bg-gray-800 rounded h-1">
+              <div
+                className="h-1 rounded bg-emerald-500"
+                style={{ width: `${Math.min(data.asymmetry_score * 10, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400">Velocity</div>
-          <div className="text-2xl font-bold text-blue-400">{(gold_rush.velocity || 0).toFixed(1)}</div>
-        </div>
+        {data.gap_pct != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-2">Info Gap</div>
+            <div className="text-2xl font-bold text-amber-400">{(data.gap_pct * 100).toFixed(1)}%</div>
+            <p className="text-xs text-gray-500 mt-1">Retail ahead of market</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400">Breadth</div>
-          <div className="text-2xl font-bold text-purple-400">{(gold_rush.breadth || 0).toFixed(1)}</div>
-        </div>
+/* Conviction Scorecard */
+function ConvictionPanel({ data }) {
+  const total = data.total || 0
+  const dims = data.dimensions || {}
 
-        <div className="bg-gray-900 rounded p-3 border border-gray-700">
-          <div className="text-xs text-gray-400">Acceleration</div>
-          <div className="text-2xl font-bold text-orange-400">{(gold_rush.acceleration || 0).toFixed(1)}</div>
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Conviction Scorecard</h3>
+
+      <div className="mb-4 pb-4 border-b border-gray-700">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-gray-400">Total Conviction</span>
+          <span className="text-2xl font-bold text-emerald-400 font-mono">{total.toFixed(1)}</span>
+        </div>
+        <div className="w-full bg-gray-900 rounded h-2">
+          <div
+            className="h-2 rounded bg-emerald-500"
+            style={{ width: `${Math.min(total, 100)}%` }}
+          />
         </div>
       </div>
 
-      {/* Recommendation Badge */}
-      <div className="bg-gray-900 rounded p-4 border border-gray-700">
-        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Recommendation</div>
-        <div className="flex gap-2">
-          {['enter', 'hold', 'monitor', 'exit'].map((rec) => (
-            <span
-              key={rec}
-              className={`px-3 py-1 rounded text-xs font-bold uppercase ${
-                rec === (gold_rush.recommendation || 'hold')
-                  ? 'bg-emerald-900 text-emerald-400'
-                  : 'bg-gray-800 text-gray-500'
-              }`}
-            >
-              {rec}
-            </span>
+      {/* Dimension Breakdown */}
+      {Object.keys(dims).length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Dimensions</div>
+          {Object.entries(dims).slice(0, 5).map(([key, val]) => (
+            <div key={key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400">{key.replace(/_/g, ' ')}</span>
+                <span className="text-xs font-mono text-gray-300">
+                  {typeof val === 'number' ? val.toFixed(2) : val}
+                </span>
+              </div>
+              {typeof val === 'number' && (
+                <div className="w-full bg-gray-900 rounded h-1">
+                  <div
+                    className="h-1 rounded bg-emerald-500/60"
+                    style={{ width: `${Math.min(val * 10, 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-/* ──────────────────────────────────────────────
-   Section 4: Catalyst Timeline
-   ────────────────────────────────────────────── */
-function CatalystTimeline({ data }) {
-  const catalysts = data?.engines?.catalyst_engine?.catalysts || []
-
-  const sortedCatalysts = useMemo(() => {
-    return [...catalysts].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
-  }, [catalysts])
-
-  const typeIcons = {
-    earnings: '📊',
-    product: '🚀',
-    regulatory: '⚖️',
-    partnership: '🤝',
-    social: '💬',
-    macro: '🌍',
-  }
-
-  if (!sortedCatalysts.length) {
-    return (
-      <div className="bg-gray-800 border border-gray-700 rounded p-6">
-        <h2 className="text-lg font-bold text-gray-200 mb-4">Catalyst Timeline</h2>
-        <div className="text-sm text-gray-500">No catalysts detected yet.</div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="bg-gray-800 border border-gray-700 rounded p-6 space-y-4">
-      <h2 className="text-lg font-bold text-gray-200 mb-4">Catalyst Timeline</h2>
-
-      <div className="space-y-3">
-        {sortedCatalysts.map((catalyst, idx) => {
-          const type = catalyst.type || 'macro'
-          const color = CATALYST_COLORS[type] || '#9ca3af'
-          const icon = typeIcons[type] || '•'
-
-          return (
-            <div
-              key={idx}
-              className="bg-gray-900 rounded p-4 border border-gray-700 hover:border-gray-600 transition-colors"
-              style={{ borderLeftColor: color, borderLeftWidth: 4 }}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-xl">{icon}</span>
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase rounded px-2 py-1" style={{ color, backgroundColor: `${color}20` }}>
-                      {type}
-                    </span>
-                    {catalyst.impact && (
-                      <span
-                        className={`text-xs font-bold px-2 py-1 rounded uppercase ${
-                          catalyst.impact === 'high'
-                            ? 'bg-red-900 text-red-400'
-                            : catalyst.impact === 'medium'
-                              ? 'bg-yellow-900 text-yellow-400'
-                              : 'bg-blue-900 text-blue-400'
-                        }`}
-                      >
-                        {catalyst.impact} impact
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-gray-300 mb-2">{catalyst.description || 'No description'}</p>
-
-                  {/* Confidence Bar */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-full transition-all"
-                        style={{
-                          width: `${(catalyst.confidence || 0) * 100}%`,
-                          backgroundColor: color,
-                        }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-gray-400 w-12 text-right">{((catalyst.confidence || 0) * 100).toFixed(0)}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
+/* Catalyst Timeline */
+function CatalystPanel({ data }) {
+  const catalysts = data.catalysts || []
+  const sorted = useMemo(
+    () => [...catalysts].sort((a, b) => (b.confidence || 0) - (a.confidence || 0)),
+    [catalysts]
   )
-}
 
-/* ──────────────────────────────────────────────
-   Section 5: Conviction Scorecard
-   ────────────────────────────────────────────── */
-function ConvictionScorecard({ data }) {
-  const conviction = data?.engines?.conviction_scorer || {}
-
-  const dimensions = conviction.dimensions || [
-    { name: 'Mosaic Coherence', score: 0, weight: 0.2 },
-    { name: 'Information Asymmetry', score: 0, weight: 0.2 },
-    { name: 'Lifecycle Momentum', score: 0, weight: 0.2 },
-    { name: 'Catalyst Probability', score: 0, weight: 0.2 },
-    { name: 'Technical Setup', score: 0, weight: 0.1 },
-    { name: 'Risk/Reward Ratio', score: 0, weight: 0.1 },
-  ]
-
-  const radarData = dimensions.map((d) => ({
-    name: d.name.split(' ')[0],
-    value: d.score || 0,
-    fullName: d.name,
-  }))
-
-  const convictionScore = conviction.conviction_score || 0
-  const decision = conviction.decision || 'WAIT'
-  const decisionColors = {
-    GO: '#10b981',
-    'NO-GO': '#ef4444',
-    WAIT: '#f59e0b',
-  }
-
-  const strengths = conviction.key_strengths || []
-  const risks = conviction.key_risks || []
+  if (!sorted.length) return null
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded p-6 space-y-4">
-      <h2 className="text-lg font-bold text-gray-200 mb-4">Conviction Scorecard</h2>
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Catalyst Timeline</h3>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Radar Chart */}
-        <div className="col-span-2 bg-gray-900 rounded p-4 border border-gray-700">
-          <div className="text-sm text-gray-400 mb-3">6-Dimension Conviction Analysis</div>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="#374151" />
-              <PolarAngleAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 10 }} />
-              <Radar
-                name="Score"
-                dataKey="value"
-                stroke="#10b981"
-                fill="#10b981"
-                fillOpacity={0.3}
-                dot={{ fill: '#10b981', r: 4 }}
-              />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 4 }}
-                labelStyle={{ color: '#d1d5db', fontSize: 11 }}
-                itemStyle={{ fontSize: 11 }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Total Conviction Score */}
-        <div className="bg-gray-900 rounded p-4 border border-gray-700 flex flex-col justify-center items-center">
-          <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Total Conviction</div>
-          <div className="text-5xl font-bold text-emerald-400 mb-2">{convictionScore.toFixed(0)}</div>
-          <div className="text-xs text-gray-500">/100</div>
-
-          <div className="mt-6 w-full">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Decision</div>
-            <div
-              className="rounded px-3 py-2 text-center font-bold text-white text-sm"
-              style={{ backgroundColor: decisionColors[decision] || '#9ca3af' }}
-            >
-              {decision}
+      <div className="space-y-2">
+        {sorted.slice(0, 5).map((cat, idx) => (
+          <div key={idx} className="bg-gray-900 rounded p-2 border border-gray-700">
+            <div className="flex items-start justify-between mb-1">
+              <span className="text-xs font-semibold text-emerald-400">{cat.name}</span>
+              {cat.confidence != null && (
+                <span className="text-xs font-mono text-gray-400">
+                  {(cat.confidence * 100).toFixed(0)}%
+                </span>
+              )}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Dimension Scores */}
-      <div className="bg-gray-900 rounded p-4 border border-gray-700 space-y-3">
-        <div className="text-sm text-gray-400 mb-3">Dimension Breakdown</div>
-        {dimensions.map((d, idx) => (
-          <div key={idx} className="space-y-1">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-sm text-gray-300">{d.name}</div>
-                <div className="text-xs text-gray-500">Weight: {(d.weight * 100).toFixed(0)}%</div>
-              </div>
-              <div className="text-lg font-bold text-emerald-400">{(d.score || 0).toFixed(1)}</div>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-emerald-500 h-full transition-all"
-                style={{ width: `${Math.min((d.score || 0), 100)}%` }}
-              ></div>
-            </div>
+            {cat.date && <div className="text-xs text-gray-500">{cat.date}</div>}
           </div>
         ))}
-      </div>
-
-      {/* Key Strengths and Risks */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Strengths */}
-        <div className="bg-gray-900 rounded p-4 border border-gray-700 space-y-2">
-          <div className="text-sm text-gray-400 uppercase tracking-wider mb-2">Key Strengths</div>
-          <div className="space-y-2">
-            {strengths.length > 0 ? (
-              strengths.map((strength, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold flex-shrink-0 mt-0.5">+</span>
-                  <span className="text-xs text-gray-300">{strength}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-gray-500">No strengths identified</p>
-            )}
-          </div>
-        </div>
-
-        {/* Risks */}
-        <div className="bg-gray-900 rounded p-4 border border-gray-700 space-y-2">
-          <div className="text-sm text-gray-400 uppercase tracking-wider mb-2">Key Risks</div>
-          <div className="space-y-2">
-            {risks.length > 0 ? (
-              risks.map((risk, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <span className="text-red-400 font-bold flex-shrink-0 mt-0.5">-</span>
-                  <span className="text-xs text-gray-300">{risk}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-gray-500">No risks identified</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Final Decision Banner */}
-      <div
-        className="rounded p-4 text-center font-bold text-white text-lg"
-        style={{ backgroundColor: decisionColors[decision] || '#9ca3af' }}
-      >
-        {decision === 'GO'
-          ? '✓ GO — Proceed with position sizing'
-          : decision === 'NO-GO'
-            ? '✗ NO-GO — Do not enter position'
-            : '⏳ WAIT — Gather more data before deciding'}
+        {sorted.length > 5 && (
+          <div className="text-xs text-gray-600 text-center py-1">+{sorted.length - 5} more catalysts</div>
+        )}
       </div>
     </div>
   )
 }
 
-/* ──────────────────────────────────────────────
-   Main Page Component
-   ────────────────────────────────────────────── */
-export default function MosaicWorkbench() {
-  const { symbol } = useParams()
-  const { data, loading, error, refetch } = useApi(() => api.getEngineOutput(symbol), [symbol])
-  const [rerunning, setRerunning] = useState(false)
-  const [actionMsg, setActionMsg] = useState(null)
-  const [showPositionForm, setShowPositionForm] = useState(false)
-  const [posForm, setPosForm] = useState({ direction: 'long', size: '', entry_price: '' })
-  const [posSubmitting, setPosSubmitting] = useState(false)
-
-  const handleRerun = async () => {
-    setRerunning(true)
-    setActionMsg(null)
-    try {
-      await api.runAnalysis({ symbol })
-      await refetch()
-      setActionMsg({ type: 'success', text: 'Engines re-run successfully' })
-    } catch (err) {
-      setActionMsg({ type: 'error', text: `Re-run failed: ${err.message}` })
-    }
-    setRerunning(false)
-    setTimeout(() => setActionMsg(null), 4000)
-  }
-
-  const handleCreatePosition = async (e) => {
-    e.preventDefault()
-    setPosSubmitting(true)
-    try {
-      await api.createPosition({
-        symbol,
-        direction: posForm.direction,
-        size: parseFloat(posForm.size),
-        entry_price: parseFloat(posForm.entry_price),
-        thesis_id: null,
-      })
-      setActionMsg({ type: 'success', text: 'Position created' })
-      setShowPositionForm(false)
-      setPosForm({ direction: 'long', size: '', entry_price: '' })
-    } catch (err) {
-      setActionMsg({ type: 'error', text: `Failed: ${err.message}` })
-    }
-    setPosSubmitting(false)
-    setTimeout(() => setActionMsg(null), 4000)
-  }
-
-  const handleAddWatchlist = async () => {
-    try {
-      await api.addToWatchlist(symbol)
-      setActionMsg({ type: 'success', text: `${symbol} added to watchlist` })
-    } catch (err) {
-      setActionMsg({ type: 'error', text: err.message })
-    }
-    setTimeout(() => setActionMsg(null), 4000)
-  }
-
-  if (loading)
-    return (
-      <div className="text-gray-400 text-sm">
-        Running Camillo mosaic engines for {symbol}...
-      </div>
-    )
-
-  if (error)
-    return <div className="text-red-400 text-sm">Error: {error.message}</div>
-
-  if (!data)
-    return <div className="text-gray-500 text-sm">No data available</div>
-
+/* Kelly Criterion Sizer */
+function KellySizerPanel({ data }) {
   return (
-    <div className="space-y-6">
-      {/* Section 1: Header */}
-      <Header symbol={symbol} data={data} onRerun={handleRerun} rerunning={rerunning} onCreatePosition={() => setShowPositionForm(!showPositionForm)} onAddWatchlist={handleAddWatchlist} actionMsg={actionMsg} />
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Kelly Criterion Sizing</h3>
 
-      {/* Action feedback */}
-      {actionMsg && (
-        <div className={`text-xs px-3 py-2 rounded ${actionMsg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
-          {actionMsg.text}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-3">
+        {data.kelly_fraction != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Kelly f*</div>
+            <div className="text-xl font-bold text-emerald-400 font-mono">
+              {(data.kelly_fraction * 100).toFixed(1)}%
+            </div>
+          </div>
+        )}
 
-      {/* Inline Position Form */}
-      {showPositionForm && (
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <h3 className="text-sm font-bold text-gray-200 mb-3">Create Position for {symbol}</h3>
-          <form onSubmit={handleCreatePosition} className="flex gap-3 items-end flex-wrap">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Direction</label>
-              <select value={posForm.direction} onChange={e => setPosForm({...posForm, direction: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200">
-                <option value="long">Long</option>
-                <option value="short">Short</option>
-              </select>
+        {data.recommended_size != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Suggested Size</div>
+            <div className="text-xl font-bold text-emerald-400 font-mono">
+              {(data.recommended_size * 100).toFixed(1)}%
             </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Size ($)</label>
-              <input type="number" step="0.01" required value={posForm.size} onChange={e => setPosForm({...posForm, size: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="10000" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Entry Price</label>
-              <input type="number" step="0.01" required value={posForm.entry_price} onChange={e => setPosForm({...posForm, entry_price: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="150.00" />
-            </div>
-            <button type="submit" disabled={posSubmitting} className="bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 text-white text-xs px-4 py-1.5 rounded">
-              {posSubmitting ? 'Creating…' : 'Create'}
-            </button>
-            <button type="button" onClick={() => setShowPositionForm(false)} className="text-xs text-gray-500 hover:text-gray-300 px-2 py-1.5">Cancel</button>
-          </form>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Sections 2 & 3: Asymmetry (60%) + Lifecycle (40%) */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2">
-          <AsymmetryPanel data={data} />
-        </div>
-        <div className="col-span-1">
-          <LifecyclePanel data={data} />
-        </div>
+        {data.confidence != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Confidence</div>
+            <div className="text-xl font-bold text-blue-400 font-mono">
+              {data.confidence.toFixed(2)}
+            </div>
+          </div>
+        )}
+
+        {data.sharpe_ratio != null && (
+          <div className="bg-gray-900 rounded p-3 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Sharpe Ratio</div>
+            <div className="text-xl font-bold text-purple-400 font-mono">
+              {data.sharpe_ratio.toFixed(2)}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Section 4: Catalyst Timeline */}
-      <CatalystTimeline data={data} />
+      {data.notes && (
+        <div className="mt-3 pt-3 border-t border-gray-700 text-xs text-gray-400">
+          {data.notes}
+        </div>
+      )}
+    </div>
+  )
+}
 
-      {/* Section 5: Conviction Scorecard */}
-      <ConvictionScorecard data={data} />
+/* Utility: Small stat box */
+function StatBox({ label, value }) {
+  return (
+    <div className="bg-gray-900 rounded p-2 border border-gray-700">
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className="text-sm font-bold text-emerald-400 font-mono">{value}</div>
     </div>
   )
 }

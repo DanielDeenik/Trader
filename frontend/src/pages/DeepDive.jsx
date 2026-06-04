@@ -20,9 +20,6 @@ import {
   Bar,
 } from 'recharts'
 
-/* ──────────────────────────────────────────────
-   Colour palette (dark-theme friendly)
-   ────────────────────────────────────────────── */
 const SOURCE_COLORS = {
   reddit: '#ff6b35',
   news: '#4da6ff',
@@ -35,81 +32,103 @@ const BULLISH_COLOR = '#34d399'
 const BEARISH_COLOR = '#f87171'
 const NEUTRAL_COLOR = '#9ca3af'
 
-/* ──────────────────────────────────────────────
-   Panel 1 — Signal Trends Chart
-   ────────────────────────────────────────────── */
-function SignalTrendsChart({ signals }) {
-  const chartData = useMemo(() => {
-    if (!signals || !signals.length) return []
-    // Group signals by day + source
-    const byDay = {}
-    for (const s of signals) {
-      const day = (s.collected_at || s.created_at || '').slice(0, 10)
-      if (!day) continue
-      if (!byDay[day]) byDay[day] = {}
-      const src = s.source || 'unknown'
-      byDay[day][src] = (byDay[day][src] || 0) + 1
-    }
-    return Object.entries(byDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, sources]) => ({ date, ...sources }))
+/* Signal Timeline — Organized chronologically */
+function SignalTimeline({ signals }) {
+  const sorted = useMemo(() => {
+    return (signals || []).sort((a, b) =>
+      new Date(b.created_at || b.timestamp) - new Date(a.created_at || a.timestamp)
+    )
   }, [signals])
 
-  const sources = useMemo(() => {
-    const s = new Set()
-    for (const row of chartData) {
-      Object.keys(row).forEach((k) => k !== 'date' && s.add(k))
-    }
-    return [...s]
-  }, [chartData])
-
-  if (!chartData.length) {
-    return <EmptyPanel label="No signal data yet" />
-  }
+  if (!sorted.length) return <EmptyPanel label="No signal data yet" />
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded p-4">
-      <h3 className="text-sm font-bold text-gray-200 mb-3">Signal Trends by Source</h3>
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-          <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} allowDecimals={false} />
-          <Tooltip
-            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 4 }}
-            labelStyle={{ color: '#d1d5db', fontSize: 11 }}
-            itemStyle={{ fontSize: 11 }}
-          />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          {sources.map((src) => (
-            <Line
-              key={src}
-              type="monotone"
-              dataKey={src}
-              stroke={SOURCE_COLORS[src] || '#8884d8'}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              connectNulls
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Signal Timeline</h3>
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {sorted.slice(0, 20).map((sig, idx) => (
+          <div key={idx} className="flex gap-3 pb-2 border-b border-gray-700 last:border-0">
+            <div className={`w-1 rounded-full flex-shrink-0 ${
+              sig.direction === 'bullish' ? 'bg-emerald-400' :
+              sig.direction === 'bearish' ? 'bg-red-400' :
+              'bg-gray-500'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-xs font-semibold text-gray-200">{sig.source}</div>
+                  <div className="text-xs text-gray-500">{new Date(sig.created_at || sig.timestamp).toLocaleDateString()}</div>
+                </div>
+                <div className={`px-2 py-0.5 rounded text-xs font-mono flex-shrink-0 ${
+                  sig.direction === 'bullish' ? 'bg-emerald-900/40 text-emerald-400' :
+                  sig.direction === 'bearish' ? 'bg-red-900/40 text-red-400' :
+                  'bg-gray-700 text-gray-300'
+                }`}>
+                  {sig.direction}
+                </div>
+              </div>
+              {sig.summary && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{sig.summary}</p>}
+            </div>
+          </div>
+        ))}
+        {sorted.length > 20 && (
+          <div className="text-xs text-gray-500 text-center py-2">+{sorted.length - 20} more signals</div>
+        )}
+      </div>
     </div>
   )
 }
 
-/* ──────────────────────────────────────────────
-   Panel 2 — Sentiment Analysis
-   ────────────────────────────────────────────── */
-function SentimentPanel({ signals, engineData }) {
-  // Extract sentiment from engine output
+/* Source Breakdown — Horizontal bars */
+function SourceBreakdown({ signals }) {
+  const breakdown = useMemo(() => {
+    const map = {}
+    for (const sig of signals || []) {
+      const src = sig.source || 'unknown'
+      map[src] = (map[src] || 0) + 1
+    }
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([source, count]) => ({ source, count }))
+  }, [signals])
+
+  const total = breakdown.reduce((s, x) => s + x.count, 0)
+
+  if (!breakdown.length) return <EmptyPanel label="No source data" />
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Source Distribution</h3>
+      <div className="space-y-2">
+        {breakdown.map(({ source, count }) => {
+          const pct = total > 0 ? (count / total) * 100 : 0
+          return (
+            <div key={source}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400">{source}</span>
+                <span className="text-xs font-mono text-gray-300">{count}</span>
+              </div>
+              <div className="w-full bg-gray-900 rounded h-2">
+                <div
+                  className="h-2 rounded bg-emerald-500/60"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* Sentiment Summary — Bullish/bearish/neutral counts */
+function SentimentSummary({ signals, engineData }) {
   const sentDiv = engineData?.sentiment_divergence || {}
 
-  // Aggregate sentiment from signals that have nlp_sentiment
-  const sentimentStats = useMemo(() => {
+  const stats = useMemo(() => {
     if (!signals || !signals.length) return null
     let bullish = 0, bearish = 0, neutral = 0, total = 0
-    const scores = []
     for (const s of signals) {
       const sent = s.nlp_sentiment || s.sentiment
       if (!sent) continue
@@ -118,94 +137,53 @@ function SentimentPanel({ signals, engineData }) {
       if (dir === 'bullish') bullish++
       else if (dir === 'bearish') bearish++
       else neutral++
-      const compound = sent.compound ?? sent.score ?? null
-      if (compound !== null) scores.push(compound)
     }
-    if (!total) return null
-    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
-    return { bullish, bearish, neutral, total, avgCompound: avg }
+    return total > 0 ? { bullish, bearish, neutral, total } : null
   }, [signals])
 
-  // Build bar chart data for sentiment by source
-  const sentBySource = useMemo(() => {
-    if (!signals || !signals.length) return []
-    const map = {}
-    for (const s of signals) {
-      const sent = s.nlp_sentiment || s.sentiment
-      if (!sent) continue
-      const src = s.source || 'unknown'
-      if (!map[src]) map[src] = { source: src, bullish: 0, bearish: 0, neutral: 0 }
-      const dir = sent.direction || sent.sentiment_direction
-      if (dir === 'bullish') map[src].bullish++
-      else if (dir === 'bearish') map[src].bearish++
-      else map[src].neutral++
-    }
-    return Object.values(map)
-  }, [signals])
+  if (!stats) return <EmptyPanel label="No sentiment data" />
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded p-4">
-      <h3 className="text-sm font-bold text-gray-200 mb-3">Sentiment Analysis</h3>
+      <h3 className="text-sm font-bold text-gray-200 mb-3">Sentiment Summary</h3>
 
-      {/* Engine divergence score */}
       {sentDiv.divergence_score != null && (
-        <div className="flex items-center gap-4 mb-3">
-          <MetricBadge
-            label="Divergence"
-            value={sentDiv.divergence_score?.toFixed(2)}
-            color={sentDiv.divergence_score > 0 ? BULLISH_COLOR : BEARISH_COLOR}
-          />
-          {sentDiv.social_sentiment != null && (
-            <MetricBadge label="Social Sentiment" value={sentDiv.social_sentiment?.toFixed(2)} />
-          )}
-          {sentDiv.market_direction != null && (
-            <MetricBadge label="Market Direction" value={sentDiv.market_direction} />
-          )}
-        </div>
-      )}
-
-      {/* Aggregated NLP stats */}
-      {sentimentStats ? (
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <StatPill label="Bullish" count={sentimentStats.bullish} color={BULLISH_COLOR} total={sentimentStats.total} />
-            <StatPill label="Bearish" count={sentimentStats.bearish} color={BEARISH_COLOR} total={sentimentStats.total} />
-            <StatPill label="Neutral" count={sentimentStats.neutral} color={NEUTRAL_COLOR} total={sentimentStats.total} />
-          </div>
-          <div className="text-xs text-gray-400">
-            Avg compound: <span className={sentimentStats.avgCompound >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-              {sentimentStats.avgCompound.toFixed(3)}
+        <div className="mb-3 pb-3 border-b border-gray-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Divergence Score</span>
+            <span className={`font-mono text-sm ${sentDiv.divergence_score > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {sentDiv.divergence_score.toFixed(2)}
             </span>
-            {' '}across {sentimentStats.total} scored signals
           </div>
-
-          {sentBySource.length > 0 && (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={sentBySource} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 10 }} allowDecimals={false} />
-                <YAxis dataKey="source" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} width={80} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 4 }}
-                  itemStyle={{ fontSize: 11 }}
-                />
-                <Bar dataKey="bullish" stackId="a" fill={BULLISH_COLOR} />
-                <Bar dataKey="neutral" stackId="a" fill={NEUTRAL_COLOR} />
-                <Bar dataKey="bearish" stackId="a" fill={BEARISH_COLOR} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
         </div>
-      ) : (
-        <p className="text-xs text-gray-500">No NLP sentiment data for these signals.</p>
       )}
+
+      <div className="space-y-2">
+        {['bullish', 'neutral', 'bearish'].map(sentiment => {
+          const count = stats[sentiment]
+          const pct = (count / stats.total) * 100
+          const color = sentiment === 'bullish' ? BULLISH_COLOR : sentiment === 'bearish' ? BEARISH_COLOR : NEUTRAL_COLOR
+          return (
+            <div key={sentiment}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400 capitalize">{sentiment}</span>
+                <span className="text-xs font-mono" style={{ color }}>{count}</span>
+              </div>
+              <div className="w-full bg-gray-900 rounded h-2">
+                <div
+                  className="h-2 rounded"
+                  style={{ width: `${pct}%`, backgroundColor: color }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-/* ──────────────────────────────────────────────
-   Panel 3 — STEPPS Radar
-   ────────────────────────────────────────────── */
+/* STEPPS Dimensions — 6-factor breakdown */
 const STEPPS_DIMS = ['social_currency', 'triggers', 'emotion', 'public_visibility', 'practical_value', 'stories']
 const STEPPS_LABELS = {
   social_currency: 'Social Currency',
@@ -216,12 +194,70 @@ const STEPPS_LABELS = {
   stories: 'Stories',
 }
 
-function SteppsRadar({ steppsData, engineData }) {
+function SteppsDimensions({ steppsData, engineData }) {
   const steppsEngine = engineData?.stepps_classifier || {}
 
-  // Try stepps scores from dedicated endpoint first, then engine output
   const scores = useMemo(() => {
-    // From /stepps/scores endpoint (array)
+    if (steppsData && steppsData.length) {
+      const latest = steppsData[0]
+      const dims = latest.dimension_scores || latest.scores || latest
+      return STEPPS_DIMS.map((d) => ({
+        key: d,
+        label: STEPPS_LABELS[d],
+        score: dims[d] ?? 0,
+      }))
+    }
+    const dims = steppsEngine.dimension_scores || steppsEngine.scores || steppsEngine
+    if (dims && typeof dims === 'object') {
+      const mapped = STEPPS_DIMS.map((d) => ({
+        key: d,
+        label: STEPPS_LABELS[d],
+        score: dims[d] ?? 0,
+      }))
+      if (mapped.some((m) => m.score > 0)) return mapped
+    }
+    return null
+  }, [steppsData, steppsEngine])
+
+  const virality = steppsEngine.virality_score ?? steppsData?.[0]?.virality_score ?? null
+
+  if (!scores) return <EmptyPanel label="No STEPPS data" />
+
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded p-4">
+      <h3 className="text-sm font-bold text-gray-200 mb-3">STEPPS Dimensions</h3>
+      {virality != null && (
+        <div className="mb-3 pb-3 border-b border-gray-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Virality Score</span>
+            <span className="text-xs font-mono text-emerald-400">{Number(virality).toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+      <div className="space-y-2">
+        {scores.map(({ key, label, score }) => (
+          <div key={key}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-400">{label}</span>
+              <span className="text-xs font-mono text-gray-300">{score.toFixed(2)}</span>
+            </div>
+            <div className="w-full bg-gray-900 rounded h-2">
+              <div
+                className="h-2 rounded bg-emerald-500/60"
+                style={{ width: `${Math.min(score * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* OLD Radar kept for reference but not used
+function SteppsRadar({ steppsData, engineData }) {
+  const steppsEngine = engineData?.stepps_classifier || {}
+  const scores = useMemo(() => {
     if (steppsData && steppsData.length) {
       const latest = steppsData[0]
       const dims = latest.dimension_scores || latest.scores || latest
@@ -231,7 +267,6 @@ function SteppsRadar({ steppsData, engineData }) {
         fullMark: 1,
       }))
     }
-    // From engine output
     const dims = steppsEngine.dimension_scores || steppsEngine.scores || steppsEngine
     if (dims && typeof dims === 'object') {
       const mapped = STEPPS_DIMS.map((d) => ({
@@ -245,10 +280,7 @@ function SteppsRadar({ steppsData, engineData }) {
   }, [steppsData, steppsEngine])
 
   const virality = steppsEngine.virality_score ?? steppsData?.[0]?.virality_score ?? null
-
-  if (!scores) {
-    return <EmptyPanel label="No STEPPS data yet" />
-  }
+  if (!scores) return <EmptyPanel label="No STEPPS data yet" />
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded p-4">
@@ -565,13 +597,16 @@ export default function DeepDive() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {(activeTab === 'all' || activeTab === 'signals') && (
-            <SignalTrendsChart signals={signals} />
+            <>
+              <SignalTimeline signals={signals} />
+              <SourceBreakdown signals={signals} />
+            </>
           )}
           {(activeTab === 'all' || activeTab === 'sentiment') && (
-            <SentimentPanel signals={signals} engineData={engines} />
+            <SentimentSummary signals={signals} engineData={engines} />
           )}
           {(activeTab === 'all' || activeTab === 'stepps') && (
-            <SteppsRadar steppsData={steppsData} engineData={engines} />
+            <SteppsDimensions steppsData={steppsData} engineData={engines} />
           )}
           {(activeTab === 'all' || activeTab === 'thesis') && (
             <MosaicThesisSummary mosaics={mosaics} theses={theses} engineData={engines} />

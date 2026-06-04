@@ -44,6 +44,10 @@ nlp = [
     "transformers>=4.35",
     "torch>=2.0",
 ]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0",
+]
 
 [project.scripts]
 social-arb = "social_arb.cli:cli"
@@ -53,3 +57,4 @@ include = ["social_arb*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"

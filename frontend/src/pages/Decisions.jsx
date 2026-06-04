@@ -1,114 +1,224 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useApi } from '../hooks'
-import { api } from '../api'
-import { SymbolLink } from '../components/SymbolLink'
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../api';
 
 export default function Decisions() {
-  const { data: reviews, refetch } = useApi(() => api.getReviews())
-  const [expandedThesis, setExpandedThesis] = useState(null)
-  const [executingId, setExecutingId] = useState(null)
-  const [execForm, setExecForm] = useState({ direction: 'long', size: '', entry_price: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [msg, setMsg] = useState(null)
+  const [reviews, setReviews] = useState([]);
+  const [expanded, setExpanded] = useState(new Set());
+  const [loading, setLoading] = useState(true);
 
-  const promoted = (reviews || []).filter(r => r.decision === 'promote' || r.decision === 'execute' || r.decision === 'forge')
+  useEffect(() => {
+    load();
+  }, []);
 
-  const handleExecute = async (e, review) => {
-    e.preventDefault()
-    setSubmitting(true)
-    setMsg(null)
+  async function load() {
     try {
-      await api.createPosition({
-        symbol: review.symbol,
-        direction: execForm.direction,
-        size: parseFloat(execForm.size),
-        entry_price: parseFloat(execForm.entry_price),
-        thesis_id: review.entity_type === 'thesis' ? review.entity_id : null,
-      })
-      setMsg({ type: 'success', text: `Position created for ${review.symbol}` })
-      setExecutingId(null)
-      setExecForm({ direction: 'long', size: '', entry_price: '' })
+      setLoading(true);
+      const data = await api.getReviews();
+      const decided = (data || []).filter(r => r.decision && r.decision !== 'pending');
+      setReviews(decided);
     } catch (err) {
-      setMsg({ type: 'error', text: `Failed: ${err.message}` })
+      console.error('Failed to load reviews:', err);
+    } finally {
+      setLoading(false);
     }
-    setSubmitting(false)
-    setTimeout(() => setMsg(null), 5000)
+  }
+
+  function toggleExpand(id) {
+    const newExpanded = new Set(expanded);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpanded(newExpanded);
+  }
+
+  const getDecisionColor = (decision) => {
+    if (decision === 'promote' || decision === 'execute') return 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30';
+    if (decision === 'watch') return 'bg-amber-400/15 text-amber-300 border-amber-400/30';
+    if (decision === 'discard') return 'bg-red-400/15 text-red-300 border-red-400/30';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  if (loading) {
+    return <div className="text-white/60 text-[13px] py-8">Loading decisions...</div>;
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-400">{promoted.length} decisions made</div>
-        <button onClick={refetch} className="text-xs px-2 py-1 bg-blue-900 text-blue-400 border border-blue-700 rounded hover:bg-blue-800">Refresh</button>
-      </div>
-
-      {msg && (
-        <div className={`text-xs px-3 py-2 rounded ${msg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
-          {msg.text}
-        </div>
-      )}
-
-      {promoted.map(r => (
-        <div key={r.id} className="bg-gray-800 border border-gray-700 rounded p-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <SymbolLink symbol={r.symbol} />
-              <span className="text-xs text-gray-400">{r.gate}</span>
-              <span className={`text-xs px-1.5 rounded ${r.decision === 'promote' || r.decision === 'execute' ? 'bg-emerald-900 text-emerald-400' : 'bg-blue-900 text-blue-400'}`}>{r.decision}</span>
+    <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Decided</div>
+            <div className="text-white text-[20px] font-mono">{reviews.length}</div>
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Promoted</div>
+            <div className="text-emerald-400 text-[20px] font-mono">
+              {reviews.filter(r => r.decision === 'promote' || r.decision === 'execute').length}
             </div>
-            <div className="flex gap-2 items-center">
-              <span className="text-xs text-gray-500">{r.total_score}/{r.threshold}</span>
-              <button
-                onClick={() => {
-                  setExecutingId(executingId === r.id ? null : r.id)
-                  setExecForm({ direction: 'long', size: '', entry_price: '' })
-                }}
-                className={`text-xs px-2 py-1 border rounded no-underline hover:bg-emerald-800 ${executingId === r.id ? 'bg-emerald-800 text-emerald-300 border-emerald-600' : 'bg-emerald-900 text-emerald-400 border-emerald-700'}`}
-              >
-                {executingId === r.id ? 'Cancel' : 'Execute → Position'}
-              </button>
-              <Link to={`/mosaic/${r.symbol}`} className="text-xs px-2 py-1 bg-purple-900 text-purple-400 border border-purple-700 rounded no-underline hover:bg-purple-800">Workbench</Link>
-              {r.entity_id && <button onClick={() => setExpandedThesis(expandedThesis === r.id ? null : r.id)} className="text-xs px-2 py-1 bg-blue-900 text-blue-400 border border-blue-700 rounded hover:bg-blue-800">View</button>}
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Watch</div>
+            <div className="text-amber-400 text-[20px] font-mono">
+              {reviews.filter(r => r.decision === 'watch').length}
+            </div>
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Discarded</div>
+            <div className="text-red-400 text-[20px] font-mono">
+              {reviews.filter(r => r.decision === 'discard').length}
+            </div>
+          </div>
+        </div>
+
+        {/* Decisions Table */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl overflow-hidden">
+          <div className="bg-white/[0.03] border-b border-white/[0.06] px-6 py-3">
+            <div className="grid grid-cols-12 gap-4 text-white/50 text-[12px] font-mono uppercase tracking-wider">
+              <div className="col-span-2">Symbol</div>
+              <div className="col-span-1">Gate</div>
+              <div className="col-span-2">Decision</div>
+              <div className="col-span-2">Score</div>
+              <div className="col-span-2">Created</div>
+              <div className="col-span-3 text-right">Action</div>
             </div>
           </div>
 
-          {/* Inline Execute Form */}
-          {executingId === r.id && (
-            <form onSubmit={(e) => handleExecute(e, r)} className="mt-3 border-t border-gray-700 pt-3 flex gap-3 items-end flex-wrap">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Direction</label>
-                <select value={execForm.direction} onChange={e => setExecForm({...execForm, direction: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200">
-                  <option value="long">Long</option>
-                  <option value="short">Short</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Size ($)</label>
-                <input type="number" step="0.01" required value={execForm.size} onChange={e => setExecForm({...execForm, size: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="10000" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Entry Price</label>
-                <input type="number" step="0.01" required value={execForm.entry_price} onChange={e => setExecForm({...execForm, entry_price: e.target.value})} className="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-gray-200 w-28" placeholder="150.00" />
-              </div>
-              <button type="submit" disabled={submitting} className="bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 text-white text-xs px-4 py-1.5 rounded">
-                {submitting ? 'Creating…' : 'Create Position'}
-              </button>
-            </form>
-          )}
+          <div>
+            {reviews.map((review) => {
+              const isExpanded = expanded.has(review.id);
+              const scorePercent = review.threshold > 0 ? (review.total_score / review.threshold) * 100 : 0;
 
-          {r.dominant_narrative && <div className="text-xs text-gray-400 mt-2">{r.dominant_narrative}</div>}
-          {expandedThesis === r.id && r.entity_type === 'thesis' && (
-            <div className="mt-2 border-t border-gray-700 pt-2 text-xs text-gray-400 space-y-1">
-              <div>Entity ID: {r.entity_id}</div>
-              <div>Type: {r.entity_type}</div>
-              {r.scores_json && <pre className="bg-gray-900 p-2 rounded overflow-x-auto max-h-24 overflow-y-auto text-gray-500">{typeof r.scores_json === 'string' ? r.scores_json : JSON.stringify(r.scores_json, null, 2)}</pre>}
-            </div>
-          )}
+              return (
+                <div key={review.id}>
+                  {/* Main Row */}
+                  <div
+                    className="border-b border-white/[0.06] hover:bg-white/[0.04] cursor-pointer transition-colors"
+                    onClick={() => toggleExpand(review.id)}
+                  >
+                    <div className="px-6 py-4 grid grid-cols-12 gap-4 items-center">
+                      {/* Symbol */}
+                      <div className="col-span-2">
+                        <span className="text-white font-mono text-[13px] font-semibold">{review.symbol}</span>
+                      </div>
+
+                      {/* Gate */}
+                      <div className="col-span-1">
+                        <span className="text-white/60 text-[12px] font-mono">{review.gate}</span>
+                      </div>
+
+                      {/* Decision Badge */}
+                      <div className="col-span-2">
+                        <span
+                          className={`text-[11px] font-mono px-3 py-1.5 rounded-full border transition-colors ${getDecisionColor(review.decision)}`}
+                        >
+                          {review.decision}
+                        </span>
+                      </div>
+
+                      {/* Score Bar */}
+                      <div className="col-span-2">
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-400 transition-all"
+                              style={{ width: `${Math.min(scorePercent, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-white/60 font-mono text-[11px] w-16 text-right">
+                            {review.total_score}/{review.threshold}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Created */}
+                      <div className="col-span-2">
+                        <span className="text-white/60 text-[12px]">
+                          {review.created_at ? new Date(review.created_at).toLocaleDateString() : '—'}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-3 flex justify-end">
+                        <div className={isExpanded ? 'text-emerald-400' : 'text-white/40'}>
+                          {isExpanded ? <span className="text-xs">▲</span> : <span className="text-xs">▼</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="bg-white/[0.02] border-b border-white/[0.06]">
+                      <div className="px-6 py-4 space-y-4">
+                        {/* Dominant Narrative */}
+                        {review.dominant_narrative && (
+                          <div>
+                            <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">Narrative</div>
+                            <p className="text-[13px] text-white/80 leading-relaxed">{review.dominant_narrative}</p>
+                          </div>
+                        )}
+
+                        {/* Market Pricing */}
+                        {review.market_pricing && (
+                          <div>
+                            <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">Market Pricing</div>
+                            <p className="text-[13px] text-white/80">{review.market_pricing}</p>
+                          </div>
+                        )}
+
+                        {/* Invalidation */}
+                        {review.invalidation && (
+                          <div>
+                            <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">Invalidation</div>
+                            <p className="text-[13px] text-white/80">{review.invalidation}</p>
+                          </div>
+                        )}
+
+                        {/* Scores JSON */}
+                        {review.scores_json && (
+                          <div>
+                            <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">Scores</div>
+                            <pre className="bg-[#0a0f1a] border border-white/[0.06] rounded-lg p-3 text-[11px] font-mono text-white/70 overflow-x-auto max-h-48 overflow-y-auto">
+                              {typeof review.scores_json === 'string'
+                                ? review.scores_json
+                                : JSON.stringify(review.scores_json, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* Risk Note */}
+                        {review.risk_note && (
+                          <div className="bg-amber-400/10 border border-amber-400/20 rounded-lg p-3">
+                            <div className="text-amber-300 text-[12px]">{review.risk_note}</div>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {(review.decision === 'promote' || review.decision === 'execute') && (
+                          <Link
+                            to={`/positions?create=${review.symbol}`}
+                            className="inline-block px-4 py-2 text-[13px] font-mono rounded-lg bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/20 transition-colors no-underline"
+                          >
+                            Create Position →
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ))}
 
-      {promoted.length === 0 && <div className="text-gray-500 text-xs">No decisions yet. Promote signals through HITL gates.</div>}
+        {reviews.length === 0 && (
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-8 text-center">
+            <p className="text-white/50 text-[13px]">No decisions yet. Promote signals through HITL gates.</p>
+          </div>
+        )}
     </div>
-  )
+  );
 }

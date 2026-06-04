@@ -1,100 +1,205 @@
-import { useState } from 'react'
-import { useApi } from '../hooks'
-import { api } from '../api'
-import { SymbolLink } from '../components/SymbolLink'
+import { useState, useEffect } from 'react';
+import { api } from '../api';
 
 export default function Positions() {
-  const { data: positions, refetch } = useApi(() => api.getPositions())
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ thesis_id: '', symbol: '', domain: 'public', direction: 'long', allocation_pct: '', conviction: 'medium', entry_price: '', entry_date: '' })
-  const [error, setError] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [closeForm, setCloseForm] = useState(null)
-  const [closeData, setCloseData] = useState({ exit_price: '', exit_date: '' })
-  const [closeError, setCloseError] = useState(null)
-  const [closeLoading, setCloseLoading] = useState(false)
+  const [positions, setPositions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('open');
 
-  const handleAdd = async (e) => {
-    e.preventDefault(); setSaving(true); setError(null)
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
     try {
-      await api.createPosition({ ...form, thesis_id: parseInt(form.thesis_id) || 1, allocation_pct: parseFloat(form.allocation_pct), entry_price: parseFloat(form.entry_price), entry_date: form.entry_date || new Date().toISOString().split('T')[0] })
-      setForm({ thesis_id: '', symbol: '', domain: 'public', direction: 'long', allocation_pct: '', conviction: 'medium', entry_price: '', entry_date: '' })
-      setShowForm(false); refetch()
-    } catch (err) { setError(err.message) }
-    finally { setSaving(false) }
+      setLoading(true);
+      const data = await api.getPositions();
+      setPositions(data || []);
+    } catch (err) {
+      console.error('Failed to load positions:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const handleClose = async (e) => {
-    e.preventDefault(); setCloseLoading(true); setCloseError(null)
-    try {
-      await api.closePosition(closeForm, { exit_price: parseFloat(closeData.exit_price), exit_date: closeData.exit_date || new Date().toISOString().split('T')[0] })
-      setCloseData({ exit_price: '', exit_date: '' })
-      setCloseForm(null); refetch()
-    } catch (err) { setCloseError(err.message) }
-    finally { setCloseLoading(false) }
+  const filtered = filterStatus === 'all'
+    ? positions
+    : positions.filter(p => (filterStatus === 'open' ? p.status === 'open' : p.status !== 'open'));
+
+  const totalAlloc = positions.reduce((sum, p) => sum + (p.allocation_pct || 0), 0);
+  const totalPnl = positions.reduce((sum, p) => sum + (p.pnl || 0), 0);
+  const openCount = positions.filter(p => p.status === 'open').length;
+
+  const getDirectionColor = (direction) => {
+    if (direction === 'long') return 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30';
+    if (direction === 'short') return 'bg-red-400/15 text-red-300 border-red-400/30';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  const getConvictionColor = (conviction) => {
+    if (conviction === 'high') return 'bg-emerald-400/15 text-emerald-300';
+    if (conviction === 'medium') return 'bg-amber-400/15 text-amber-300';
+    if (conviction === 'low') return 'bg-red-400/15 text-red-300';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'open') return 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  if (loading) {
+    return <div className="text-white/60 text-[13px] py-8">Loading positions...</div>;
   }
 
   return (
     <div className="space-y-4">
-      {!showForm && <button onClick={() => setShowForm(true)} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">+ Add Position</button>}
+        {/* Summary */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Total Positions</div>
+            <div className="text-white text-[20px] font-mono">{positions.length}</div>
+            <div className="text-white/50 text-[11px] mt-2">
+              {openCount} open
+            </div>
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Total Allocation</div>
+            <div className="text-white text-[20px] font-mono">{totalAlloc.toFixed(1)}%</div>
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Total P&L</div>
+            <div className={`text-[20px] font-mono ${totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              ${totalPnl.toFixed(2)}
+            </div>
+          </div>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Avg P&L %</div>
+            <div className={`text-[20px] font-mono ${
+              positions.length > 0 && positions.reduce((sum, p) => sum + (p.pnl_pct || 0), 0) / positions.length >= 0
+                ? 'text-emerald-400'
+                : 'text-red-400'
+            }`}>
+              {positions.length > 0 ? ((positions.reduce((sum, p) => sum + (p.pnl_pct || 0), 0) / positions.length).toFixed(1)) + '%' : '—'}
+            </div>
+          </div>
+        </div>
 
-      {showForm && (
-        <form onSubmit={handleAdd} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
-          <div className="grid grid-cols-3 gap-2">
-            <div><label className="text-xs text-gray-400 block mb-1">Symbol</label><input value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Entry Price</label><input type="number" step="0.01" value={form.entry_price} onChange={e => setForm({...form, entry_price: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Allocation %</label><input type="number" step="0.1" value={form.allocation_pct} onChange={e => setForm({...form, allocation_pct: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">{saving ? 'Adding...' : 'Add'}</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1 bg-gray-700 text-gray-300 border border-gray-600 text-xs rounded">Cancel</button>
-          </div>
-          {error && <div className="text-xs text-red-400">{error}</div>}
-        </form>
-      )}
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-6">
+          {['open', 'closed', 'all'].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-4 py-2 text-[13px] font-mono rounded-lg transition-colors ${
+                filterStatus === status
+                  ? 'bg-emerald-400/15 border border-emerald-400/30 text-emerald-300'
+                  : 'bg-white/[0.08] border border-white/[0.12] text-white/60 hover:bg-white/[0.12]'
+              }`}
+            >
+              {status === 'open' ? 'Open' : status === 'closed' ? 'Closed' : 'All'}
+            </button>
+          ))}
+        </div>
 
-      {closeForm && (
-        <form onSubmit={handleClose} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
-          <div className="text-xs font-bold text-gray-300 mb-2">Close Position #{closeForm}</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><label className="text-xs text-gray-400 block mb-1">Exit Price</label><input type="number" step="0.01" value={closeData.exit_price} onChange={e => setCloseData({...closeData, exit_price: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Exit Date</label><input type="date" value={closeData.exit_date} onChange={e => setCloseData({...closeData, exit_date: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
+        {/* Positions Table */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl overflow-hidden">
+          <div className="bg-white/[0.03] border-b border-white/[0.06] px-6 py-3">
+            <div className="grid grid-cols-12 gap-4 text-white/50 text-[12px] font-mono uppercase tracking-wider">
+              <div className="col-span-2">Symbol</div>
+              <div className="col-span-1">Dir</div>
+              <div className="col-span-1.5 text-right">Alloc%</div>
+              <div className="col-span-1.5 text-right">Entry</div>
+              <div className="col-span-1.5">Conv</div>
+              <div className="col-span-1.5">Status</div>
+              <div className="col-span-2 text-right">P&L</div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={closeLoading} className="px-3 py-1 bg-red-900 text-red-400 border border-red-700 text-xs rounded">{closeLoading ? 'Closing...' : 'Close'}</button>
-            <button type="button" onClick={() => setCloseForm(null)} className="px-3 py-1 bg-gray-700 text-gray-300 border border-gray-600 text-xs rounded">Cancel</button>
-          </div>
-          {closeError && <div className="text-xs text-red-400">{closeError}</div>}
-        </form>
-      )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead><tr className="border-b border-gray-700">
-            <th className="text-left py-2 px-3">Symbol</th>
-            <th className="text-left py-2 px-3">Direction</th>
-            <th className="text-right py-2 px-3">Entry</th>
-            <th className="text-right py-2 px-3">Alloc%</th>
-            <th className="text-left py-2 px-3">Conviction</th>
-            <th className="text-left py-2 px-3">Status</th>
-            <th className="text-right py-2 px-3">P&L / Action</th>
-          </tr></thead>
-          <tbody>
-            {(positions || []).map(p => (
-              <tr key={p.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                <td className="py-2 px-3"><SymbolLink symbol={p.symbol} /></td>
-                <td className="py-2 px-3"><span className={p.direction === 'long' ? 'text-emerald-400' : 'text-red-400'}>{p.direction}</span></td>
-                <td className="py-2 px-3 text-right text-gray-300">${parseFloat(p.entry_price).toFixed(2)}</td>
-                <td className="py-2 px-3 text-right text-gray-300">{p.allocation_pct}%</td>
-                <td className="py-2 px-3 text-gray-400">{p.conviction}</td>
-                <td className="py-2 px-3"><span className={`px-1 rounded text-xs ${p.status === 'open' ? 'bg-emerald-900 text-emerald-400' : 'bg-gray-700 text-gray-400'}`}>{p.status || 'open'}</span></td>
-                <td className="py-2 px-3 text-right">{p.status === 'open' ? <button onClick={() => setCloseForm(p.id)} className="text-red-400 hover:text-red-300 text-xs">Close</button> : (p.pnl_pct != null ? <span className={p.pnl_pct >= 0 ? 'text-emerald-400' : 'text-red-400'}>{p.pnl_pct.toFixed(1)}%</span> : '—')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(!positions || positions.length === 0) && <div className="p-4 text-center text-gray-500 text-xs">No positions yet</div>}
-      </div>
+          <div>
+            {filtered.map((position) => {
+              const pnlPercent = position.pnl_pct || 0;
+              const isPnlPositive = pnlPercent >= 0;
+
+              return (
+                <div
+                  key={position.id}
+                  className="border-b border-white/[0.06] hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="px-6 py-4 grid grid-cols-12 gap-4 items-center">
+                    {/* Symbol */}
+                    <div className="col-span-2">
+                      <span className="text-white font-mono text-[13px] font-semibold">{position.symbol}</span>
+                    </div>
+
+                    {/* Direction */}
+                    <div className="col-span-1">
+                      <span
+                        className={`text-[11px] font-mono px-2 py-1 rounded-full border ${getDirectionColor(position.direction)}`}
+                      >
+                        {position.direction === 'long' ? 'L' : 'S'}
+                      </span>
+                    </div>
+
+                    {/* Allocation */}
+                    <div className="col-span-1.5 text-right">
+                      <span className="text-white/70 font-mono text-[12px]">{position.allocation_pct.toFixed(1)}%</span>
+                    </div>
+
+                    {/* Entry Price */}
+                    <div className="col-span-1.5 text-right">
+                      <span className="text-white/70 font-mono text-[12px]">
+                        ${parseFloat(position.entry_price).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Conviction */}
+                    <div className="col-span-1.5">
+                      <span
+                        className={`text-[11px] font-mono px-2 py-1 rounded-full ${getConvictionColor(position.conviction)}`}
+                      >
+                        {position.conviction}
+                      </span>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-1.5">
+                      <span
+                        className={`text-[11px] font-mono px-2 py-1 rounded-full border ${getStatusColor(position.status)}`}
+                      >
+                        {position.status}
+                      </span>
+                    </div>
+
+                    {/* P&L */}
+                    <div className="col-span-2 text-right">
+                      {position.status === 'open' ? (
+                        <span className="text-white/60 text-[12px]">—</span>
+                      ) : (
+                        <div>
+                          <div className={`font-mono text-[13px] ${isPnlPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {isPnlPositive ? '+' : ''}{pnlPercent.toFixed(1)}%
+                          </div>
+                          <div className={`font-mono text-[11px] ${isPnlPositive ? 'text-emerald-400/60' : 'text-red-400/60'}`}>
+                            ${(position.pnl || 0).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-8 text-center">
+            <p className="text-white/50 text-[13px]">
+              No {filterStatus === 'open' ? 'open' : filterStatus === 'closed' ? 'closed' : ''} positions yet
+            </p>
+          </div>
+        )}
     </div>
-  )
+  );
 }

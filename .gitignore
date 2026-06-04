@@ -70,3 +70,32 @@ daily-scan-*.md
 data/daily_scans/
 data/drop_arb_scan/
 scan_reports/
+
+# Generated scans & reports (local artifacts, not source)
+Social_Arb_P2_Scan_*.md
+lattice_scan_*.md
+nightly-test-report-*.md
+startup-scan-*.md
+startup_scan_*.md
+stock_scan_*.md
+stock-scan-*.md
+scan_*.json
+crypto_scan_*.json
+data/drop_arb/scan_report_*.md
+reports/
+social_arb/db/inbox/
+social_arb/reports/
+social_arb/scans/
+
+# DB backups / corruption artifacts / scratch
+*.db.bak
+*.db.bak-wal
+*.corrupt*
+*.corrupted_backup*
+test_write
+test_write.tmp
+test_write.txt
+test.txt
+
+# Local tooling state
+.superpowers/

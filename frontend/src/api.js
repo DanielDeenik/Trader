@@ -31,33 +31,7 @@ async function handleResponse(res) {
 }
 
 export const api = {
-  // Auth
-  async login(email, password) {
-    const res = await fetch(`${API_BASE}/v1/auth/login`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ email, password }),
-    })
-    return handleResponse(res)
-  },
-
-  async register(email, password, displayName) {
-    const res = await fetch(`${API_BASE}/v1/auth/register`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ email, password, display_name: displayName }),
-    })
-    return handleResponse(res)
-  },
-
-  async googleLogin(credential) {
-    const res = await fetch(`${API_BASE}/v1/auth/google`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ credential }),
-    })
-    return handleResponse(res)
-  },
+  // Auth — handled by AuthContext directly, not via api.js
 
   // Health
   async getHealth() {
@@ -77,49 +51,10 @@ export const api = {
     return handleResponse(res)
   },
 
-  async createInstrument(data) {
-    const res = await fetch(`${API_BASE}/v1/instruments`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
-    return handleResponse(res)
-  },
-
-  async updateInstrument(id, data) {
-    const res = await fetch(`${API_BASE}/v1/instruments/${id}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
-    return handleResponse(res)
-  },
-
-  async deleteInstrument(id) {
-    const res = await fetch(`${API_BASE}/v1/instruments/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
-    }
-    return { success: true }
-  },
-
   // Signals
   async getSignals(params = {}) {
     const query = new URLSearchParams(params).toString()
     const res = await fetch(`${API_BASE}/v1/signals?${query}`, { headers: getHeaders() })
-    return handleResponse(res)
-  },
-
-  async createSignal(data) {
-    const res = await fetch(`${API_BASE}/v1/signals`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
     return handleResponse(res)
   },
 
@@ -184,15 +119,6 @@ export const api = {
     return handleResponse(res)
   },
 
-  async closePosition(positionId, data) {
-    const res = await fetch(`${API_BASE}/v1/positions/${positionId}`, {
-      method: 'PATCH',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
-    return handleResponse(res)
-  },
-
   // Analysis / Engines
   async runAnalysis(data = {}) {
     const res = await fetch(`${API_BASE}/v1/analyze`, {
@@ -229,45 +155,15 @@ export const api = {
     return handleResponse(res)
   },
 
-  async deleteTask(id) {
-    const res = await fetch(`${API_BASE}/v1/tasks/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
-    }
-    return { success: true }
-  },
-
   async getSourceHealth() {
     const res = await fetch(`${API_BASE}/v1/source-health`, { headers: getHeaders() })
     return handleResponse(res)
   },
 
   // STEPPS
-  async scoreStepps(data) {
-    const res = await fetch(`${API_BASE}/v1/stepps/score`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
-    return handleResponse(res)
-  },
-
   async getSteppsScores(params = {}) {
     const query = new URLSearchParams(params).toString()
     const res = await fetch(`${API_BASE}/v1/stepps/scores?${query}`, { headers: getHeaders() })
-    return handleResponse(res)
-  },
-
-  async correctStepps(data) {
-    const res = await fetch(`${API_BASE}/v1/stepps/correct`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    })
     return handleResponse(res)
   },
 
@@ -310,47 +206,9 @@ export const api = {
     return handleResponse(res)
   },
 
-  // Alerts
-  async getAlerts(params = {}) {
-    const query = new URLSearchParams(params).toString()
-    const res = await fetch(`${API_BASE}/v1/alerts?${query}`, { headers: getHeaders() })
-    return handleResponse(res)
-  },
-
-  async getAlertThresholds() {
-    const res = await fetch(`${API_BASE}/v1/alerts/thresholds`, { headers: getHeaders() })
-    return handleResponse(res)
-  },
-
-  async updateAlertThresholds(thresholds) {
-    const res = await fetch(`${API_BASE}/v1/alerts/thresholds`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ thresholds }),
-    })
-    return handleResponse(res)
-  },
-
-  async clearAlerts() {
-    const res = await fetch(`${API_BASE}/v1/alerts`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    })
-    if (!res.ok) {
-      const data = await res.json()
-      throw new ApiError(res.status, data.detail || `HTTP ${res.status}`, data)
-    }
-    return { success: true }
-  },
+  // Alerts — handled by WebSocket in useAlerts hook
 
   // User Settings
-  async getSettings() {
-    const res = await fetch(`${API_BASE}/v1/auth/settings`, {
-      headers: getHeaders(),
-    })
-    return handleResponse(res)
-  },
-
   async updateSettings(settings) {
     const res = await fetch(`${API_BASE}/v1/auth/settings`, {
       method: 'PUT',
@@ -389,12 +247,4 @@ export const api = {
     return { success: true }
   },
 
-  // Sentiment
-  async getSentiment(params = {}) {
-    const query = new URLSearchParams(params).toString()
-    const res = await fetch(`${API_BASE}/v1/sentiment?${query}`, {
-      headers: getHeaders(),
-    })
-    return handleResponse(res)
-  },
 }

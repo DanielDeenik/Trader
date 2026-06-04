@@ -1,93 +1,251 @@
-import { useState } from 'react'
-import { useApi } from '../hooks'
-import { api } from '../api'
-import { SymbolLink } from '../components/SymbolLink'
+import { useState, useEffect } from 'react';
+import { api } from '../api';
+import { Link } from 'react-router-dom';
 
 export default function ThesisForge() {
-  const { data: theses, refetch } = useApi(() => api.getTheses())
-  const [expanded, setExpanded] = useState(null)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ symbol: '', domain: 'public', thesis_type: '', lifecycle_stage: 'emerging', roi_bear: '', roi_base: '', roi_bull: '', risk_assessment: '' })
-  const [error, setError] = useState(null)
-  const [saving, setSaving] = useState(false)
+  const [theses, setTheses] = useState([]);
+  const [expanded, setExpanded] = useState(new Set());
+  const [loading, setLoading] = useState(true);
 
-  const handleCreate = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    setError(null)
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
     try {
-      await api.createThesis({
-        ...form,
-        roi_bear: parseFloat(form.roi_bear) / 100,
-        roi_base: parseFloat(form.roi_base) / 100,
-        roi_bull: parseFloat(form.roi_bull) / 100,
-      })
-      setForm({ symbol: '', domain: 'public', thesis_type: '', lifecycle_stage: 'emerging', roi_bear: '', roi_base: '', roi_bull: '', risk_assessment: '' })
-      setShowForm(false)
-      refetch()
-    } catch (err) { setError(err.message) }
-    finally { setSaving(false) }
+      setLoading(true);
+      const data = await api.getTheses();
+      setTheses(data || []);
+    } catch (err) {
+      console.error('Failed to load theses:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggleExpand(id) {
+    const newExpanded = new Set(expanded);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpanded(newExpanded);
+  }
+
+  const getLifecycleColor = (stage) => {
+    if (stage === 'emerging') return 'bg-blue-400/15 text-blue-300 border-blue-400/30';
+    if (stage === 'validating') return 'bg-amber-400/15 text-amber-300 border-amber-400/30';
+    if (stage === 'confirmed') return 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30';
+    if (stage === 'saturated') return 'bg-red-400/15 text-red-300 border-red-400/30';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'active') return 'bg-emerald-400/15 text-emerald-300';
+    return 'bg-white/[0.08] text-white/60';
+  };
+
+  const getDomainColor = (domain) => {
+    if (domain === 'public') return 'text-blue-300 font-mono text-[12px]';
+    if (domain === 'private') return 'text-purple-300 font-mono text-[12px]';
+    if (domain === 'crypto') return 'text-orange-300 font-mono text-[12px]';
+    return 'text-white/60 font-mono text-[12px]';
+  };
+
+  if (loading) {
+    return <div className="text-white/60 text-[13px] py-8">Loading theses...</div>;
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        {!showForm && (
-          <button onClick={() => setShowForm(true)} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">+ Create Thesis</button>
-        )}
-        <button onClick={refetch} className="px-3 py-1 bg-blue-900 text-blue-400 border border-blue-700 text-xs rounded">Refresh</button>
-        <span className="text-xs text-gray-400 self-center">{(theses || []).length} theses</span>
-      </div>
-
-      {showForm && (
-        <form onSubmit={handleCreate} className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div><label className="text-xs text-gray-400 block mb-1">Symbol</label><input value={form.symbol} onChange={e => setForm({...form, symbol: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Domain</label><select value={form.domain} onChange={e => setForm({...form, domain: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs"><option value="public">Public</option><option value="private">Private</option><option value="crypto">Crypto</option></select></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Thesis Type</label><input value={form.thesis_type} onChange={e => setForm({...form, thesis_type: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">Lifecycle Stage</label><select value={form.lifecycle_stage} onChange={e => setForm({...form, lifecycle_stage: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs"><option value="emerging">Emerging</option><option value="validating">Validating</option><option value="confirmed">Confirmed</option><option value="saturated">Saturated</option></select></div>
+    <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Total Theses</div>
+            <div className="text-white text-[20px] font-mono">{theses.length}</div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div><label className="text-xs text-gray-400 block mb-1">ROI Bear %</label><input type="number" step="0.1" value={form.roi_bear} onChange={e => setForm({...form, roi_bear: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">ROI Base %</label><input type="number" step="0.1" value={form.roi_base} onChange={e => setForm({...form, roi_base: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-            <div><label className="text-xs text-gray-400 block mb-1">ROI Bull %</label><input type="number" step="0.1" value={form.roi_bull} onChange={e => setForm({...form, roi_bull: e.target.value})} required className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" /></div>
-          </div>
-          <div><label className="text-xs text-gray-400 block mb-1">Risk Assessment</label><textarea value={form.risk_assessment} onChange={e => setForm({...form, risk_assessment: e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded text-xs" rows="3" /></div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="px-3 py-1 bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs rounded">{saving ? 'Creating...' : 'Create'}</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1 bg-gray-700 text-gray-300 border border-gray-600 text-xs rounded">Cancel</button>
-          </div>
-          {error && <div className="text-xs text-red-400">{error}</div>}
-        </form>
-      )}
-
-      {(theses || []).map(t => (
-        <div key={t.id} className="bg-gray-800 border border-gray-700 rounded p-3">
-          <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpanded(expanded === t.id ? null : t.id)}>
-            <div className="flex items-center gap-3">
-              <SymbolLink symbol={t.symbol} />
-              {t.lifecycle_stage && <span className="text-xs text-yellow-400">{t.lifecycle_stage}</span>}
-              {t.status && <span className={`text-xs px-1 rounded ${t.status === 'active' ? 'bg-emerald-900 text-emerald-400' : 'bg-gray-700 text-gray-400'}`}>{t.status}</span>}
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Active</div>
+            <div className="text-emerald-400 text-[20px] font-mono">
+              {theses.filter(t => t.status === 'active').length}
             </div>
-            <span className="text-xs text-gray-500">{t.domain}</span>
           </div>
-
-          {expanded === t.id && (
-            <div className="mt-2 border-t border-gray-700 pt-2 text-xs space-y-2">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-red-900/30 p-2 rounded"><span className="text-gray-400">Bear:</span> <span className="text-red-400">{t.roi_bear != null ? `${(t.roi_bear * 100).toFixed(0)}%` : '—'}</span></div>
-                <div className="bg-gray-900 p-2 rounded"><span className="text-gray-400">Base:</span> <span className="text-gray-200">{t.roi_base != null ? `${(t.roi_base * 100).toFixed(0)}%` : '—'}</span></div>
-                <div className="bg-emerald-900/30 p-2 rounded"><span className="text-gray-400">Bull:</span> <span className="text-emerald-400">{t.roi_bull != null ? `${(t.roi_bull * 100).toFixed(0)}%` : '—'}</span></div>
-              </div>
-              {t.kelly_fraction != null && <div className="text-gray-400">Kelly: {(t.kelly_fraction * 100).toFixed(1)}%</div>}
-              {t.vulnerability_json && <pre className="bg-gray-900 p-2 rounded text-gray-400 overflow-x-auto max-h-24 overflow-y-auto">{typeof t.vulnerability_json === 'string' ? t.vulnerability_json : JSON.stringify(t.vulnerability_json, null, 2)}</pre>}
-              <a href={`/gate/review?gate=L3_conviction&symbol=${t.symbol}&entity_id=${t.id}&entity_type=thesis`} className="block text-emerald-400 hover:text-emerald-300 no-underline">→ Review at L3 Gate</a>
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-4">
+            <div className="text-white/50 text-[11px] uppercase tracking-wide mb-1">Avg Kelly</div>
+            <div className="text-white text-[20px] font-mono">
+              {theses.length > 0
+                ? ((theses.reduce((sum, t) => sum + (t.kelly_fraction || 0), 0) / theses.length) * 100).toFixed(1) + '%'
+                : '—'}
             </div>
-          )}
+          </div>
         </div>
-      ))}
 
-      {(!theses || theses.length === 0) && <div className="text-gray-500 text-xs">No theses yet. Run analysis to forge theses from mosaics.</div>}
+        {/* Theses Grid */}
+        <div className="space-y-4">
+          {theses.map((thesis) => {
+            const isExpanded = expanded.has(thesis.id);
+            return (
+              <div
+                key={thesis.id}
+                className="bg-[#111827]/80 border border-white/[0.06] rounded-xl overflow-hidden hover:border-white/[0.12] transition-colors"
+              >
+                {/* Header */}
+                <div
+                  className="px-6 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  onClick={() => toggleExpand(thesis.id)}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      {/* Expand Icon */}
+                      <div className={isExpanded ? 'text-emerald-400' : 'text-white/40'}>
+                        {isExpanded ? <span className="text-xs">▲</span> : <span className="text-xs">▼</span>}
+                      </div>
+
+                      {/* Symbol */}
+                      <span className="text-[16px] font-mono font-bold text-white">{thesis.symbol}</span>
+
+                      {/* Lifecycle Stage */}
+                      {thesis.lifecycle_stage && (
+                        <span
+                          className={`text-[11px] font-mono px-3 py-1.5 rounded-full border transition-colors ${getLifecycleColor(thesis.lifecycle_stage)}`}
+                        >
+                          {thesis.lifecycle_stage}
+                        </span>
+                      )}
+
+                      {/* Status */}
+                      {thesis.status && (
+                        <span className={`text-[11px] font-mono px-3 py-1.5 rounded-full ${getStatusColor(thesis.status)}`}>
+                          {thesis.status}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Right Side - ROI Range */}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-white/50 text-[11px] uppercase tracking-wider mb-1">ROI Range</div>
+                        <div className="flex gap-2 items-center">
+                          <span className="text-red-400 font-mono text-[13px]">
+                            {thesis.roi_bear != null ? `${(thesis.roi_bear * 100).toFixed(0)}%` : '—'}
+                          </span>
+                          <span className="text-white/40">/</span>
+                          <span className="text-white/80 font-mono text-[13px]">
+                            {thesis.roi_base != null ? `${(thesis.roi_base * 100).toFixed(0)}%` : '—'}
+                          </span>
+                          <span className="text-white/40">/</span>
+                          <span className="text-emerald-400 font-mono text-[13px]">
+                            {thesis.roi_bull != null ? `${(thesis.roi_bull * 100).toFixed(0)}%` : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Kelly Fraction */}
+                      {thesis.kelly_fraction != null && (
+                        <div className="text-right">
+                          <div className="text-white/50 text-[11px] uppercase tracking-wider mb-1">Kelly</div>
+                          <div className="text-emerald-400 font-mono text-[13px]">
+                            {(thesis.kelly_fraction * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Domain */}
+                      <div className={getDomainColor(thesis.domain)}>{thesis.domain}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="bg-white/[0.02] border-t border-white/[0.06] px-6 py-4 space-y-4">
+                    {/* ROI Breakdown */}
+                    <div>
+                      <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-3">
+                        Scenario Analysis
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-red-400/10 border border-red-400/20 rounded-lg p-3">
+                          <div className="text-white/60 text-[11px] mb-1">Bear Case</div>
+                          <div className="text-red-400 font-mono text-[14px] font-bold">
+                            {thesis.roi_bear != null ? `${(thesis.roi_bear * 100).toFixed(1)}%` : '—'}
+                          </div>
+                        </div>
+                        <div className="bg-white/[0.08] border border-white/[0.12] rounded-lg p-3">
+                          <div className="text-white/60 text-[11px] mb-1">Base Case</div>
+                          <div className="text-white font-mono text-[14px] font-bold">
+                            {thesis.roi_base != null ? `${(thesis.roi_base * 100).toFixed(1)}%` : '—'}
+                          </div>
+                        </div>
+                        <div className="bg-emerald-400/10 border border-emerald-400/20 rounded-lg p-3">
+                          <div className="text-white/60 text-[11px] mb-1">Bull Case</div>
+                          <div className="text-emerald-400 font-mono text-[14px] font-bold">
+                            {thesis.roi_bull != null ? `${(thesis.roi_bull * 100).toFixed(1)}%` : '—'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Risk Assessment */}
+                    {thesis.risk_assessment && (
+                      <div>
+                        <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">
+                          Risk Assessment
+                        </div>
+                        <p className="text-[13px] text-white/70 leading-relaxed">{thesis.risk_assessment}</p>
+                      </div>
+                    )}
+
+                    {/* Vulnerability JSON */}
+                    {thesis.vulnerability_json && (
+                      <div>
+                        <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">
+                          Vulnerabilities
+                        </div>
+                        <pre className="bg-[#0a0f1a] border border-white/[0.06] rounded-lg p-3 text-[11px] font-mono text-white/70 overflow-x-auto max-h-48 overflow-y-auto">
+                          {typeof thesis.vulnerability_json === 'string'
+                            ? thesis.vulnerability_json
+                            : JSON.stringify(thesis.vulnerability_json, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Simulation JSON */}
+                    {thesis.simulation_json && (
+                      <div>
+                        <div className="text-white/50 text-[11px] uppercase tracking-wider font-mono mb-2">
+                          Simulation Data
+                        </div>
+                        <pre className="bg-[#0a0f1a] border border-white/[0.06] rounded-lg p-3 text-[11px] font-mono text-white/70 overflow-x-auto max-h-48 overflow-y-auto">
+                          {typeof thesis.simulation_json === 'string'
+                            ? thesis.simulation_json
+                            : JSON.stringify(thesis.simulation_json, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* Action */}
+                    <div className="flex gap-2 pt-2">
+                      <Link
+                        to={`/gate/review?gate=L3_conviction&symbol=${thesis.symbol}&entity_id=${thesis.id}&entity_type=thesis`}
+                        className="px-3 py-2 text-[13px] font-mono rounded-lg bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/20 transition-colors no-underline"
+                      >
+                        Review → Gate
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {theses.length === 0 && (
+          <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-8 text-center">
+            <p className="text-white/50 text-[13px]">No theses yet. Run analysis to forge theses from mosaics.</p>
+          </div>
+        )}
     </div>
-  )
+  );
 }

@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Arb — Information Arbitrage</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-        // Set your Google OAuth Client ID here or via environment
-        // Create one at: https://console.cloud.google.com/apis/credentials
+        // Google OAuth Client ID (optional — set a real ID to enable Google Sign-In)
         window.__GOOGLE_CLIENT_ID__ = '358461657718-REPLACE_WITH_YOUR_CLIENT_ID.apps.googleusercontent.com';
     </script>
 </head>
 <body class="dark bg-gray-900 text-gray-50">
-    <div id="root"></div>
+    <div id="root">
+        <!-- Visible loading state while React hydrates -->
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#6b7280;font-family:system-ui,sans-serif;font-size:14px;">
+            Loading Social Arb...
+        </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

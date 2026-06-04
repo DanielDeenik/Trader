@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApi } from '../hooks'
 import { api } from '../api'
 import { SymbolLink } from '../components/SymbolLink'
+import { Link } from 'react-router-dom'
 
 function formatTime(isoString) {
   if (!isoString) return 'Never'
@@ -9,14 +10,16 @@ function formatTime(isoString) {
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function formatDuration(ms) {
+function formatDurationHuman(ms) {
   if (!ms) return '—'
   const secs = Math.round(ms / 1000)
   if (secs < 60) return `${secs}s`
   const mins = Math.round(secs / 60)
   if (mins < 60) return `${mins}m`
   const hours = Math.round(mins / 60)
-  return `${hours}h`
+  if (hours < 24) return `${hours}h`
+  const days = Math.round(hours / 24)
+  return `${days}d`
 }
 
 export default function Overview() {
@@ -32,223 +35,224 @@ export default function Overview() {
   const { data: reviews } = useApi(() => api.getReviews({ limit: 50 }))
   const { data: scheduler } = useApi(() => api.getSchedulerStatus())
 
-  // Calculate last 24h active signals
-  const now = new Date()
-  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  const recentSignals = (signals || []).filter(s => new Date(s.timestamp) > oneDayAgo)
-
   // Calculate pending reviews
   const pendingReviews = (reviews || []).filter(r => r.decision === 'pending' || !r.decision)
 
-  // Get top 5 symbols by signal activity
+  // Get top 10 symbols by signal activity
   const topSymbols = (signalsGrouped || [])
     .sort((a, b) => (b.total || 0) - (a.total || 0))
-    .slice(0, 5)
-
-  // Build heatmap data
-  const sources = ['reddit', 'news', 'sec_edgar', 'google_trends', 'yfinance']
-  const heatmapData = {}
-
-  topSymbols.forEach(sym => {
-    heatmapData[sym.symbol] = {}
-    sources.forEach(src => {
-      // Count signals from this source for this symbol
-      const count = (signals || []).filter(
-        s => s.symbol === sym.symbol && s.source === src
-      ).length
-      heatmapData[sym.symbol][src] = count
-    })
-  })
-
-  // Combine signals + reviews + decisions into activity feed (last 10)
-  const activity = [
-    ...(signals || []).map(s => ({
-      type: 'signal',
-      symbol: s.symbol,
-      text: `Signal from ${s.source}`,
-      direction: s.direction,
-      timestamp: s.timestamp,
-      id: `signal-${s.id}`,
-    })),
-    ...(reviews || []).map(r => ({
-      type: 'review',
-      symbol: r.symbol,
-      text: `Review: ${r.gate} → ${r.decision}`,
-      timestamp: r.created_at,
-      id: `review-${r.id}`,
-    })),
-  ]
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10)
+
+  // Get recent 10 signals
+  const recentSignals = (signals || []).slice(0, 10)
+
+  // Count open positions
+  const openPositionsCount = (positions || []).length
+
+  // Calculate table counts from health
+  const signalCount = health?.table_counts?.signals || 0
+  const mosaicCount = health?.table_counts?.mosaics || 0
+  const thesisCount = health?.table_counts?.theses || 0
 
   const handleTriggerSchedule = async (scheduleName) => {
     setTriggeringSchedule(scheduleName)
     try {
       await api.triggerSchedule({ schedule_name: scheduleName })
+      setQuickActionMsg({ type: 'success', text: `${scheduleName} triggered` })
       setTimeout(() => setTriggeringSchedule(null), 2000)
     } catch (err) {
       console.error('Trigger failed:', err)
+      setQuickActionMsg({ type: 'error', text: `Failed to trigger ${scheduleName}` })
       setTriggeringSchedule(null)
     }
+    setTimeout(() => setQuickActionMsg(null), 4000)
   }
-
-  // Calculate total position value
-  const totalPositionValue = (positions || []).reduce((sum, p) => sum + (p.value || 0), 0)
 
   return (
     <div className="space-y-6">
-      {/* Portfolio Summary Row */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Position Value</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">
-            ${totalPositionValue.toFixed(0)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">{(positions || []).length} open positions</div>
+      {/* STATS ROW */}
+      <div className="grid grid-cols-4 gap-4">
+        {/* Total Signals */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Total Signals</div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-3">{signalCount}</div>
+          <div className="text-[13px] text-white/50 mt-2">Latest: {recentSignals.length > 0 ? formatTime(recentSignals[0].timestamp) : '—'}</div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Signals (24h)</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-2">
-            {recentSignals.length}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">out of {(signals || []).length} total</div>
+        {/* Active Mosaics */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Active Mosaics</div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-3">{mosaicCount}</div>
+          <div className="text-[13px] text-white/50 mt-2">Assembled signals</div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Reviews</div>
-          <div className={`text-2xl font-bold mt-2 ${pendingReviews.length > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-            {pendingReviews.length}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">{(reviews || []).length} reviewed</div>
+        {/* Open Theses */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Open Theses</div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-3">{thesisCount}</div>
+          <div className="text-[13px] text-white/50 mt-2">Investment theses</div>
+        </div>
+
+        {/* Open Positions */}
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Open Positions</div>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-3">{openPositionsCount}</div>
+          <div className="text-[13px] text-white/50 mt-2">Active trades</div>
         </div>
       </div>
 
-      {/* Top Movers */}
+      {/* TOP MOVERS TABLE */}
       {topSymbols.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Top Movers (by signal activity)</div>
-          <div className="space-y-2">
-            {topSymbols.map(sym => {
-              const latest = (signals || [])
-                .filter(s => s.symbol === sym.symbol)
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest mb-4">Top Movers by Signal Activity</div>
 
-              return (
-                <div key={sym.symbol} className="flex items-center justify-between bg-gray-700/30 rounded px-3 py-2 border border-gray-700/50">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <SymbolLink symbol={sym.symbol} />
-                      <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">
-                        {sym.total} signals
-                      </span>
-                      {latest && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          latest.direction === 'bullish' ? 'bg-emerald-900 text-emerald-300' :
-                          latest.direction === 'bearish' ? 'bg-red-900 text-red-300' :
-                          'bg-gray-700 text-gray-300'
-                        }`}>
-                          {latest.direction}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {sym.bullish} bullish, {sym.bearish} bearish, {sym.neutral} neutral
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <a href={`/tickers/${sym.symbol}`} className="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-1 rounded">
-                      Deep Dive
-                    </a>
-                    <a href={`/lattice/${sym.symbol}`} className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2 py-1 rounded">
-                      Lattice
-                    </a>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Signals Heatmap */}
-      {topSymbols.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Signal Heatmap (sources × symbols)</div>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-[13px]">
               <thead>
-                <tr>
-                  <th className="text-left py-2 px-2 text-gray-400">Source</th>
-                  {topSymbols.map(sym => (
-                    <th key={sym.symbol} className="text-center py-2 px-2 text-gray-400 font-mono">
-                      {sym.symbol}
-                    </th>
-                  ))}
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left py-3 px-4 text-white/60 font-mono font-medium">Symbol</th>
+                  <th className="text-right py-3 px-4 text-white/60 font-mono font-medium">Total</th>
+                  <th className="text-center py-3 px-4 text-white/60 font-mono font-medium">Sentiment</th>
+                  <th className="text-right py-3 px-4 text-white/60 font-mono font-medium">Sources</th>
+                  <th className="text-left py-3 px-4 text-white/60 font-mono font-medium">Latest</th>
+                  <th className="text-center py-3 px-4 text-white/60 font-mono font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {sources.map(src => (
-                  <tr key={src} className="border-t border-gray-700">
-                    <td className="text-left py-2 px-2 text-gray-400 font-mono">{src}</td>
-                    {topSymbols.map(sym => {
-                      const count = heatmapData[sym.symbol]?.[src] || 0
-                      const maxCount = Math.max(...topSymbols.map(s => heatmapData[s.symbol]?.[src] || 0))
-                      const intensity = maxCount > 0 ? count / maxCount : 0
-                      const baseColor = src === 'reddit' ? 'emerald' : src === 'news' ? 'blue' : 'amber'
-                      const bgOpacity = count === 0 ? 0.1 : Math.max(0.3, intensity * 0.8)
-                      const bgClass = `bg-${baseColor}-900 opacity-${Math.round(bgOpacity * 100)}`
+                {topSymbols.map((sym, idx) => {
+                  const latest = (signals || [])
+                    .filter(s => s.symbol === sym.symbol)
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
 
-                      return (
-                        <td
-                          key={`${sym.symbol}-${src}`}
-                          className={`text-center py-2 px-2 font-mono text-sm ${
-                            count > 0 ? `bg-${baseColor}-900 text-${baseColor}-200` : 'bg-gray-700/30 text-gray-500'
-                          }`}
-                          style={{
-                            backgroundColor: count > 0
-                              ? `hsl(${baseColor === 'emerald' ? 160 : baseColor === 'blue' ? 210 : 45}, 70%, ${40 - intensity * 20}%)`
-                              : 'transparent',
-                          }}
+                  const bullishPct = sym.total > 0 ? Math.round((sym.bullish / sym.total) * 100) : 0
+                  const bearishPct = sym.total > 0 ? Math.round((sym.bearish / sym.total) * 100) : 0
+                  const neutralPct = sym.total > 0 ? Math.round((sym.neutral / sym.total) * 100) : 0
+
+                  return (
+                    <tr key={sym.symbol} className="border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-4 text-white font-mono font-bold">
+                        <SymbolLink symbol={sym.symbol} />
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-white/80">{sym.total}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2 justify-center">
+                          {bullishPct > 0 && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-6 h-1 bg-emerald-500/60 rounded-full"></div>
+                              <span className="text-[11px] text-emerald-400 font-mono">{bullishPct}%</span>
+                            </div>
+                          )}
+                          {bearishPct > 0 && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-6 h-1 bg-red-500/60 rounded-full"></div>
+                              <span className="text-[11px] text-red-400 font-mono">{bearishPct}%</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-white/60">{sym.source_count || (typeof sym.sources === 'string' ? sym.sources.split(',').length : Array.isArray(sym.sources) ? sym.sources.length : 0)}</td>
+                      <td className="py-3 px-4 text-[12px] text-white/50">
+                        {latest ? formatTime(latest.timestamp) : '—'}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Link
+                          to={`/tickers/${sym.symbol}`}
+                          className="inline-block text-[11px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-2.5 py-1 rounded-full transition-colors font-mono"
                         >
-                          {count > 0 ? count : '—'}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                          Deep Dive
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Scheduler Status */}
-      {scheduler && (
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Scheduler Status</div>
+      {/* RECENT SIGNALS FEED */}
+      {recentSignals.length > 0 && (
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest mb-4">Recent Signals (Last 10)</div>
+
           <div className="space-y-2">
-            {(scheduler.schedules || []).map(sched => (
-              <div key={sched.name} className="flex items-center justify-between bg-gray-700/30 rounded px-3 py-2 border border-gray-700/50">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-gray-300">{sched.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      sched.enabled ? 'bg-emerald-900 text-emerald-300' : 'bg-gray-700 text-gray-400'
-                    }`}>
-                      {sched.enabled ? 'Enabled' : 'Disabled'}
+            {recentSignals.map((signal, idx) => (
+              <div key={signal.id} className="flex items-center gap-3 py-2 px-3 bg-white/[0.02] rounded-lg border border-white/[0.05] hover:border-white/[0.10] transition-colors">
+                <span className="text-[12px] text-white/40 font-mono min-w-fit">{formatTime(signal.timestamp)}</span>
+
+                <div className="flex-1 flex items-center gap-3">
+                  <SymbolLink symbol={signal.symbol} />
+
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
+                    signal.direction === 'bullish'
+                      ? 'bg-emerald-500/20 text-emerald-300'
+                      : signal.direction === 'bearish'
+                      ? 'bg-red-500/20 text-red-300'
+                      : 'bg-gray-500/20 text-gray-300'
+                  }`}>
+                    {signal.direction === 'bullish' ? '↑' : signal.direction === 'bearish' ? '↓' : '→'}
+                    {signal.direction}
+                  </span>
+
+                  <span className="text-[12px] text-white/40 font-mono">{signal.source}</span>
+
+                  {signal.strength && (
+                    <span className="text-[11px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full font-mono">
+                      str: {signal.strength}
                     </span>
+                  )}
+
+                  {signal.confidence && (
+                    <span className="text-[11px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-full font-mono">
+                      conf: {Math.round(signal.confidence * 100)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SCHEDULER STATUS */}
+      {scheduler && scheduler.schedules && (
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Scheduler Status</div>
+            <div className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-medium ${
+              scheduler.running
+                ? 'bg-emerald-500/20 text-emerald-300'
+                : 'bg-amber-500/20 text-amber-300'
+            }`}>
+              {scheduler.running ? '● Running' : '● Stopped'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {Object.entries(scheduler.schedules || {}).map(([name, info]) => (
+              <div key={name} className="flex items-center justify-between py-3 px-3 bg-white/[0.02] rounded-lg border border-white/[0.05] hover:border-white/[0.10] transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-mono text-[13px] text-white font-medium min-w-24">{name}</span>
+                    {info.interval_human && (
+                      <span className="text-[11px] bg-white/[0.06] text-white/60 px-2 py-0.5 rounded font-mono">
+                        {info.interval_human}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Interval: {sched.interval || sched.cron || '—'} | Last: {formatTime(sched.last_run_at)} | Next: {formatTime(sched.next_run_at)}
+                  <div className="text-[11px] text-white/40 font-mono space-x-4">
+                    <span>Last: {formatTime(info.last_run)}</span>
+                    <span>Next: {formatTime(info.next_run)}</span>
                   </div>
                 </div>
+
                 <button
-                  onClick={() => handleTriggerSchedule(sched.name)}
-                  disabled={triggeringSchedule === sched.name}
-                  className="text-xs bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 text-white px-2 py-1 rounded whitespace-nowrap"
+                  onClick={() => handleTriggerSchedule(name)}
+                  disabled={triggeringSchedule === name}
+                  className="ml-4 px-3 py-1.5 rounded-lg text-[11px] font-mono font-medium bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 disabled:bg-white/[0.05] disabled:text-white/40 transition-colors whitespace-nowrap"
                 >
-                  {triggeringSchedule === sched.name ? 'Running…' : 'Trigger'}
+                  {triggeringSchedule === name ? 'Running…' : 'Trigger'}
                 </button>
               </div>
             ))}
@@ -256,51 +260,56 @@ export default function Overview() {
         </div>
       )}
 
-      {/* Recent Activity Feed */}
-      {activity.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Recent Activity</div>
-          <div className="space-y-1">
-            {activity.map(item => (
-              <div key={item.id} className="flex items-center gap-2 text-xs py-1 border-b border-gray-700/50 last:border-0">
-                <span className="text-gray-500">{formatTime(item.timestamp)}</span>
-                {item.type === 'signal' && (
-                  <>
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${
-                      item.direction === 'bullish' ? 'bg-emerald-900 text-emerald-300' :
-                      item.direction === 'bearish' ? 'bg-red-900 text-red-300' :
-                      'bg-gray-700 text-gray-300'
-                    }`}>
-                      {item.direction}
+      {/* PENDING REVIEWS */}
+      {pendingReviews.length > 0 && (
+        <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest">Pending Reviews</div>
+            <div className="px-2.5 py-1 rounded-full text-[12px] font-mono font-bold bg-amber-500/20 text-amber-300">
+              {pendingReviews.length}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {pendingReviews.slice(0, 5).map((review) => (
+              <div key={review.id} className="flex items-center justify-between py-2 px-3 bg-white/[0.02] rounded-lg border border-white/[0.05]">
+                <div className="flex-1 flex items-center gap-3">
+                  <SymbolLink symbol={review.symbol} />
+                  <span className="text-[11px] text-white/50 font-mono">{review.gate}</span>
+                  {review.total_score !== undefined && (
+                    <span className="text-[11px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded font-mono">
+                      Score: {Math.round(review.total_score * 100)}%
                     </span>
-                    <SymbolLink symbol={item.symbol} />
-                    <span className="text-gray-500">{item.text}</span>
-                  </>
-                )}
-                {item.type === 'review' && (
-                  <>
-                    <span className="bg-blue-900 text-blue-300 px-1.5 py-0.5 rounded text-xs font-mono">Review</span>
-                    <SymbolLink symbol={item.symbol} />
-                    <span className="text-gray-500">{item.text}</span>
-                  </>
-                )}
+                  )}
+                </div>
+                <Link
+                  to={`/decisions?symbol=${review.symbol}`}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-mono underline"
+                >
+                  Review →
+                </Link>
               </div>
             ))}
+            {pendingReviews.length > 5 && (
+              <Link to="/decisions" className="block mt-3 text-[12px] text-white/50 hover:text-white/70 font-mono">
+                View all {pendingReviews.length} pending…
+              </Link>
+            )}
           </div>
         </div>
       )}
 
-      {/* Quick Actions Bar */}
-      <div className="bg-gray-800 border border-gray-700 rounded p-4">
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</div>
-        <div className="flex gap-2 flex-wrap">
+      {/* QUICK ACTIONS */}
+      <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-5">
+        <div className="text-[11px] font-medium text-white/40 uppercase tracking-widest mb-4">Quick Actions</div>
+
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={async () => {
               setQuickAction('collect')
-              setQuickActionMsg(null)
               try {
                 await api.createTask({ task_type: 'collect' })
-                setQuickActionMsg({ type: 'success', text: 'Collection started — check Task Queue for progress' })
+                setQuickActionMsg({ type: 'success', text: 'Collection started → check Task Queue' })
               } catch (err) {
                 setQuickActionMsg({ type: 'error', text: `Failed: ${err.message}` })
               }
@@ -308,17 +317,17 @@ export default function Overview() {
               setTimeout(() => setQuickActionMsg(null), 5000)
             }}
             disabled={quickAction === 'collect'}
-            className="text-sm bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 disabled:text-gray-500 text-white px-4 py-2 rounded font-mono"
+            className="px-4 py-2.5 rounded-lg text-[12px] font-mono font-medium bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 disabled:bg-white/[0.05] disabled:text-white/40 transition-colors"
           >
-            {quickAction === 'collect' ? 'Starting…' : '→ Run Collect'}
+            {quickAction === 'collect' ? '⟳ Collecting…' : '⬇ Run Collect'}
           </button>
+
           <button
             onClick={async () => {
               setQuickAction('analyze')
-              setQuickActionMsg(null)
               try {
                 await api.createTask({ task_type: 'analyze' })
-                setQuickActionMsg({ type: 'success', text: 'Analysis started — check Task Queue for progress' })
+                setQuickActionMsg({ type: 'success', text: 'Analysis started → check Task Queue' })
               } catch (err) {
                 setQuickActionMsg({ type: 'error', text: `Failed: ${err.message}` })
               }
@@ -326,19 +335,32 @@ export default function Overview() {
               setTimeout(() => setQuickActionMsg(null), 5000)
             }}
             disabled={quickAction === 'analyze'}
-            className="text-sm bg-blue-700 hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white px-4 py-2 rounded font-mono"
+            className="px-4 py-2.5 rounded-lg text-[12px] font-mono font-medium bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:bg-white/[0.05] disabled:text-white/40 transition-colors"
           >
-            {quickAction === 'analyze' ? 'Starting…' : '⚙ Run Analyze'}
+            {quickAction === 'analyze' ? '⟳ Analyzing…' : '⚙ Run Analyze'}
           </button>
-          <a
-            href="/instruments"
-            className="text-sm bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded font-mono inline-block"
+
+          <Link
+            to="/instruments"
+            className="px-4 py-2.5 rounded-lg text-[12px] font-mono font-medium bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors inline-block"
           >
-            + Add Instrument
-          </a>
+            ➕ Add Instrument
+          </Link>
+
+          <Link
+            to="/decisions"
+            className="px-4 py-2.5 rounded-lg text-[12px] font-mono font-medium bg-white/[0.05] text-white/70 hover:bg-white/[0.10] transition-colors inline-block"
+          >
+            📋 Review Queue
+          </Link>
         </div>
+
         {quickActionMsg && (
-          <div className={`mt-3 text-xs px-3 py-2 rounded ${quickActionMsg.type === 'success' ? 'bg-emerald-900 text-emerald-400' : 'bg-red-900 text-red-400'}`}>
+          <div className={`mt-4 px-4 py-3 rounded-lg text-[12px] font-mono ${
+            quickActionMsg.type === 'success'
+              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+              : 'bg-red-500/10 text-red-300 border border-red-500/20'
+          }`}>
             {quickActionMsg.text}
           </div>
         )}

@@ -146,7 +146,11 @@ def get_connection(db_path: Optional[str] = None):
 
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except sqlite3.OperationalError:
+            # WAL may fail on certain filesystems (FUSE, NFS); fall back to default journal mode
+            pass
         conn.execute("PRAGMA foreign_keys=ON")
 
         try:

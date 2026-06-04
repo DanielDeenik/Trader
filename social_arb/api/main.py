@@ -11,9 +11,12 @@ from social_arb.api.deps import ensure_db, get_config, get_db_path
 from social_arb.api.routes import (
     health, instruments, signals, reviews, analysis, mosaics, theses, positions, tasks, stepps, sentiment, scheduler, lattice, alerts, auth,
 )
+from social_arb.api.routes.agents import router as agents_router
+from social_arb.api.routes.trends import router as trends_router
 from social_arb.tasks.queue import TaskQueue
 from social_arb.tasks.scheduler import TaskScheduler
 from social_arb.tasks.workers import handle_collect, handle_analyze, handle_backfill, handle_train_stepps, handle_enrich_sentiment
+from social_arb.agents.setup import setup_agents, teardown_agents
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +43,19 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Scheduler disabled via DISABLE_SCHEDULER env var")
 
+    # Initialize agent pipeline
+    registry = None
+    if not os.environ.get("DISABLE_SCHEDULER"):
+        registry = await setup_agents(db_path)
+        await registry.start_all()
+        logger.info("Agent pipeline started")
+    else:
+        logger.info("Agent pipeline disabled via DISABLE_SCHEDULER env var")
+
     # Store in app state
     app.state.queue = queue
     app.state.scheduler = scheduler
+    app.state.agent_registry = registry
 
     logger.info("TaskQueue and TaskScheduler started")
 
@@ -50,9 +63,10 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down")
+    await teardown_agents()
     await scheduler.stop()
     await queue.stop()
-    logger.info("TaskQueue and TaskScheduler stopped")
+    logger.info("TaskQueue, TaskScheduler, and Agent pipeline stopped")
 
 
 def create_app() -> FastAPI:
@@ -95,6 +109,8 @@ def create_app() -> FastAPI:
     app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
     app.include_router(tasks.router, prefix="/api/v1", tags=["tasks"])
     app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
+    app.include_router(agents_router, prefix="/api/v1", tags=["agents"])
+    app.include_router(trends_router, prefix="/api/v1", tags=["trends"])
     app.include_router(lattice.router)
     app.include_router(stepps.router)
     app.include_router(sentiment.router)

@@ -22,7 +22,13 @@ CPU          := 1
 MIN_INST     := 0
 MAX_INST     := 3
 
-.PHONY: help setup deploy open logs logs-follow status health url build run-local teardown clean permissions registry
+# -- Option B: DuckDB + Parquet lakehouse (see deploy/OPTION_B.md) --
+BUCKET       := $(PROJECT)-social-arb-lake
+LAKE_DIR     := gs://$(BUCKET)/lake
+SYNC_JOB     := social-arb-lake-sync
+SYNC_CRON    := */15 * * * *
+
+.PHONY: help setup deploy open logs logs-follow status health url build run-local teardown clean permissions registry lake-bucket deploy-lake lake-job lake-sync
 
 help: ## Show all commands
 	@echo ""
@@ -46,6 +52,33 @@ registry: ## Create Artifact Registry repo
 	gcloud artifacts repositories describe $(REPO) --location=$(REGION) --project=$(PROJECT) 2>/dev/null \
 		&& echo "Registry already exists" \
 		|| gcloud artifacts repositories create $(REPO) --repository-format=docker --location=$(REGION) --project=$(PROJECT)
+
+lake-bucket: ## Option B: create the GCS Parquet lake bucket
+	@echo "Creating lake bucket gs://$(BUCKET) ..."
+	gcloud storage buckets describe gs://$(BUCKET) --project=$(PROJECT) >/dev/null 2>&1 \
+		&& echo "Bucket already exists" \
+		|| gcloud storage buckets create gs://$(BUCKET) --project=$(PROJECT) --location=$(REGION) --uniform-bucket-level-access
+
+deploy-lake: ## Option B: deploy with lakehouse wired in (min-instances=1)
+	@echo "--- Deploying Social Arb (Option B lakehouse) ---"
+	gcloud builds submit --config deploy/cloudbuild.yaml --project=$(PROJECT) --substitutions=SHORT_SHA=$$(git rev-parse --short HEAD)
+	gcloud run services update $(SERVICE) --region=$(REGION) --project=$(PROJECT) \
+		--min-instances=1 --update-env-vars="LAKE_DIR=$(LAKE_DIR)"
+	@echo "LIVE: $$(gcloud run services describe $(SERVICE) --project=$(PROJECT) --region=$(REGION) --format='value(status.url)')"
+
+lake-job: ## Option B: create scheduled Cloud Run Job (operational -> Parquet)
+	@echo "Creating lake-sync job $(SYNC_JOB) ..."
+	gcloud run jobs deploy $(SYNC_JOB) --image=$(IMAGE):latest --region=$(REGION) --project=$(PROJECT) \
+		--set-env-vars="LAKE_DIR=$(LAKE_DIR)" --command=social-arb --args=lake-sync
+	gcloud scheduler jobs describe $(SYNC_JOB)-sched --location=$(REGION) --project=$(PROJECT) >/dev/null 2>&1 \
+		&& echo "Scheduler already exists" \
+		|| gcloud scheduler jobs create http $(SYNC_JOB)-sched --location=$(REGION) --project=$(PROJECT) \
+			--schedule="$(SYNC_CRON)" \
+			--uri="https://$(REGION)-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$(PROJECT)/jobs/$(SYNC_JOB):run" \
+			--http-method=POST --oauth-service-account-email="$(PROJECT_NUM)-compute@developer.gserviceaccount.com"
+
+lake-sync: ## Option B: run a lake sync now (local DB -> Parquet)
+	LAKE_DIR=$(LAKE_DIR) social-arb lake-sync
 
 deploy: ## Build and deploy to Cloud Run
 	@echo ""

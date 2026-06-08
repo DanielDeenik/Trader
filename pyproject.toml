@@ -34,12 +34,13 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary>=2.9.0"]
+lake = ["duckdb>=1.0", "pyarrow>=14.0"]
 production = [
     "gunicorn>=21.0",
     "python-json-logger>=2.0",
     "slowapi>=0.1.9",
 ]
-cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0", "python-json-logger>=2.0", "slowapi>=0.1.9", "vaderSentiment>=3.3"]
+cloud = ["psycopg2-binary>=2.9.0", "gunicorn>=21.0", "python-json-logger>=2.0", "slowapi>=0.1.9", "vaderSentiment>=3.3", "duckdb>=1.0", "pyarrow>=14.0"]
 nlp = [
     "transformers>=4.35",
     "torch>=2.0",

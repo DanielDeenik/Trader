@@ -22,7 +22,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from social_arb.db.adapter import get_connection, get_placeholder
+from social_arb.db.adapter import get_placeholder
+from social_arb.lake import is_lake_enabled, lake_connection
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,193 @@ def _safe_float(val, default=0.0):
         return default
 
 
+def _compute_ticker_row(sig, mosaic, thesis, instr, sparkline, max_signals,
+                        hours, now):
+    """Score one symbol into the trending-ticker output dict.
+
+    Shared by the operational (per-row) and lakehouse (DuckDB) data paths so
+    both produce identical scores — only the data-fetch layer differs.
+    """
+    # Velocity: normalized signal count (0-1)
+    velocity = min(sig["signal_count"] / max(max_signals, 1), 1.0)
+
+    # Source diversity: source_count / known sources (0-1)
+    source_div = min(sig["source_count"] / max(len(KNOWN_SOURCES), 1), 1.0)
+
+    # Divergence: from mosaic (normalize to 0-1; DB may store 0-100)
+    raw_div = _safe_float(mosaic.get("divergence_strength"), 0.0)
+    divergence = raw_div / 100.0 if raw_div > 1.0 else raw_div
+
+    # Coherence: from mosaic (normalize to 0-1; DB may store 0-100)
+    raw_coh = _safe_float(mosaic.get("coherence_score"), 0.0)
+    coherence = raw_coh / 100.0 if raw_coh > 1.0 else raw_coh
+
+    # Recency: how recent is the latest signal (0-1, 1 = within last hour)
+    recency = 0.0
+    latest = sig.get("latest_signal")
+    if latest:
+        try:
+            latest_dt = datetime.fromisoformat(str(latest).replace("Z", "+00:00").replace("+00:00", ""))
+            age_hours = max((now - latest_dt).total_seconds() / 3600, 0)
+            recency = max(1.0 - (age_hours / hours), 0.0)
+        except (ValueError, TypeError):
+            pass
+
+    trend_score = round(
+        (W_VELOCITY * velocity
+         + W_SOURCE_DIVERSITY * source_div
+         + W_DIVERGENCE * divergence
+         + W_COHERENCE * coherence
+         + W_RECENCY * recency) * 100,
+        1,
+    )
+
+    # Direction: majority vote
+    b = sig["bullish"] or 0
+    br = sig["bearish"] or 0
+    n = sig["neutral"] or 0
+    total = b + br + n
+    if total > 0:
+        if b / total > 0.5:
+            direction = "bullish"
+        elif br / total > 0.5:
+            direction = "bearish"
+        else:
+            direction = "neutral"
+    else:
+        direction = "neutral"
+
+    # Domain: normalize from instrument type + mosaic domain
+    domain = _normalize_domain(instr.get("type", ""), mosaic.get("domain", ""))
+
+    sources_str = sig.get("sources", "")
+    sources_list = [s.strip() for s in sources_str.split(",") if s.strip()] if sources_str else []
+
+    return {
+        "symbol": sig["symbol"],
+        "name": instr.get("name", sig["symbol"]),
+        "domain": domain,
+        "trend_score": trend_score,
+        "signal_count": sig["signal_count"],
+        "source_count": sig["source_count"],
+        "sources": sources_list,
+        "direction": direction,
+        "bullish": b,
+        "bearish": br,
+        "neutral": n,
+        "avg_strength": round(_safe_float(sig["avg_strength"]), 3),
+        "avg_confidence": round(_safe_float(sig["avg_confidence"]), 3),
+        "divergence": round(divergence, 3),
+        "coherence": round(coherence, 3),
+        "narrative": mosaic.get("narrative", ""),
+        "mosaic_action": mosaic.get("action", ""),
+        "lifecycle": thesis.get("lifecycle_stage", ""),
+        "kelly": round(_safe_float(thesis.get("kelly_fraction")), 4),
+        "roi_bear": _safe_float(thesis.get("roi_bear")),
+        "roi_base": _safe_float(thesis.get("roi_base")),
+        "roi_bull": _safe_float(thesis.get("roi_bull")),
+        "thesis_status": thesis.get("status", ""),
+        "latest_signal": sig.get("latest_signal", ""),
+        "sparkline": sparkline or [],
+        "sector": instr.get("sector", ""),
+        "vertical": instr.get("vertical", ""),
+    }
+
+
+def _fetch_dicts(con, sql, params=None):
+    """Run a DuckDB query and return rows as list-of-dicts."""
+    cur = con.execute(sql, params or [])
+    cols = [d[0] for d in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _trending_tickers_lake(hours, limit, domain_filter):
+    """Lakehouse path: compute trending tickers from Parquet via DuckDB.
+
+    Replaces the operational per-symbol N+1 loops with a handful of set-based
+    queries over columnar Parquet. Output is identical to the operational path
+    (both call _compute_ticker_row).
+    """
+    now = datetime.utcnow()
+    cutoff = (now - timedelta(hours=hours)).isoformat()
+
+    with lake_connection() as con:
+        # 1. Signal aggregation per symbol (one set-based query, no N+1)
+        sig_rows = _fetch_dicts(con, """
+            SELECT
+                symbol,
+                COUNT(*)                                           AS signal_count,
+                COUNT(DISTINCT source)                             AS source_count,
+                string_agg(DISTINCT source, ',')                  AS sources,
+                SUM(CASE WHEN direction='bullish' THEN 1 ELSE 0 END) AS bullish,
+                SUM(CASE WHEN direction='bearish' THEN 1 ELSE 0 END) AS bearish,
+                SUM(CASE WHEN direction='neutral' THEN 1 ELSE 0 END) AS neutral,
+                AVG(strength)                                     AS avg_strength,
+                AVG(confidence)                                   AS avg_confidence,
+                MAX(timestamp)                                    AS latest_signal
+            FROM signals
+            WHERE timestamp >= ?
+            GROUP BY symbol
+            HAVING COUNT(*) >= 2
+            ORDER BY signal_count DESC
+        """, [cutoff])
+
+        if not sig_rows:
+            return []
+
+        max_signals = max(r["signal_count"] for r in sig_rows)
+
+        # 2-5. Latest mosaic / thesis / instrument / sparkline per symbol —
+        # each a single set-based query (optional tables guarded).
+        def _safe_map(sql, key="symbol"):
+            try:
+                return {r[key]: r for r in _fetch_dicts(con, sql)}
+            except Exception:  # noqa: BLE001 — table not in lake yet
+                return {}
+
+        mosaic_map = _safe_map("""
+            SELECT symbol, domain, coherence_score, divergence_strength,
+                   narrative, action
+            FROM mosaics
+            QUALIFY ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY created_at DESC) = 1
+        """)
+        thesis_map = _safe_map("""
+            SELECT symbol, roi_bear, roi_base, roi_bull, kelly_fraction,
+                   lifecycle_stage, status
+            FROM theses
+            QUALIFY ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY created_at DESC) = 1
+        """)
+        instr_map = _safe_map("""
+            SELECT symbol, name, type, sector, vertical, data_class
+            FROM instruments
+        """)
+        spark_map = _safe_map("""
+            SELECT symbol, (list(close ORDER BY timestamp DESC))[1:12] AS closes
+            FROM ohlcv GROUP BY symbol
+        """)
+
+    results = []
+    for sig in sig_rows:
+        sym = sig["symbol"]
+        closes = spark_map.get(sym, {}).get("closes") or []
+        sparkline = list(reversed(closes))  # oldest -> newest, matches operational
+        results.append(_compute_ticker_row(
+            sig,
+            mosaic_map.get(sym, {}),
+            thesis_map.get(sym, {}),
+            instr_map.get(sym, {}),
+            sparkline,
+            max_signals,
+            hours,
+            now,
+        ))
+
+    if domain_filter and domain_filter != "all":
+        results = [r for r in results if r["domain"] == domain_filter]
+    results.sort(key=lambda x: x["trend_score"], reverse=True)
+    return results[:limit]
+
+
 def get_trending_tickers(
     db_path: str,
     hours: int = 168,
@@ -87,6 +275,16 @@ def get_trending_tickers(
     Returns list of ticker dicts with trend_score, signals, divergence, etc.
     """
     hours = max(int(hours), 1)  # guard against div-by-zero in recency calc
+
+    # Option B: when a Parquet lake is configured, serve analytics from DuckDB
+    # over columnar Parquet (set-based, no per-symbol N+1) instead of the
+    # operational store.
+    if is_lake_enabled():
+        try:
+            return _trending_tickers_lake(hours, limit, domain_filter)
+        except Exception as e:  # noqa: BLE001 — fall back to operational path
+            logger.warning("lakehouse trend path failed (%s); using operational DB", e)
+
     conn = _get_conn(db_path)
     ph = get_placeholder()
     cutoff = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
@@ -194,94 +392,16 @@ def get_trending_tickers(
         results = []
         for sig in rows:
             sym = sig["symbol"]
-            mosaic = mosaic_map.get(sym, {})
-            thesis = thesis_map.get(sym, {})
-            instr = instr_map.get(sym, {})
-
-            # Velocity: normalized signal count (0-1)
-            velocity = min(sig["signal_count"] / max(max_signals, 1), 1.0)
-
-            # Source diversity: source_count / known sources (0-1)
-            source_div = min(sig["source_count"] / max(len(KNOWN_SOURCES), 1), 1.0)
-
-            # Divergence: from mosaic (normalize to 0-1; DB may store 0-100)
-            raw_div = _safe_float(mosaic.get("divergence_strength"), 0.0)
-            divergence = raw_div / 100.0 if raw_div > 1.0 else raw_div
-
-            # Coherence: from mosaic (normalize to 0-1; DB may store 0-100)
-            raw_coh = _safe_float(mosaic.get("coherence_score"), 0.0)
-            coherence = raw_coh / 100.0 if raw_coh > 1.0 else raw_coh
-
-            # Recency: how recent is the latest signal (0-1, 1 = within last hour)
-            recency = 0.0
-            latest = sig.get("latest_signal")
-            if latest:
-                try:
-                    latest_dt = datetime.fromisoformat(str(latest).replace("Z", "+00:00").replace("+00:00", ""))
-                    age_hours = max((now - latest_dt).total_seconds() / 3600, 0)
-                    recency = max(1.0 - (age_hours / hours), 0.0)
-                except (ValueError, TypeError):
-                    pass
-
-            trend_score = round(
-                (W_VELOCITY * velocity
-                 + W_SOURCE_DIVERSITY * source_div
-                 + W_DIVERGENCE * divergence
-                 + W_COHERENCE * coherence
-                 + W_RECENCY * recency) * 100,
-                1,
-            )
-
-            # Direction: majority vote
-            b = sig["bullish"] or 0
-            br = sig["bearish"] or 0
-            n = sig["neutral"] or 0
-            total = b + br + n
-            if total > 0:
-                if b / total > 0.5:
-                    direction = "bullish"
-                elif br / total > 0.5:
-                    direction = "bearish"
-                else:
-                    direction = "neutral"
-            else:
-                direction = "neutral"
-
-            # Domain: normalize from instrument type + mosaic domain
-            domain = _normalize_domain(instr.get("type", ""), mosaic.get("domain", ""))
-
-            sources_str = sig.get("sources", "")
-            sources_list = [s.strip() for s in sources_str.split(",") if s.strip()] if sources_str else []
-
-            results.append({
-                "symbol": sym,
-                "name": instr.get("name", sym),
-                "domain": domain,
-                "trend_score": trend_score,
-                "signal_count": sig["signal_count"],
-                "source_count": sig["source_count"],
-                "sources": sources_list,
-                "direction": direction,
-                "bullish": b,
-                "bearish": br,
-                "neutral": n,
-                "avg_strength": round(_safe_float(sig["avg_strength"]), 3),
-                "avg_confidence": round(_safe_float(sig["avg_confidence"]), 3),
-                "divergence": round(divergence, 3),
-                "coherence": round(coherence, 3),
-                "narrative": mosaic.get("narrative", ""),
-                "mosaic_action": mosaic.get("action", ""),
-                "lifecycle": thesis.get("lifecycle_stage", ""),
-                "kelly": round(_safe_float(thesis.get("kelly_fraction")), 4),
-                "roi_bear": _safe_float(thesis.get("roi_bear")),
-                "roi_base": _safe_float(thesis.get("roi_base")),
-                "roi_bull": _safe_float(thesis.get("roi_bull")),
-                "thesis_status": thesis.get("status", ""),
-                "latest_signal": sig.get("latest_signal", ""),
-                "sparkline": sparkline_map.get(sym, []),
-                "sector": instr.get("sector", ""),
-                "vertical": instr.get("vertical", ""),
-            })
+            results.append(_compute_ticker_row(
+                sig,
+                mosaic_map.get(sym, {}),
+                thesis_map.get(sym, {}),
+                instr_map.get(sym, {}),
+                sparkline_map.get(sym, []),
+                max_signals,
+                hours,
+                now,
+            ))
 
         # Apply domain filter
         if domain_filter and domain_filter != "all":

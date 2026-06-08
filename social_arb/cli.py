@@ -420,6 +420,32 @@ def backfill(symbols, domain, period, crypto_days):
     console.print()
 
 
+@cli.command(name="lake-sync")
+@click.option("--lake-dir", default=None,
+              help="Lake root (local path or gs://bucket/prefix). "
+                   "Defaults to LAKE_DIR env.")
+def lake_sync(lake_dir):
+    """Snapshot operational tables to the Parquet lake (Option B analytics)."""
+    from social_arb.lake import sync_to_parquet, lake_dir_from_env
+
+    target = lake_dir or lake_dir_from_env()
+    if not target:
+        console.print("[red]No lake dir.[/red] Pass --lake-dir or set LAKE_DIR.")
+        raise SystemExit(1)
+
+    console.print(f"Syncing operational DB → Parquet lake at [cyan]{target}[/cyan] …")
+    written = sync_to_parquet(db_path=config.db_path, lake_dir=target)
+
+    table = Table(title="Lake Sync")
+    table.add_column("Table")
+    table.add_column("Rows", justify="right")
+    for name, count in sorted(written.items()):
+        table.add_row(name, str(count))
+    console.print(table)
+    console.print(f"[green]Synced {len(written)} tables, "
+                  f"{sum(written.values())} rows.[/green]")
+
+
 @cli.command()
 def dashboard():
     """Start the local dashboard + API server."""

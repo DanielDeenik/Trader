@@ -58,6 +58,11 @@ def _configure_remote(con: duckdb.DuckDBPyConnection, lake_dir: str) -> None:
     if not lake_dir.startswith(("gs://", "s3://")):
         return
     con.execute("INSTALL httpfs; LOAD httpfs;")
+    # Fail fast on missing/unauthorized objects instead of retrying for ~30s.
+    try:
+        con.execute("SET http_retries=1; SET http_timeout=5000;")
+    except duckdb.Error:
+        pass
     if lake_dir.startswith("gs://"):
         key_id = os.getenv("GCS_HMAC_KEY_ID")
         secret = os.getenv("GCS_HMAC_SECRET")

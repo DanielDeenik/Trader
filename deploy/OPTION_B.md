@@ -66,10 +66,18 @@ make lake-job
 make lake-sync                   # or: social-arb lake-sync --lake-dir gs://…
 ```
 
-## GCS auth for DuckDB
+## GCS access on Cloud Run (gcsfuse volume)
 
-On Cloud Run, DuckDB uses the service account via `credential_chain` (no keys
-in env). Off-GCP, set HMAC keys: `GCS_HMAC_KEY_ID` / `GCS_HMAC_SECRET`.
+The bucket is mounted into the container as a Cloud Run **volume** (gcsfuse) at
+`/mnt/lake`, and `LAKE_DIR=/mnt/lake`. DuckDB then reads/writes plain local
+files — no httpfs extension, no HMAC keys, no `credential_chain`. gcsfuse
+authenticates as the Cloud Run service account (which needs
+`roles/storage.objectAdmin` on the bucket). Requires the gen2 execution
+environment (set by `make deploy-lake` / `make lake-job`).
+
+Off-Cloud-Run (e.g. local against a real bucket) the code path also supports a
+direct `gs://` `LAKE_DIR` via DuckDB httpfs + HMAC keys
+(`GCS_HMAC_KEY_ID` / `GCS_HMAC_SECRET`).
 
 ## Sync cadence
 

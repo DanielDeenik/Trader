@@ -27,7 +27,7 @@ def cli(db, verbose):
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=getattr(logging, config.log_level))
+        logging.basicConfig(level=getattr(logging, config.log_level.upper(), logging.INFO))
     init_db(config.db_path)
 
 

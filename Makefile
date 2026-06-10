@@ -23,7 +23,11 @@ MIN_INST     := 0
 MAX_INST     := 3
 
 # -- Option B: DuckDB + Parquet lakehouse (see deploy/OPTION_B.md) --
+# The bucket is mounted into the container via gcsfuse (Cloud Run volume), so
+# DuckDB reads/writes plain local files at LAKE_MOUNT — no httpfs/HMAC creds.
 BUCKET       := $(PROJECT)-social-arb-lake
+LAKE_MOUNT   := /mnt/lake
+LAKE_VOL      := lakevol
 LAKE_DIR     := gs://$(BUCKET)/lake
 SYNC_JOB     := social-arb-lake-sync
 SYNC_CRON    := */15 * * * *
@@ -59,17 +63,23 @@ lake-bucket: ## Option B: create the GCS Parquet lake bucket
 		&& echo "Bucket already exists" \
 		|| gcloud storage buckets create gs://$(BUCKET) --project=$(PROJECT) --location=$(REGION) --uniform-bucket-level-access
 
-deploy-lake: ## Option B: deploy with lakehouse wired in (min-instances=1)
+deploy-lake: ## Option B: deploy with lakehouse wired in (min-instances=1, gcsfuse mount)
 	@echo "--- Deploying Social Arb (Option B lakehouse) ---"
 	gcloud builds submit --config deploy/cloudbuild.yaml --project=$(PROJECT) --substitutions=SHORT_SHA=$$(git rev-parse --short HEAD)
 	gcloud run services update $(SERVICE) --region=$(REGION) --project=$(PROJECT) \
-		--min-instances=1 --update-env-vars="LAKE_DIR=$(LAKE_DIR)"
+		--min-instances=1 --execution-environment=gen2 \
+		--add-volume=name=$(LAKE_VOL),type=cloud-storage,bucket=$(BUCKET) \
+		--add-volume-mount=volume=$(LAKE_VOL),mount-path=$(LAKE_MOUNT) \
+		--update-env-vars="LAKE_DIR=$(LAKE_MOUNT)"
 	@echo "LIVE: $$(gcloud run services describe $(SERVICE) --project=$(PROJECT) --region=$(REGION) --format='value(status.url)')"
 
 lake-job: ## Option B: create scheduled Cloud Run Job (operational -> Parquet)
 	@echo "Creating lake-sync job $(SYNC_JOB) ..."
 	gcloud run jobs deploy $(SYNC_JOB) --image=$(IMAGE):latest --region=$(REGION) --project=$(PROJECT) \
-		--set-env-vars="LAKE_DIR=$(LAKE_DIR)" --command=social-arb --args=lake-sync
+		--execution-environment=gen2 \
+		--add-volume=name=$(LAKE_VOL),type=cloud-storage,bucket=$(BUCKET) \
+		--add-volume-mount=volume=$(LAKE_VOL),mount-path=$(LAKE_MOUNT) \
+		--set-env-vars="LAKE_DIR=$(LAKE_MOUNT)" --command=social-arb --args=lake-sync
 	gcloud scheduler jobs describe $(SYNC_JOB)-sched --location=$(REGION) --project=$(PROJECT) >/dev/null 2>&1 \
 		&& echo "Scheduler already exists" \
 		|| gcloud scheduler jobs create http $(SYNC_JOB)-sched --location=$(REGION) --project=$(PROJECT) \

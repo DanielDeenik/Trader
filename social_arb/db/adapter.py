@@ -105,6 +105,11 @@ class PostgreSQLCursor:
     def execute(self, sql, params=None):
         if params is None:
             params = ()
+        # Translate sqlite-style '?' placeholders to psycopg2 '%s'. Call sites
+        # using get_placeholder() already emit '%s' (no '?'), so this is a no-op
+        # there; it covers any remaining hardcoded '?' (e.g. auth routes).
+        if "?" in sql:
+            sql = sql.replace("?", "%s")
         # sqlite3's lastrowid is implicit; Postgres needs RETURNING. Auto-append
         # it to INSERTs (every operational table has an `id` PK) so existing
         # `cursor.lastrowid` call sites work unchanged on the Postgres backend.

@@ -19,6 +19,44 @@ from typing import Optional
 DEFAULT_DB_PATH = str(Path(__file__).parent / "social_arb.db")
 
 
+_numpy_adapters_registered = False
+
+
+def _register_numpy_adapters() -> None:
+    """Teach psycopg2 to adapt numpy scalars (collectors emit numpy floats/ints).
+
+    SQLite tolerated these (numpy.float64 subclasses float); psycopg2 + numpy 2.x
+    does not, so register native conversions once. No-op if numpy is absent.
+    """
+    global _numpy_adapters_registered
+    if _numpy_adapters_registered:
+        return
+    try:
+        import numpy as np
+        from psycopg2.extensions import register_adapter, AsIs
+    except ImportError:
+        _numpy_adapters_registered = True
+        return
+
+    register_adapter(np.float64, lambda v: AsIs(float(v)))
+    register_adapter(np.float32, lambda v: AsIs(float(v)))
+    register_adapter(np.int64, lambda v: AsIs(int(v)))
+    register_adapter(np.int32, lambda v: AsIs(int(v)))
+    register_adapter(np.bool_, lambda v: AsIs(bool(v)))
+
+    # Postgres NUMERIC -> Python Decimal by default, but the engine does float
+    # math (SQLite returned floats). Cast NUMERIC -> float on read to match.
+    import psycopg2
+    dec2float = psycopg2.extensions.new_type(
+        psycopg2.extensions.DECIMAL.values,
+        "DEC2FLOAT",
+        lambda value, curs: float(value) if value is not None else None,
+    )
+    psycopg2.extensions.register_type(dec2float)
+
+    _numpy_adapters_registered = True
+
+
 def get_db_backend() -> str:
     """Detect backend from DATABASE_URL env var.
 
@@ -50,8 +88,15 @@ class PostgreSQLCursor:
 
     @property
     def lastrowid(self):
-        """Get last inserted row ID. Requires INSERT ... RETURNING id."""
-        row = self._cursor.fetchone()
+        """Last inserted row id.
+
+        execute() auto-appends ``RETURNING id`` to INSERTs (below), so the id
+        is available to fetch here — mirroring sqlite3's cursor.lastrowid.
+        """
+        try:
+            row = self._cursor.fetchone()
+        except Exception:
+            return None  # non-INSERT / no RETURNING row to fetch
         if row:
             row_dict = dict(row)
             return row_dict.get("id") or row_dict.get(list(row_dict.keys())[0])
@@ -60,6 +105,12 @@ class PostgreSQLCursor:
     def execute(self, sql, params=None):
         if params is None:
             params = ()
+        # sqlite3's lastrowid is implicit; Postgres needs RETURNING. Auto-append
+        # it to INSERTs (every operational table has an `id` PK) so existing
+        # `cursor.lastrowid` call sites work unchanged on the Postgres backend.
+        stripped = sql.strip().rstrip(";")
+        if stripped[:6].upper() == "INSERT" and "RETURNING" not in stripped.upper():
+            sql = stripped + " RETURNING id"
         self._cursor.execute(sql, params)
         return self
 
@@ -125,6 +176,8 @@ def get_connection(db_path: Optional[str] = None):
                 "psycopg2 required for PostgreSQL backend. "
                 "Install with: pip install 'social-arb[postgres]'"
             )
+
+        _register_numpy_adapters()
 
         db_url = os.getenv("DATABASE_URL")
         conn = psycopg2.connect(db_url)

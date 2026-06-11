@@ -1,29 +1,108 @@
-version: "3.8"
+# Option B lakehouse — full local stack (mirrors Cloud Run + Cloud SQL).
+#
+#   db        Postgres = operational tier (durable volume)    <-> Cloud SQL
+#   api       FastAPI, serves /trends from DuckDB over Parquet <-> Cloud Run service
+#   lake/     shared volume holding Parquet                    <-> GCS bucket (gcsfuse)
+#   collect / analyze / lake-sync  → on-demand CLI runners     <-> Cloud Run Jobs
+#
+# Quick start:
+#   docker compose up -d db api          # start Postgres + API
+#   docker compose run --rm collect      # pull real signals -> Postgres
+#   docker compose run --rm analyze      # build mosaics/theses -> Postgres
+#   docker compose run --rm lake-sync    # Postgres -> Parquet lake
+#   open http://localhost:8000           # dashboard served from the lake
+#
+# Moving to cloud is config-only: DATABASE_URL -> Cloud SQL, LAKE_DIR -> gcsfuse mount.
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://socialarb:socialarb@db:5432/socialarb
+  LAKE_DIR: /lake
+  LOG_LEVEL: info
+  LOG_FORMAT: json
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: socialarb
+      POSTGRES_PASSWORD: socialarb
+      POSTGRES_DB: socialarb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socialarb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: .
+    image: social-arb-app:local
+    environment:
+      <<: *app-env
+      # Agents use raw sqlite and are not Postgres-aware; the web tier serves
+      # only. Data flows via the collect/analyze/lake-sync runners below.
+      DISABLE_SCHEDULER: "1"
+      PORT: "8000"
+      WEB_CONCURRENCY: "1"
+      CORS_ORIGINS: http://localhost:3000,http://localhost:8000
     ports:
       - "${PORT:-8000}:8000"
     volumes:
-      - ./data:/app/data
-    environment:
-      - SOCIAL_ARB_DB=/app/data/social_arb.db
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LOG_FORMAT=${LOG_FORMAT:-json}
-      - PORT=8000
-      - WEB_CONCURRENCY=1
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - lake:/lake
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
 
+  # ---- On-demand runners (docker compose run --rm <name>) -------------------
+  collect:
+    image: social-arb-app:local
+    profiles: ["tools"]
+    environment:
+      <<: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["social-arb"]
+    command: ["collect"]
+
+  analyze:
+    image: social-arb-app:local
+    profiles: ["tools"]
+    environment:
+      <<: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["social-arb"]
+    command: ["analyze"]
+
+  lake-sync:
+    image: social-arb-app:local
+    profiles: ["tools"]
+    environment:
+      <<: *app-env
+    volumes:
+      - lake:/lake
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["social-arb"]
+    command: ["lake-sync"]
+
+  # ---- Optional Vite dev server ---------------------------------------------
   frontend-dev:
     image: node:20-slim
+    profiles: ["dev"]
     working_dir: /app/frontend
     volumes:
       - ./frontend:/app/frontend
@@ -31,6 +110,8 @@ services:
       - "3000:3000"
     command: npx vite --host 0.0.0.0
     environment:
-      - VITE_API_URL=http://localhost:8000
-    profiles:
-      - dev
+      VITE_API_URL: http://localhost:8000
+
+volumes:
+  pgdata:
+  lake:

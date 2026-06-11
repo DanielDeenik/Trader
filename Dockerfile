@@ -28,6 +28,10 @@ COPY social_arb/ ./social_arb/
 # Install Python deps + application
 RUN pip install --no-cache-dir ".[cloud]" gunicorn
 
+# Pre-install DuckDB extensions at build time so runtime LOAD is offline/instant
+# (httpfs for gs://, sqlite/postgres scanners for the lake-sync attach).
+RUN python -c "import duckdb; c=duckdb.connect(); [c.execute('INSTALL ' + x) for x in ('httpfs','sqlite','postgres')]"
+
 # Copy scripts and pre-trained models
 COPY scripts/ ./scripts/
 

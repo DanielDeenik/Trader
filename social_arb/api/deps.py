@@ -28,14 +28,17 @@ def ensure_db():
 def _seed_default_user(db_path: str):
     """Create default admin user if no users exist."""
     from social_arb.db.schema import get_connection
+    from social_arb.db.adapter import get_placeholder
     from social_arb.auth.models import hash_password
 
+    ph = get_placeholder()
     with get_connection(db_path) as conn:
         row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
         if row and dict(row)["cnt"] == 0:
             pw_hash = hash_password("socialarb")
             conn.execute(
-                "INSERT INTO users (email, password_hash, display_name) VALUES (?, ?, ?)",
+                f"INSERT INTO users (email, password_hash, display_name) "
+                f"VALUES ({ph}, {ph}, {ph})",
                 ("deenikdaniel@gmail.com", pw_hash, "Dan"),
             )
             conn.commit()

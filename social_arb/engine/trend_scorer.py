@@ -22,7 +22,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from social_arb.db.adapter import get_placeholder
+import os
+from social_arb.db.adapter import get_placeholder, get_db_backend
 from social_arb.lake import is_lake_enabled, lake_connection
 
 logger = logging.getLogger(__name__)
@@ -62,10 +63,39 @@ def _dict_row(cursor, row):
 
 
 def _get_conn(db_path: str):
-    """Get a connection with dict row factory."""
+    """Get a backend-aware connection with dict rows.
+
+    Postgres: reuse the adapter's psycopg2 wrapper (RealDictCursor) so the
+    same queries + '%s' placeholders work. SQLite: dict row factory.
+    """
+    if get_db_backend() == "postgres":
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        from social_arb.db.adapter import (
+            PostgreSQLConnection, _register_numpy_adapters,
+        )
+        _register_numpy_adapters()
+        raw = psycopg2.connect(os.getenv("DATABASE_URL"))
+        return PostgreSQLConnection(raw, RealDictCursor)
     conn = sqlite3.connect(db_path)
     conn.row_factory = _dict_row
     return conn
+
+
+def _date_expr(col: str) -> str:
+    """Cross-backend date-of-day from an ISO TEXT timestamp column.
+
+    substr(x,1,10) yields 'YYYY-MM-DD' on both SQLite and Postgres, avoiding
+    SQLite's DATE()/Postgres date(text) incompatibility.
+    """
+    return f"substr({col}, 1, 10)"
+
+
+def _group_concat(expr: str) -> str:
+    """Cross-backend distinct comma aggregation."""
+    if get_db_backend() == "postgres":
+        return f"string_agg(DISTINCT {expr}, ',')"
+    return f"GROUP_CONCAT(DISTINCT {expr})"
 
 
 def _safe_float(val, default=0.0):
@@ -296,7 +326,7 @@ def get_trending_tickers(
                 s.symbol,
                 COUNT(*) as signal_count,
                 COUNT(DISTINCT s.source) as source_count,
-                GROUP_CONCAT(DISTINCT s.source) as sources,
+                {_group_concat('s.source')} as sources,
                 SUM(CASE WHEN s.direction = 'bullish' THEN 1 ELSE 0 END) as bullish,
                 SUM(CASE WHEN s.direction = 'bearish' THEN 1 ELSE 0 END) as bearish,
                 SUM(CASE WHEN s.direction = 'neutral' THEN 1 ELSE 0 END) as neutral,
@@ -369,10 +399,10 @@ def get_trending_tickers(
         timeline_map = {}
         for sym in symbols:
             timeline_rows = conn.execute(
-                f"""SELECT DATE(timestamp) as day, source, COUNT(*) as cnt
+                f"""SELECT {_date_expr('timestamp')} as day, source, COUNT(*) as cnt
                     FROM signals
                     WHERE symbol = {ph} AND timestamp >= {ph}
-                    GROUP BY DATE(timestamp), source
+                    GROUP BY {_date_expr('timestamp')}, source
                     ORDER BY day""",
                 (sym, (now - timedelta(days=7)).isoformat()),
             ).fetchall()
@@ -501,10 +531,10 @@ def get_similar_trends(db_path: str, limit: int = 20) -> List[Dict[str, Any]]:
 
             # Timeline: weekly trend score
             timeline_rows = conn.execute(
-                f"""SELECT DATE(timestamp) as day, COUNT(*) as cnt
+                f"""SELECT {_date_expr('timestamp')} as day, COUNT(*) as cnt
                     FROM signals
                     WHERE symbol IN ({placeholders}) AND timestamp >= {ph}
-                    GROUP BY DATE(timestamp)
+                    GROUP BY {_date_expr('timestamp')}
                     ORDER BY day""",
                 (*symbols, (now - timedelta(days=30)).isoformat()),
             ).fetchall()
@@ -585,7 +615,7 @@ def get_ticker_deep_dive(db_path: str, symbol: str) -> Dict[str, Any]:
         all_signals = conn.execute(
             f"""SELECT COUNT(*) as total,
                        COUNT(DISTINCT source) as source_count,
-                       GROUP_CONCAT(DISTINCT source) as sources,
+                       {_group_concat('source')} as sources,
                        SUM(CASE WHEN direction='bullish' THEN 1 ELSE 0 END) as bullish,
                        SUM(CASE WHEN direction='bearish' THEN 1 ELSE 0 END) as bearish,
                        SUM(CASE WHEN direction='neutral' THEN 1 ELSE 0 END) as neutral,
@@ -604,10 +634,10 @@ def get_ticker_deep_dive(db_path: str, symbol: str) -> Dict[str, Any]:
 
         # Signal timeline by source (daily for last 30 days)
         timeline_rows = conn.execute(
-            f"""SELECT DATE(timestamp) as day, source, COUNT(*) as cnt
+            f"""SELECT {_date_expr('timestamp')} as day, source, COUNT(*) as cnt
                 FROM signals
                 WHERE symbol = {ph} AND timestamp >= {ph}
-                GROUP BY DATE(timestamp), source
+                GROUP BY {_date_expr('timestamp')}, source
                 ORDER BY day""",
             (symbol, (now - timedelta(days=30)).isoformat()),
         ).fetchall()

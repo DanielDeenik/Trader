@@ -7,8 +7,16 @@ from social_arb.api.deps import get_db_path
 from social_arb.api.schemas import SignalResponse
 from social_arb.db.store import query_signals, insert_signal
 from social_arb.db.schema import get_connection
+from social_arb.db.adapter import get_db_backend
 
 router = APIRouter()
+
+
+def _group_concat(expr: str) -> str:
+    """Cross-backend distinct comma aggregation."""
+    if get_db_backend() == "postgres":
+        return f"string_agg(DISTINCT {expr}, ',')"
+    return f"GROUP_CONCAT(DISTINCT {expr})"
 
 
 class SignalCreate(BaseModel):
@@ -59,14 +67,14 @@ def signals_grouped():
     """Signals grouped by symbol with counts and direction breakdown."""
     db_path = get_db_path()
     with get_connection(db_path) as conn:
-        cursor = conn.execute("""
+        cursor = conn.execute(f"""
             SELECT symbol,
                    COUNT(*) as total,
                    SUM(CASE WHEN direction = 'bullish' THEN 1 ELSE 0 END) as bullish,
                    SUM(CASE WHEN direction = 'bearish' THEN 1 ELSE 0 END) as bearish,
                    SUM(CASE WHEN direction = 'neutral' THEN 1 ELSE 0 END) as neutral,
                    COUNT(DISTINCT source) as source_count,
-                   GROUP_CONCAT(DISTINCT source) as sources,
+                   {_group_concat('source')} as sources,
                    MAX(timestamp) as latest_signal
             FROM signals
             GROUP BY symbol

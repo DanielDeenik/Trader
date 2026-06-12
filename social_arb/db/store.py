@@ -11,9 +11,20 @@ Uses .adapter module to support both SQLite and PostgreSQL backends.
 
 import json
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from .schema import get_connection, DEFAULT_DB_PATH
 from .adapter import get_placeholder
+
+
+def _scalar(row):
+    """First column value of a row, backend-agnostic.
+
+    sqlite3.Row supports row[0]; psycopg2 RealDictRow does not (KeyError 0).
+    dict(row).values() works for both.
+    """
+    if row is None:
+        return None
+    return next(iter(dict(row).values()), None)
 
 
 # TIER 2: RAW SIGNALS
@@ -565,19 +576,19 @@ def count_instruments(
             params.append(f"%{search}%")
             params.append(f"%{search}%")
         cursor = conn.execute(query, params)
-        return cursor.fetchone()[0]
+        return _scalar(cursor.fetchone()) or 0
 
 
 def get_instrument_facets(*, db_path: str = DEFAULT_DB_PATH) -> Dict:
     """Get distinct values for filter dropdowns."""
     with get_connection(db_path) as conn:
-        sectors = [r[0] for r in conn.execute(
+        sectors = [_scalar(r) for r in conn.execute(
             "SELECT DISTINCT sector FROM instruments WHERE sector IS NOT NULL AND sector != '' ORDER BY sector"
         ).fetchall()]
-        exchanges = [r[0] for r in conn.execute(
+        exchanges = [_scalar(r) for r in conn.execute(
             "SELECT DISTINCT exchange FROM instruments WHERE exchange IS NOT NULL AND exchange != '' ORDER BY exchange"
         ).fetchall()]
-        types = [r[0] for r in conn.execute(
+        types = [_scalar(r) for r in conn.execute(
             "SELECT DISTINCT type FROM instruments ORDER BY type"
         ).fetchall()]
         return {"sectors": sectors, "exchanges": exchanges, "types": types}
@@ -839,13 +850,16 @@ def claim_task(
     Returns None if no pending tasks exist.
     """
     with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        now_iso = datetime.utcnow().isoformat()
         cursor = conn.execute(
-            """
+            f"""
             SELECT id FROM tasks
-            WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= datetime('now'))
+            WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= {ph})
             ORDER BY created_at ASC
             LIMIT 1
-            """
+            """,
+            (now_iso,),
         )
         row = cursor.fetchone()
         if not row:
@@ -953,6 +967,8 @@ def query_source_health(
     Returns list of dicts with: source, signal_count, avg_confidence, last_timestamp, status.
     """
     with get_connection(db_path) as conn:
+        ph = get_placeholder()
+        cutoff = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
         cursor = conn.execute(
             f"""
             SELECT
@@ -966,10 +982,11 @@ def query_source_health(
                     ELSE 'unknown'
                 END as status
             FROM signals
-            WHERE datetime(timestamp) > datetime('now', '-{hours} hours')
+            WHERE timestamp > {ph}
             GROUP BY source
             ORDER BY signal_count DESC
-            """
+            """,
+            (cutoff,),
         )
         return [dict(row) for row in cursor.fetchall()]
 

@@ -13,7 +13,12 @@ Priorities: **P0** now · **P1** next · **P2** soon · **P3** later.
 - **Local Docker stack** — Postgres + api + collect/analyze/lake-sync runners +
   shared lake volume; full data flow verified, durable across restarts.
 - **Postgres compatibility** — adapter fixes: `?`→`%s`, `RETURNING id`,
-  numpy adapters, `NUMERIC`→float; seed + auth routes work on Postgres.
+  numpy adapters, `NUMERIC`→float, `TIMESTAMP`→ISO-str; seed + auth work.
+- **Full component audit (Postgres)** — every frontend→backend endpoint probed;
+  16/17 green. Fixed SQLite-only SQL (`GROUP_CONCAT`→`string_agg`,
+  `DATE()`/`datetime('now')`→cross-backend), positional `row[0]` access, and
+  `trend_scorer` raw-sqlite `_get_conn` → backend-aware. Only `/agents/*`
+  remains (agents are SQLite-only — see P1).
 - **Cloud Run deploy (Option B)** — gcsfuse lake mount, min-instances=1,
   scheduler off on web tier, scheduled lake-sync job, DuckDB extensions baked.
 - **Code review fixes** — `hours=0` 500, break-even log, dead imports,

@@ -54,6 +54,17 @@ def _register_numpy_adapters() -> None:
     )
     psycopg2.extensions.register_type(dec2float)
 
+    # Postgres TIMESTAMP / TIMESTAMPTZ -> Python datetime by default, but the
+    # API schemas type created_at/updated_at as str (SQLite stored TEXT). Cast
+    # timestamps to ISO strings on read so responses validate. OIDs: 1114
+    # (timestamp), 1184 (timestamptz).
+    ts2str = psycopg2.extensions.new_type(
+        (1114, 1184),
+        "TS2STR",
+        lambda value, curs: None if value is None else value.replace(" ", "T", 1),
+    )
+    psycopg2.extensions.register_type(ts2str)
+
     _numpy_adapters_registered = True
 
 

@@ -62,12 +62,55 @@ def _dict_row(cursor, row):
     return dict(zip(cols, row))
 
 
-def _get_conn(db_path: str):
-    """Get a backend-aware connection with dict rows.
+class _LakeResult:
+    """Wraps a DuckDB cursor to return dict rows (mirrors the operational API)."""
 
-    Postgres: reuse the adapter's psycopg2 wrapper (RealDictCursor) so the
-    same queries + '%s' placeholders work. SQLite: dict row factory.
+    def __init__(self, cur):
+        self._cur = cur
+        self._cols = [d[0] for d in cur.description] if cur.description else []
+
+    def fetchall(self):
+        return [dict(zip(self._cols, r)) for r in self._cur.fetchall()]
+
+    def fetchone(self):
+        r = self._cur.fetchone()
+        return dict(zip(self._cols, r)) if r else None
+
+
+class _LakeDictConn:
+    """Adapts the cached lake DuckDB connection to the operational conn API.
+
+    Lets the existing analytical functions (which call
+    ``conn.execute(sql, params).fetchall()`` and read dict rows) run against the
+    Parquet lake unchanged — so the whole trends dashboard reads ONE source.
     """
+
+    def __init__(self):
+        from social_arb.lake import lake_connection
+        self._cm = lake_connection()
+        self._con = self._cm.__enter__()
+
+    def execute(self, sql, params=None):
+        cur = self._con.cursor()
+        cur.execute(sql, list(params) if params else [])
+        return _LakeResult(cur)
+
+    def close(self):
+        try:
+            self._cm.__exit__(None, None, None)
+        except Exception:
+            pass
+
+
+def _get_conn(db_path: str):
+    """Get a connection with dict rows for the active read path.
+
+    When a Parquet lake is configured (LAKE_DIR), all analytics read DuckDB over
+    Parquet — one consistent source for the whole trends dashboard. Otherwise
+    the operational store: Postgres via the adapter wrapper, else SQLite.
+    """
+    if is_lake_enabled():
+        return _LakeDictConn()
     if get_db_backend() == "postgres":
         import psycopg2
         from psycopg2.extras import RealDictCursor
@@ -82,18 +125,23 @@ def _get_conn(db_path: str):
     return conn
 
 
-def _date_expr(col: str) -> str:
-    """Cross-backend date-of-day from an ISO TEXT timestamp column.
+def _ph() -> str:
+    """Param placeholder for the active read path (DuckDB lake uses '?')."""
+    return "?" if is_lake_enabled() else get_placeholder()
 
-    substr(x,1,10) yields 'YYYY-MM-DD' on both SQLite and Postgres, avoiding
+
+def _date_expr(col: str) -> str:
+    """Cross-backend date-of-day from an ISO timestamp column.
+
+    substr(x,1,10) yields 'YYYY-MM-DD' on SQLite, Postgres, and DuckDB, avoiding
     SQLite's DATE()/Postgres date(text) incompatibility.
     """
     return f"substr({col}, 1, 10)"
 
 
 def _group_concat(expr: str) -> str:
-    """Cross-backend distinct comma aggregation."""
-    if get_db_backend() == "postgres":
+    """Distinct comma aggregation for the active read path."""
+    if is_lake_enabled() or get_db_backend() == "postgres":
         return f"string_agg(DISTINCT {expr}, ',')"
     return f"GROUP_CONCAT(DISTINCT {expr})"
 
@@ -199,8 +247,13 @@ def _compute_ticker_row(sig, mosaic, thesis, instr, sparkline, max_signals,
 
 
 def _fetch_dicts(con, sql, params=None):
-    """Run a DuckDB query and return rows as list-of-dicts."""
-    cur = con.execute(sql, params or [])
+    """Run a DuckDB query and return rows as list-of-dicts.
+
+    Uses a fresh cursor per query so concurrent requests can share the one
+    cached lake connection safely (the connection is yielded outside the lock).
+    """
+    cur = con.cursor()
+    cur.execute(sql, params or [])
     cols = [d[0] for d in cur.description]
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
@@ -316,7 +369,7 @@ def get_trending_tickers(
             logger.warning("lakehouse trend path failed (%s); using operational DB", e)
 
     conn = _get_conn(db_path)
-    ph = get_placeholder()
+    ph = _ph()
     cutoff = (datetime.utcnow() - timedelta(hours=hours)).isoformat()
 
     try:
@@ -472,7 +525,7 @@ def get_similar_trends(db_path: str, limit: int = 20) -> List[Dict[str, Any]]:
                        i.name, i.type, i.sector, i.vertical
                 FROM mosaics m
                 LEFT JOIN instruments i ON m.symbol = i.symbol
-                WHERE m.created_at >= {get_placeholder()}
+                WHERE m.created_at >= {_ph()}
                   AND m.narrative IS NOT NULL AND m.narrative != ''
                 ORDER BY m.created_at DESC""",
             (cutoff,),
@@ -517,7 +570,7 @@ def get_similar_trends(db_path: str, limit: int = 20) -> List[Dict[str, Any]]:
             avg_divergence = sum(_norm(m.get("divergence_strength")) for m in members) / len(members)
 
             # Get signal counts per source for this cluster
-            ph = get_placeholder()
+            ph = _ph()
             placeholders = ",".join([ph] * len(symbols))
             source_rows = conn.execute(
                 f"""SELECT source, COUNT(*) as cnt
@@ -602,7 +655,7 @@ def get_ticker_deep_dive(db_path: str, symbol: str) -> Dict[str, Any]:
     Full deep dive for a single ticker: signals, mosaic, thesis, STEPPS, timeline, HITL status.
     """
     conn = _get_conn(db_path)
-    ph = get_placeholder()
+    ph = _ph()
     now = datetime.utcnow()
 
     try:
@@ -848,7 +901,7 @@ def get_overview_stats(db_path: str) -> Dict[str, Any]:
     """Dashboard top-level stats."""
     conn = _get_conn(db_path)
     now = datetime.utcnow()
-    ph = get_placeholder()
+    ph = _ph()
 
     try:
         today_cutoff = (now - timedelta(hours=24)).isoformat()

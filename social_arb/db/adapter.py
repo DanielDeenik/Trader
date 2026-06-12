@@ -116,16 +116,21 @@ class PostgreSQLCursor:
     def execute(self, sql, params=None):
         if params is None:
             params = ()
-        # Translate sqlite-style '?' placeholders to psycopg2 '%s'. Call sites
-        # using get_placeholder() already emit '%s' (no '?'), so this is a no-op
-        # there; it covers any remaining hardcoded '?' (e.g. auth routes).
+        # Translate sqlite-style '?' placeholders to psycopg2 '%s'. Only queries
+        # that use '?' are sqlite-style; for those, escape any literal '%' to
+        # '%%' first so psycopg2's own format parser doesn't misread it (e.g. a
+        # LIKE pattern written into the SQL text). Queries built with
+        # get_placeholder() already emit '%s' and contain no '?', so they are
+        # left untouched.
         if "?" in sql:
-            sql = sql.replace("?", "%s")
+            sql = sql.replace("%", "%%").replace("?", "%s")
         # sqlite3's lastrowid is implicit; Postgres needs RETURNING. Auto-append
-        # it to INSERTs (every operational table has an `id` PK) so existing
-        # `cursor.lastrowid` call sites work unchanged on the Postgres backend.
+        # it to plain INSERTs (every operational table has an `id` PK) so
+        # existing `cursor.lastrowid` call sites work on Postgres. Skip when the
+        # statement already returns, or uses ON CONFLICT (which can yield no row).
         stripped = sql.strip().rstrip(";")
-        if stripped[:6].upper() == "INSERT" and "RETURNING" not in stripped.upper():
+        up = stripped.upper()
+        if up[:6] == "INSERT" and "RETURNING" not in up and "ON CONFLICT" not in up:
             sql = stripped + " RETURNING id"
         self._cursor.execute(sql, params)
         return self

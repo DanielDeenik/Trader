@@ -108,8 +108,11 @@ def lake_connection(lake_dir: Optional[str] = None):
     """Cached DuckDB connection with a VIEW per operational table over Parquet.
 
     The connection is built once per lake_dir and reused (views read Parquet
-    lazily, so they always reflect the latest sync). Access is serialized by a
-    lock — yield the connection only for the duration of a query.
+    lazily, so they always reflect the latest sync). The lock guards only
+    get-or-create of the cached connection; the connection itself is yielded
+    OUTSIDE the lock so concurrent queries don't serialize and a nested call
+    can't deadlock. Callers must run each query on its own ``con.cursor()`` —
+    a single DuckDB connection is shared across threads.
 
     Args:
         lake_dir: lake root (local path or gs://). Defaults to LAKE_DIR env.
@@ -129,4 +132,5 @@ def lake_connection(lake_dir: Optional[str] = None):
                 _cached_con.close()
             _cached_con = _build_connection(lake_dir)
             _cached_dir = lake_dir
-        yield _cached_con
+        con = _cached_con
+    yield con

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const API = '/api/v1'
+import { api } from '../api'
+import { usePolling } from '../hooks'
 
 const DOMAIN_COLORS = { public: '#3b82f6', private: '#a855f7', crypto: '#f59e0b' }
 const LIFECYCLE_COLORS = { emerging: '#6366f1', validating: '#f59e0b', confirmed: '#10b981', saturated: '#6b7280' }
@@ -51,37 +51,30 @@ function MiniSparkline({ data, color = '#10b981' }) {
 
 export default function TrendRadar() {
   const navigate = useNavigate()
-  const [stats, setStats] = useState(null)
-  const [tickers, setTickers] = useState([])
-  const [alerts, setAlerts] = useState([])
   const [domainFilter, setDomainFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
 
-  const fetchData = useCallback(async () => {
-    try {
-      const domainParam = domainFilter !== 'all' ? `&domain=${domainFilter}` : ''
-      const [statsRes, tickersRes, alertsRes] = await Promise.all([
-        fetch(`${API}/trends/stats`),
-        fetch(`${API}/trends/tickers?limit=30${domainParam}`),
-        fetch(`${API}/trends/alerts?limit=5`),
-      ])
-      if (statsRes.ok) setStats(await statsRes.json())
-      if (tickersRes.ok) setTickers(await tickersRes.json())
-      if (alertsRes.ok) setAlerts(await alertsRes.json())
-    } catch (err) {
-      console.error('Failed to fetch trend data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [domainFilter])
+  // One source, shared client (auth headers + ApiError), shared polling hook.
+  const { data, loading, error, refetch } = usePolling(async () => {
+    const params = domainFilter !== 'all' ? { domain: domainFilter } : {}
+    const [stats, tickers, alerts] = await Promise.all([
+      api.getTrendStats(),
+      api.getTrendingTickers({ limit: 30, ...params }),
+      api.getDivergenceAlerts({ limit: 5 }),
+    ])
+    return { stats, tickers, alerts }
+  }, 15000, [domainFilter])
 
-  useEffect(() => { fetchData() }, [fetchData])
-  useEffect(() => {
-    const interval = setInterval(fetchData, 15000)
-    return () => clearInterval(interval)
-  }, [fetchData])
+  const stats = data?.stats
+  const tickers = data?.tickers || []
+  const alerts = data?.alerts || []
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading trends...</div>
+  if (loading && !data) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading trends...</div>
+  if (error && !data) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-sm">
+      <div className="text-red-400">Couldn't load trends — {error.message}</div>
+      <button onClick={refetch} className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-gray-300">Retry</button>
+    </div>
+  )
 
   return (
     <div className="space-y-5">

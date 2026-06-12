@@ -39,6 +39,51 @@ export const api = {
     return handleResponse(res)
   },
 
+  // Trends (lakehouse dashboard) — routed through the shared client so auth
+  // headers + ApiError handling apply uniformly (was bypassed before).
+  async getTrendingTickers(params = {}, opts = {}) {
+    const query = new URLSearchParams(params).toString()
+    const res = await fetch(`${API_BASE}/v1/trends/tickers?${query}`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getTrendStats(opts = {}) {
+    const res = await fetch(`${API_BASE}/v1/trends/stats`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getDivergenceAlerts(params = {}, opts = {}) {
+    const query = new URLSearchParams(params).toString()
+    const res = await fetch(`${API_BASE}/v1/trends/alerts?${query}`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getThemes(params = {}, opts = {}) {
+    const query = new URLSearchParams(params).toString()
+    const res = await fetch(`${API_BASE}/v1/trends/themes?${query}`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getTickerTrend(symbol, opts = {}) {
+    const res = await fetch(`${API_BASE}/v1/trends/ticker/${encodeURIComponent(symbol)}`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+
+  // Agents (pipeline)
+  async getAgentHealth(opts = {}) {
+    const res = await fetch(`${API_BASE}/v1/agents/health`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getAgentFlow(opts = {}) {
+    const res = await fetch(`${API_BASE}/v1/agents/flow`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async getAgentEvents(params = {}, opts = {}) {
+    const query = new URLSearchParams(params).toString()
+    const res = await fetch(`${API_BASE}/v1/agents/events/history?${query}`, { headers: getHeaders(), ...opts })
+    return handleResponse(res)
+  },
+  async restartAgent(name) {
+    const res = await fetch(`${API_BASE}/v1/agents/${encodeURIComponent(name)}/restart`, { method: 'POST', headers: getHeaders() })
+    return handleResponse(res)
+  },
+
   // Instruments
   async getInstruments(params = {}) {
     const query = new URLSearchParams(params).toString()

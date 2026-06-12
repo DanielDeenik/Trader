@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { api, ApiError } from '../api'
+import { usePolling } from '../hooks'
 
-const API = '/api/v1'
 const DOMAIN_COLORS = { public: '#3b82f6', private: '#a855f7', crypto: '#f59e0b' }
 const LIFECYCLE_COLORS = { emerging: '#6366f1', validating: '#f59e0b', confirmed: '#10b981', saturated: '#6b7280' }
 const SOURCE_COLORS = {
@@ -149,39 +149,29 @@ function SteppsRadar({ stepps }) {
   )
 }
 
+// Safe percent: null/undefined/NaN -> '—' (avoids "NaN%" on partial theses).
+const pct = (v, digits = 0) => {
+  const n = Number(v)
+  if (v == null || !Number.isFinite(n)) return '—'
+  const p = n * 100
+  return `${p > 0 ? '+' : ''}${p.toFixed(digits)}%`
+}
+
 export default function TickerTrend() {
   const { symbol } = useParams()
   const navigate = useNavigate()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/trends/ticker/${symbol}`)
-      if (res.ok) {
-        setData(await res.json())
-        setError(null)
-      } else if (res.status === 404) {
-        setError(`No data found for ${symbol}`)
-      } else {
-        setError('Failed to load ticker data')
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [symbol])
+  // Shared client + polling. 404 -> friendly "no data" message.
+  const { data, loading, error: rawError } = usePolling(
+    () => api.getTickerTrend(symbol), 30000, [symbol])
+  const error = rawError
+    ? (rawError instanceof ApiError && rawError.status === 404
+        ? `No data found for ${symbol}`
+        : (rawError.message || 'Failed to load ticker data'))
+    : null
 
-  useEffect(() => { fetchData() }, [fetchData])
-  useEffect(() => {
-    const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
-  }, [fetchData])
-
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading {symbol}...</div>
-  if (error) return (
+  if (loading && !data) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading {symbol}...</div>
+  if (error && !data) return (
     <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-8 text-center">
       <div className="text-gray-400 text-sm">{error}</div>
       <button onClick={() => navigate('/')} className="mt-3 text-[11px] text-emerald-400 hover:underline">Back to Trend Radar</button>
@@ -310,16 +300,16 @@ export default function TickerTrend() {
               <div className="flex justify-between text-[11px]">
                 <span className="text-gray-500">ROI Range</span>
                 <span className="text-gray-300">
-                  <span className="text-red-400">{thesis.roi_bear > 0 ? '+' : ''}{(thesis.roi_bear * 100).toFixed(0)}%</span>
+                  <span className="text-red-400">{pct(thesis.roi_bear)}</span>
                   {' / '}
-                  <span className="text-emerald-400">+{(thesis.roi_base * 100).toFixed(0)}%</span>
+                  <span className="text-emerald-400">{pct(thesis.roi_base)}</span>
                   {' / '}
-                  <span className="text-emerald-300">+{(thesis.roi_bull * 100).toFixed(0)}%</span>
+                  <span className="text-emerald-300">{pct(thesis.roi_bull)}</span>
                 </span>
               </div>
               <div className="flex justify-between text-[11px]">
                 <span className="text-gray-500">Kelly Fraction</span>
-                <span className="text-purple-400 font-semibold">{(thesis.kelly * 100).toFixed(1)}%</span>
+                <span className="text-purple-400 font-semibold">{pct(thesis.kelly, 1)}</span>
               </div>
               <div className="flex justify-between text-[11px]">
                 <span className="text-gray-500">Lifecycle</span>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-
-const API = '/api/v1'
+import { useState } from 'react'
+import { api } from '../api'
+import { usePolling } from '../hooks'
 
 const STATE_COLORS = {
   watching: 'bg-emerald-400',
@@ -267,43 +267,30 @@ function EventHistory({ events }) {
 }
 
 export default function Pipeline() {
-  const [health, setHealth] = useState(null)
-  const [flow, setFlow] = useState(null)
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [restartError, setRestartError] = useState(null)
 
-  const fetchAll = useCallback(async () => {
-    try {
-      const [healthRes, flowRes, eventsRes] = await Promise.all([
-        fetch(`${API}/agents/health`),
-        fetch(`${API}/agents/flow`),
-        fetch(`${API}/agents/events/history?limit=30`),
-      ])
+  // Shared client + polling. /agents/health throws (503) when the pipeline is
+  // disabled -> error set, health null -> "Pipeline not available" below.
+  const { data, loading, error, refetch: fetchAll } = usePolling(async () => {
+    const [health, flow, events] = await Promise.all([
+      api.getAgentHealth(),
+      api.getAgentFlow(),
+      api.getAgentEvents({ limit: 30 }),
+    ])
+    return { health, flow, events }
+  }, 5000, [])
 
-      if (healthRes.ok) setHealth(await healthRes.json())
-      if (flowRes.ok) setFlow(await flowRes.json())
-      if (eventsRes.ok) setEvents(await eventsRes.json())
-      setError(null)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchAll()
-    const interval = setInterval(fetchAll, 5000)
-    return () => clearInterval(interval)
-  }, [fetchAll])
+  const health = data?.health || null
+  const flow = data?.flow || null
+  const events = data?.events || []
 
   const handleRestart = async (agentName) => {
+    setRestartError(null)
     try {
-      await fetch(`${API}/agents/${agentName}/restart`, { method: 'POST' })
+      await api.restartAgent(agentName)  // throws on non-2xx (was unchecked)
       await fetchAll()
     } catch (err) {
-      console.error('Failed to restart agent:', err)
+      setRestartError(`Restart failed for ${agentName}: ${err.message}`)
     }
   }
 
@@ -319,7 +306,7 @@ export default function Pipeline() {
     return (
       <div className="bg-[#111827]/80 border border-white/[0.06] rounded-xl p-6 text-center">
         <div className="text-red-400 text-sm mb-2">Pipeline not available</div>
-        <div className="text-gray-500 text-xs">{error}</div>
+        <div className="text-gray-500 text-xs">{error.message}</div>
         <div className="text-gray-500 text-xs mt-2">Agents may be disabled or not yet initialized.</div>
       </div>
     )
@@ -349,6 +336,9 @@ export default function Pipeline() {
           Refresh
         </button>
       </div>
+      {restartError && (
+        <div className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded px-3 py-1.5">{restartError}</div>
+      )}
 
       {/* Throughput */}
       <ThroughputPanel throughput={health?.throughput} />

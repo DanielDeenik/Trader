@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../api'
+import { usePolling } from '../hooks'
 
-const API = '/api/v1'
 const DOMAIN_COLORS = { public: '#3b82f6', private: '#a855f7', crypto: '#f59e0b' }
 const LIFECYCLE_COLORS = { emerging: '#6366f1', validating: '#f59e0b', confirmed: '#10b981', saturated: '#6b7280' }
 
@@ -56,25 +57,12 @@ function MiniTimeline({ data }) {
 
 export default function SimilarTrends() {
   const navigate = useNavigate()
-  const [themes, setThemes] = useState([])
-  const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState('trend_score')
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/trends/themes?limit=20`)
-      if (res.ok) {
-        const data = await res.json()
-        setThemes(data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch themes:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetchData() }, [fetchData])
+  // Shared client + polling (was a one-shot direct fetch with no auth/refresh).
+  const { data, loading, error, refetch } = usePolling(
+    () => api.getThemes({ limit: 20 }), 15000, [])
+  const themes = data || []
 
   const sorted = [...themes].sort((a, b) => {
     if (sortBy === 'divergence') return (b.divergence_avg || 0) - (a.divergence_avg || 0)
@@ -82,7 +70,13 @@ export default function SimilarTrends() {
     return (b.trend_score || 0) - (a.trend_score || 0)
   })
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading theme clusters...</div>
+  if (loading && !data) return <div className="flex items-center justify-center h-64 text-gray-500 text-sm">Loading theme clusters...</div>
+  if (error && !data) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-sm">
+      <div className="text-red-400">Couldn't load theme clusters — {error.message}</div>
+      <button onClick={refetch} className="px-3 py-1.5 rounded bg-white/[0.06] hover:bg-white/[0.1] text-gray-300">Retry</button>
+    </div>
+  )
 
   return (
     <div className="space-y-4">
